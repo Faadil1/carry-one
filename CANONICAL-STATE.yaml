@@ -1,0 +1,68 @@
+project: Carry One
+competition: Nimiq Mini Apps Competition - Cycle II
+repository: Faadil1/carry-one
+visibility: private
+state_version: 0.1.0
+date: 2026-08-31
+
+phase: PRE_BUILD_TECHNICAL_SPIKE
+build_authorized: false
+problem_locked: false
+
+team:
+  faadil:
+    role: repo_owner_product_lead
+  opeyemi:
+    role: collaborator_technical_lead
+    github_username: pending
+  prize_split:
+    current: 50_50
+    condition: revisit_in_writing_if_either_party_steps_away_before_submission
+
+collaboration_alignment:
+  joint_cycle_ii_concept: true
+  team_submission_intent: true
+  no_solo_build_or_submission_same_concept: true
+  repo_owner: Faadil1
+
+core_product_law: >-
+  THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT,
+  WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
+
+technical_baseline:
+  active_pass_intent: one_atomic_intent_per_baton_plus_sequence
+  bind_intent_to:
+    - current_holder
+    - intended_recipient
+    - expected_value
+    - nonce
+    - sequence
+  canonical_order_source: included_transaction_matching_active_intent
+  mempool_order_is_canonical: false
+  recipient_value_luna: 100000
+  fee_part_of_amount_validation: false
+  confirmation_states:
+    - PENDING
+    - INCLUDED
+    - FINAL
+  next_pass_unlock: FINAL
+  dormant_behavior: display_only_no_clawback_no_reassignment
+
+current_gate:
+  name: W0_W5_TECHNICAL_SPIKE
+  owner: Opeyemi
+  spec: docs/W0-W5-SPIKE.md
+  status: ACTIVE_PENDING_COLLABORATOR_ACCESS
+
+next_exact_action: >-
+  Obtain Opeyemi's actual GitHub username, add him as collaborator,
+  then run the W0→W5 spike against the frozen technical baseline.
+
+blocked:
+  - full production build
+  - prizes or wagering
+  - pooled funds
+  - autonomous AI spend
+  - marketplace expansion
+  - unique-human claims
+  - public repository before team intentionally opens it
