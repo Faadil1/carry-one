@@ -250,4 +250,32 @@ describe("CanonicalRelayService: full W0 -> W5 relay through intent/broadcast/re
     // Re-entrant: calling it again changes nothing.
     await expect(service.reconcile(BATON)).resolves.toBeNull();
   });
+
+  it("rejects cross-baton transaction replay when reusing the same tx hash on a second baton", () => {
+    const store = new RelayStore();
+    const service = new CanonicalRelayService(store, new FakeRpcClient());
+    const baton1 = "baton-1";
+    const baton2 = "baton-2";
+
+    service.initiatePass(baton1, "W0", "W1");
+    const sharedTxHash = randomHash();
+    service.recordBroadcast(baton1, sharedTxHash);
+
+    // Baton 2 has matching endpoints W0 -> W1
+    service.initiatePass(baton2, "W0", "W1");
+
+    // Attempting to attach the same broadcast / tx hash to baton 2 must be rejected
+    let caught: RelayValidationError | null = null;
+    try {
+      service.recordBroadcast(baton2, sharedTxHash);
+    } catch (err) {
+      caught = err as RelayValidationError;
+    }
+    expect(caught).not.toBeNull();
+    expect(caught?.reason).toBe("DUPLICATE_TX_HASH");
+
+    // Baton 2's intent remains intact and no hop was recorded for baton 2
+    expect(store.getActiveIntent(baton2)).toBeDefined();
+    expect(store.getHops(baton2)).toHaveLength(0);
+  });
 });

@@ -32,6 +32,10 @@ export class RelayStore {
     return this.hops.find((h) => h.batonId === batonId && h.sequence === sequence);
   }
 
+  findHopByTxHash(txHash: string): Hop | undefined {
+    return this.hops.find((h) => h.txHash === txHash);
+  }
+
   getCurrentSequence(batonId: string): number {
     const hops = this.getHops(batonId).filter((hop) => hop.status === "FINAL");
     return hops.length === 0 ? 0 : hops[hops.length - 1].sequence;
@@ -91,6 +95,15 @@ export class RelayStore {
    * record, or `getHop`/reconciliation would keep finding the invalid one.
    */
   recordHop(hop: Hop) {
+    if (hop.txHash) {
+      const existing = this.findHopByTxHash(hop.txHash);
+      if (existing && (existing.batonId !== hop.batonId || existing.sequence !== hop.sequence)) {
+        throw new RelayValidationError(
+          "DUPLICATE_TX_HASH",
+          `Transaction hash ${hop.txHash} has already been recorded for baton ${existing.batonId} at sequence ${existing.sequence}`
+        );
+      }
+    }
     const idx = this.hops.findIndex((h) => h.batonId === hop.batonId && h.sequence === hop.sequence);
     if (idx >= 0) {
       this.hops[idx] = hop;

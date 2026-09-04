@@ -186,3 +186,55 @@ describe("Bonus: dormancy is display-only and never mutates state", () => {
     expect(store.getActiveIntent(BATON)).toBeDefined();
   });
 });
+
+describe("Negative test 6: transaction replay across batons", () => {
+  it("rejects recording the same tx hash across different batons", () => {
+    const store = new RelayStore();
+    const intent1 = store.createIntent("baton-alpha", W0, W1);
+    store.recordHop({
+      batonId: intent1.batonId,
+      sequence: intent1.sequence,
+      currentHolder: intent1.currentHolder,
+      recipient: intent1.recipient,
+      nonce: intent1.nonce,
+      txHash: "0xshared_hash",
+      value: ONE_NIM_IN_LUNA,
+      status: "PENDING",
+      createdAt: Date.now(),
+      confirmedAt: null,
+    });
+
+    const intent2 = store.createIntent("baton-beta", W0, W1);
+    expect(() =>
+      store.recordHop({
+        batonId: intent2.batonId,
+        sequence: intent2.sequence,
+        currentHolder: intent2.currentHolder,
+        recipient: intent2.recipient,
+        nonce: intent2.nonce,
+        txHash: "0xshared_hash",
+        value: ONE_NIM_IN_LUNA,
+        status: "PENDING",
+        createdAt: Date.now(),
+        confirmedAt: null,
+      })
+    ).toThrow(RelayValidationError);
+
+    try {
+      store.recordHop({
+        batonId: intent2.batonId,
+        sequence: intent2.sequence,
+        currentHolder: intent2.currentHolder,
+        recipient: intent2.recipient,
+        nonce: intent2.nonce,
+        txHash: "0xshared_hash",
+        value: ONE_NIM_IN_LUNA,
+        status: "PENDING",
+        createdAt: Date.now(),
+        confirmedAt: null,
+      });
+    } catch (e) {
+      expect((e as RelayValidationError).reason).toBe("DUPLICATE_TX_HASH");
+    }
+  });
+});

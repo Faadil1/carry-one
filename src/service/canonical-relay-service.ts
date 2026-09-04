@@ -96,6 +96,13 @@ export class CanonicalRelayService {
         `Intent for baton ${batonId} at sequence ${intent.sequence} has expired`
       );
     }
+    const existingHop = this.store.findHopByTxHash(txHash);
+    if (existingHop && (existingHop.batonId !== batonId || existingHop.sequence !== intent.sequence)) {
+      throw new RelayValidationError(
+        "DUPLICATE_TX_HASH",
+        `Transaction hash ${txHash} has already been recorded for baton ${existingHop.batonId} at sequence ${existingHop.sequence}`
+      );
+    }
     const hop: Hop = {
       batonId: intent.batonId,
       sequence: intent.sequence,
