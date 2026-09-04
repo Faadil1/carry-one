@@ -1,0 +1,29 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.seed
+*.mnemonic
+keystore/
+
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.nyc_output/
+
+# Runtime output and local tooling
+*.log
+*.tmp
+*.temp
+.cache/
+.turbo/
+.vite/
+
+# Operating-system and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
