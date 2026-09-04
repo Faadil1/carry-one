@@ -89,6 +89,13 @@ export class CanonicalRelayService {
     if (!intent) {
       throw new RelayValidationError("NO_ACTIVE_INTENT", `No active intent for baton ${batonId} to attach a broadcast to`);
     }
+    if (isIntentStale(intent)) {
+      this.store.cancelIntent(batonId);
+      throw new RelayValidationError(
+        "STALE_INTENT",
+        `Intent for baton ${batonId} at sequence ${intent.sequence} has expired`
+      );
+    }
     const hop: Hop = {
       batonId: intent.batonId,
       sequence: intent.sequence,
@@ -174,7 +181,9 @@ export class CanonicalRelayService {
       // Not observed on-chain yet. Only give up once the intent itself is
       // stale — a transaction can legitimately sit unconfirmed for a while.
       if (isIntentStale(intent)) {
-        return this.store.updateHop(batonId, intent.sequence, { status: "INVALID" });
+        const invalidHop = this.store.updateHop(batonId, intent.sequence, { status: "INVALID" });
+        this.store.cancelIntent(batonId);
+        return invalidHop;
       }
       return hop;
     }

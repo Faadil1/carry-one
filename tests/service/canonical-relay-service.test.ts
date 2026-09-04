@@ -194,6 +194,53 @@ describe("CanonicalRelayService: full W0 -> W5 relay through intent/broadcast/re
     vi.useRealTimers();
   });
 
+  it("closes a stale intent when RPC returns null after expiry", async () => {
+    const store = new RelayStore();
+    const service = new CanonicalRelayService(store, new FakeRpcClient());
+    const intent = service.initiatePass(BATON, "W0", "W1");
+    const txHash = randomHash();
+    service.recordBroadcast(BATON, txHash);
+
+    const staleAt = intent.createdAt + INTENT_VALIDITY_WINDOW_MS + 1;
+    vi.setSystemTime(staleAt);
+
+    // Reconcile when RPC returns null (tx never appeared) and intent is now stale
+    const result = await service.reconcile(BATON);
+    expect(result).toMatchObject({ status: "INVALID" });
+
+    // Intent is cancelled / closed, not left active
+    expect(store.getActiveIntent(BATON)).toBeUndefined();
+    // A new intent can now be initiated without DUPLICATE_INTENT error
+    expect(() => service.initiatePass(BATON, "W0", "W1")).not.toThrow();
+
+    vi.useRealTimers();
+  });
+
+  it("rejects recordBroadcast against an expired/stale intent and closes the intent", () => {
+    const store = new RelayStore();
+    const service = new CanonicalRelayService(store, new FakeRpcClient());
+    const intent = service.initiatePass(BATON, "W0", "W1");
+    const staleAt = intent.createdAt + INTENT_VALIDITY_WINDOW_MS + 1;
+    vi.setSystemTime(staleAt);
+
+    const txHash = randomHash();
+    let caught: RelayValidationError | null = null;
+    try {
+      service.recordBroadcast(BATON, txHash);
+    } catch (err) {
+      caught = err as RelayValidationError;
+    }
+    expect(caught).not.toBeNull();
+    expect(caught?.reason).toBe("STALE_INTENT");
+
+    // Intent is no longer active
+    expect(store.getActiveIntent(BATON)).toBeUndefined();
+    // Fresh pass can now be initiated
+    expect(() => service.initiatePass(BATON, "W0", "W1")).not.toThrow();
+
+    vi.useRealTimers();
+  });
+
   it("reconciling with no broadcast reported yet is a safe no-op (recovery after app close)", async () => {
     const service = new CanonicalRelayService(new RelayStore(), new FakeRpcClient());
     service.initiatePass(BATON, "W0", "W1");
