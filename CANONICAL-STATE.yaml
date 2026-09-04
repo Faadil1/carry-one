@@ -2,10 +2,10 @@ project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: private
-state_version: 0.1.0
-date: 2026-08-31
+state_version: 0.2.0
+date: 2026-09-04
 
-phase: PRE_BUILD_TECHNICAL_SPIKE
+phase: TECHNICAL_SPIKE_VERIFIED_PENDING_MERGE
 build_authorized: false
 problem_locked: false
 
@@ -14,7 +14,7 @@ team:
     role: repo_owner_product_lead
   opeyemi:
     role: collaborator_technical_lead
-    github_username: pending
+    github_username: opeblow
   prize_split:
     current: 50_50
     condition: revisit_in_writing_if_either_party_steps_away_before_submission
@@ -47,22 +47,67 @@ technical_baseline:
     - FINAL
   next_pass_unlock: FINAL
   dormant_behavior: display_only_no_clawback_no_reassignment
+  transaction_replay_boundary: one_tx_hash_per_baton_sequence_globally_within_store
+  cancel_after_broadcast: forbidden_fail_closed
+  stale_intent_behavior: invalidate_and_release_without_advancing_sequence
+
+pr1:
+  number: 1
+  branch: feat/carry-one-spike-v2
+  original_author: opeblow
+  remediation_branch: fix/pr1-audit-remediation
+  remediation_status: APPLIED_TO_PR_HEAD
+  merge_authorized: true
+  merged: false
+
+remediation:
+  mit_license:
+    package_json: MIT
+    license_file: present
+  cancel_after_broadcast_guard: PASS
+  stale_intent_cleanup: PASS
+  transaction_hash_replay_protection: PASS
+  github_actions_ci: PASS
+
+verification:
+  github_actions:
+    workflow: .github/workflows/ci.yml
+    run_id: 33929153645
+    head_sha: 868847e37e02309ff5732a94be53a2ff3f14e3c8
+    conclusion: success
+    node: 24
+    npm_ci: pass
+    typecheck: pass
+    tests: pass
+    build: pass
+  test_count:
+    authoritative_current_vitest_count: 42
+    collaborator_pre_pr_reported_count: 76
+    note: >-
+      The repository CI is authoritative. Do not cite 76 as independently
+      verified unless a later repository state actually contains that count.
 
 current_gate:
-  name: W0_W5_TECHNICAL_SPIKE
-  owner: Opeyemi
-  spec: docs/W0-W5-SPIKE.md
-  status: ACTIVE_PENDING_COLLABORATOR_ACCESS
+  name: CARRY_ONE_PR1_REMEDIATION_AND_REAUDIT
+  owner: Faadil
+  status: PASS_PENDING_MERGE
 
 next_exact_action: >-
-  Obtain Opeyemi's actual GitHub username, add him as collaborator,
-  then run the W0→W5 spike against the frozen technical baseline.
+  Merge PR #1 after confirming the latest CI remains green, then start the
+  PRODUCT_LAW_REASON_TO_PASS gate before expanding backend scope.
+
+pre_production_followups:
+  - replace in-memory RelayStore with durable persistence before real multi-user production
+  - authenticate or cryptographically authorize write endpoints before public production use
+  - regenerate package-lock metadata after MIT package metadata change
+  - perform secret scan before making the repository public
+  - switch network policy and RPC deliberately before any mainnet cutover
 
 blocked:
-  - full production build
+  - full production build before PR1 merge and product-law gate
   - prizes or wagering
   - pooled funds
   - autonomous AI spend
   - marketplace expansion
   - unique-human claims
-  - public repository before team intentionally opens it
+  - public repository before secret scan and intentional Early Access opening
