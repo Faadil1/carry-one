@@ -18,7 +18,7 @@
   },
   "keywords": [],
   "author": "Opeyemi",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@nimiq/core": "^2.21.0",
     "@nimiq/mini-app-sdk": "^0.1.0",
