@@ -2,19 +2,20 @@ project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: private
-state_version: 0.1.0
-date: 2026-08-31
+state_version: 0.3.0
+date: 2026-09-04
 
-phase: PRE_BUILD_TECHNICAL_SPIKE
+phase: REACH_MISSION_PRODUCT_LAW_LOCKED
 build_authorized: false
-problem_locked: false
+ux_contract_authorized: true
+problem_locked: true
 
 team:
   faadil:
     role: repo_owner_product_lead
   opeyemi:
     role: collaborator_technical_lead
-    github_username: pending
+    github_username: opeblow
   prize_split:
     current: 50_50
     condition: revisit_in_writing_if_either_party_steps_away_before_submission
@@ -25,44 +26,179 @@ collaboration_alignment:
   no_solo_build_or_submission_same_concept: true
   repo_owner: Faadil1
 
-core_product_law: >-
-  THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT,
-  WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
+core_product_laws:
+  baton: >-
+    THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT,
+    WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
+  destination: EVERY BATON HAS A DESTINATION.
+  consent: NO ONE BECOMES A BRIDGE BY SURPRISE.
+  custody: THE PATH CHANGES ONLY AFTER VERIFIED FINALITY.
+  decline: A DECLINE LEAVES CUSTODY WHERE IT IS.
+  arrival: THE MISSION ENDS ONLY WHEN THE DESTINATION BECOMES THE FINALIZED RECIPIENT.
+  reward: THE PATH IS THE PRODUCT.
+
+product_positioning:
+  category: destination_bound_human_routing
+  primary_problem: >-
+    Warm introductions and community routing become opaque after the first handoff;
+    Carry One gives the request a verified chain of custody until it reaches one destination.
+  primary_audience:
+    - builder_and_hackathon_communities
+    - open_source_communities
+    - professional_and_founder_groups
+    - interest_based_online_communities
+  working_promise: >-
+    Get this to someone you cannot reach directly — one human bridge at a time.
+  holder_question: Who can move this one person closer?
+  emotional_loop: >-
+    I was chosen -> I can move this closer -> I leave a verified place in the path -> I can see if it arrives.
+
+collision_scan:
+  nimiq_cycle2_nim_relay:
+    risk: HIGH_FOR_GENERIC_RELAY
+    avoid:
+      - generic_one_coin_journey_positioning
+      - skill_challenges_before_pass
+      - streaks
+      - leaderboards
+      - country_or_map_progression_as_core
+  nimiq_cycle2_ralli:
+    risk: MEDIUM_HIGH_FOR_CHALLENGE_CHAIN
+    avoid:
+      - social_challenge_feed
+      - response_chain_as_core
+      - boosted_reward_pool
+      - creator_tipping_as_core
+  cycle1_62_entry_scan:
+    result: >-
+      Dense in payments, rewards, games, challenges, gifting, bounties, savings,
+      commerce, proof and creator tools; no identified entry uses destination-bound
+      sequential human routing with one canonical transferable baton as its core.
+  white_space: >-
+    A consented, destination-specific referral path whose chain of custody is verified by Nimiq.
+
+mvp_contract:
+  mission_target:
+    target_wallet: required_private_server_side
+    target_label: required
+    mission_note: short
+  invitation:
+    states:
+      - INVITED
+      - ACCEPTED
+      - DECLINED
+      - EXPIRED
+    suggested_expiry_hours: 12
+    accepted_before_payment: true
+  pass:
+    recipient_value_luna: 100000
+    fee_part_of_amount_validation: false
+    canonical_confirmation_states:
+      - PENDING
+      - INCLUDED
+      - FINAL
+    next_pass_unlock: FINAL
+  reroute: invite_another_candidate_before_any_finalized_pass
+  dormant_behavior: display_only_no_clawback_no_reassignment
+  five_screens:
+    - Mission_Home
+    - Create_Mission
+    - Bridge_Invitation
+    - Pass_1_NIM
+    - Route_Arrival
+
+privacy:
+  target_wallet_public: false
+  full_wallet_addresses_in_ui: false
+  participant_names: opt_in_only
+  why_you_visibility: participant_only
+  public_named_target: consent_or_legitimate_public_launch_basis_required
+  active_missions_default: private_or_unlisted
+
+anti_features_cycle2:
+  - mini_games
+  - skill_challenges
+  - xp
+  - streaks
+  - leaderboards
+  - map_as_core_product
+  - prize_pools
+  - wagers
+  - forwarding_rewards
+  - ai_routing
+  - marketplace_matching
+  - auto_next_recipient
+  - unique_human_claims
+  - public_social_feed
+  - multiple_mission_types
 
 technical_baseline:
   active_pass_intent: one_atomic_intent_per_baton_plus_sequence
-  bind_intent_to:
-    - current_holder
-    - intended_recipient
-    - expected_value
-    - nonce
-    - sequence
   canonical_order_source: included_transaction_matching_active_intent
   mempool_order_is_canonical: false
   recipient_value_luna: 100000
   fee_part_of_amount_validation: false
-  confirmation_states:
-    - PENDING
-    - INCLUDED
-    - FINAL
   next_pass_unlock: FINAL
-  dormant_behavior: display_only_no_clawback_no_reassignment
+  known_verified_remediation_evidence:
+    mit_license: pass_on_remediated_branch
+    cancel_after_broadcast_guard: pass_on_remediated_branch
+    stale_intent_cleanup: pass_on_remediated_branch
+    transaction_hash_replay_protection: pass_on_remediated_branch
+    github_actions_ci: pass_on_remediated_branch
+    authoritative_vitest_count_at_verified_run: 42
+
+pr1_integration:
+  number: 1
+  status: BLOCKED_BRANCH_ANCESTRY_RECONCILIATION
+  pr_metadata_head_observed: ecac9cb59231294489ee68d09f8179b9b7c1fa62
+  collaborator_branch_ref_observed: 51185896105878358d30cb5df040c58f65807714
+  merge_attempt: rejected_head_out_of_date
+  compare_to_main: no_common_ancestor_reported
+  rule: >-
+    Do not force merge or overwrite collaborator work. Reconcile ancestry and preserve
+    both the verified remediation and any later collaborator commits before main integration.
+
+research_evidence:
+  cycle2_scoring:
+    functionality_reliability_usefulness: 45
+    nimiq_integration: 25
+    real_usage: 15
+    design_ux: 10
+    builder_promotion: 5
+  full_usage_threshold_unique_wallets: 25
+  cycle1_entries_scanned: 62
 
 current_gate:
-  name: W0_W5_TECHNICAL_SPIKE
-  owner: Opeyemi
-  spec: docs/W0-W5-SPIKE.md
-  status: ACTIVE_PENDING_COLLABORATOR_ACCESS
+  name: CARRY_ONE_REACH_MISSION_PRODUCT_LAW_VALIDATION
+  owner: Faadil
+  spec: docs/REACH-MISSION-PRODUCT-LAW.md
+  status: PASS
 
-next_exact_action: >-
-  Obtain Opeyemi's actual GitHub username, add him as collaborator,
-  then run the W0→W5 spike against the frozen technical baseline.
+next_gate:
+  name: CARRY_ONE_REACH_MISSION_UX_AND_STATE_CONTRACT
+  status: READY
+  deliverables:
+    - exact_five_screen_wire_contract
+    - mission_and_invitation_persistence_schema
+    - holder_authorization_or_signature_scheme
+    - invite_token_threat_model
+    - target_wallet_privacy_api_contract
+    - accept_decline_expiry_target_arrival_test_matrix
+    - pr1_ancestry_reconciliation
+
+pre_public_followups:
+  - durable persistence before real multi-user production
+  - cryptographically authorize write endpoints before public production use
+  - regenerate package-lock metadata after MIT package metadata change
+  - perform secret scan before repository publication
+  - deliberate mainnet RPC and network-policy cutover
 
 blocked:
-  - full production build
-  - prizes or wagering
-  - pooled funds
-  - autonomous AI spend
-  - marketplace expansion
-  - unique-human claims
-  - public repository before team intentionally opens it
+  - full frontend_or_production_build_before_next_gate
+  - force_merging_pr1
+  - prizes_or_wagering
+  - pooled_funds
+  - autonomous_ai_spend
+  - marketplace_expansion
+  - unique_human_claims
+  - public_repository_before_secret_scan_and_intentional_early_access_opening
