@@ -15,6 +15,7 @@ export class RelayStore {
   private intents = new Map<string, PassIntent>(); // key: batonId
   private hops: Hop[] = [];
   private holders = new Map<string, string>(); // last canonical holder by baton
+  private transactionClaims = new Map<string, { batonId: string; sequence: number }>();
 
   key(batonId: string) {
     return batonId;
@@ -80,6 +81,24 @@ export class RelayStore {
 
   cancelIntent(batonId: string) {
     this.intents.delete(this.key(batonId));
+  }
+
+  /**
+   * Bind a transaction hash to exactly one baton/sequence across the store.
+   * The recipient-data tag remains optional for compatibility with all send
+   * paths, so global hash uniqueness is the fail-closed replay boundary.
+   */
+  claimTransactionHash(batonId: string, sequence: number, txHash: string): void {
+    const existing = this.transactionClaims.get(txHash);
+    if (existing && (existing.batonId !== batonId || existing.sequence !== sequence)) {
+      throw new RelayValidationError(
+        "TX_HASH_REPLAY",
+        `Transaction ${txHash} is already bound to ${existing.batonId} sequence ${existing.sequence}`
+      );
+    }
+    if (!existing) {
+      this.transactionClaims.set(txHash, { batonId, sequence });
+    }
   }
 
   /**
