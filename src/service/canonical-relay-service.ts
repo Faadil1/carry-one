@@ -109,8 +109,23 @@ export class CanonicalRelayService {
    * Cancellation leaves the baton with the current holder (product law).
    * Call this when the client observes the user dismissing the native
    * Nimiq Pay approval dialog before any hash was ever returned.
+   *
+   * Fails closed: once a broadcast transaction hash has been recorded for
+   * this intent, cancellation is rejected because the transaction may still
+   * finalize on-chain even if we stop tracking it locally.
    */
   cancelPass(batonId: string): void {
+    const intent = this.store.getActiveIntent(batonId);
+    if (!intent) {
+      return;
+    }
+    const hop = this.store.getHop(batonId, intent.sequence);
+    if (hop && hop.txHash !== null) {
+      throw new RelayValidationError(
+        "CANNOT_CANCEL_BROADCAST",
+        `Cannot cancel pass for baton ${batonId}: transaction ${hop.txHash} has already been broadcast`
+      );
+    }
     this.store.cancelIntent(batonId);
   }
 

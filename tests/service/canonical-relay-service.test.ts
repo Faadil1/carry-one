@@ -155,6 +155,28 @@ describe("CanonicalRelayService: full W0 -> W5 relay through intent/broadcast/re
     expect(() => service.initiatePass(BATON, "W0", "W2")).not.toThrow();
   });
 
+  it("rejects cancellation once a broadcast has already been recorded and leaves the intent intact", () => {
+    const service = new CanonicalRelayService(new RelayStore(), new FakeRpcClient());
+    service.initiatePass(BATON, "W0", "W1");
+    const txHash = randomHash();
+    service.recordBroadcast(BATON, txHash);
+
+    expect(() => service.cancelPass(BATON)).toThrow(RelayValidationError);
+    try {
+      service.cancelPass(BATON);
+    } catch (err) {
+      expect((err as RelayValidationError).reason).toBe("CANNOT_CANCEL_BROADCAST");
+    }
+
+    // Intent remains intact: status is still PENDING, cannot create duplicate intent
+    expect(service.getPublicView(BATON).status).toBe("PENDING");
+    expect(() => service.initiatePass(BATON, "W0", "W2")).toThrow(RelayValidationError);
+    expect(service.getHistory(BATON)[0]).toMatchObject({
+      tx_hash: txHash,
+      status: "PENDING",
+    });
+  });
+
   it("marks an unbroadcast stale intent invalid without advancing the baton", async () => {
     const service = new CanonicalRelayService(new RelayStore(), new FakeRpcClient());
     const intent = service.initiatePass(BATON, "W0", "W1");

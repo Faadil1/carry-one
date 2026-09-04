@@ -119,4 +119,25 @@ describe("HTTP surface over CanonicalRelayService", () => {
     });
     expect(retryRes.status).toBe(201);
   });
+
+  it("rejects cancel with 409 once broadcast has been recorded", async () => {
+    const baton = "baton-http-cancel-rejected";
+    await fetch(`${baseUrl}/relay/${baton}/intent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentHolder: "W0", recipient: "W1" }),
+    });
+
+    const txHash = randomBytes(32).toString("hex");
+    await fetch(`${baseUrl}/relay/${baton}/broadcast`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ txHash }),
+    });
+
+    const cancelRes = await fetch(`${baseUrl}/relay/${baton}/cancel`, { method: "POST" });
+    expect(cancelRes.status).toBe(409);
+    const body = await cancelRes.json();
+    expect(body.error).toBe("CANNOT_CANCEL_BROADCAST");
+  });
 });
