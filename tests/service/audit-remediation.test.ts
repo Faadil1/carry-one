@@ -27,6 +27,16 @@ function randomHash(): string {
   return randomBytes(32).toString("hex");
 }
 
+function captureRelayError(fn: () => unknown): RelayValidationError {
+  try {
+    fn();
+  } catch (error) {
+    expect(error).toBeInstanceOf(RelayValidationError);
+    return error as RelayValidationError;
+  }
+  throw new Error("Expected RelayValidationError");
+}
+
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -41,12 +51,8 @@ describe("PR #1 audit remediation invariants", () => {
     const txHash = randomHash();
     service.recordBroadcast(baton, txHash);
 
-    expect(() => service.cancelPass(baton)).toThrowError(RelayValidationError);
-    try {
-      service.cancelPass(baton);
-    } catch (error) {
-      expect((error as RelayValidationError).reason).toBe("BROADCAST_ALREADY_RECORDED");
-    }
+    const cancelError = captureRelayError(() => service.cancelPass(baton));
+    expect(cancelError.reason).toBe("BROADCAST_ALREADY_RECORDED");
 
     rpc.seeTx({
       hash: txHash,
@@ -90,13 +96,8 @@ describe("PR #1 audit remediation invariants", () => {
     const intent = service.initiatePass(baton, "W0", "W1");
     vi.setSystemTime(intent.createdAt + INTENT_VALIDITY_WINDOW_MS + 1);
 
-    expect(() => service.recordBroadcast(baton, randomHash())).toThrowError(RelayValidationError);
-    try {
-      service.recordBroadcast(baton, randomHash());
-    } catch (error) {
-      expect((error as RelayValidationError).reason).toBe("STALE_INTENT");
-    }
-
+    const staleError = captureRelayError(() => service.recordBroadcast(baton, randomHash()));
+    expect(staleError.reason).toBe("STALE_INTENT");
     expect(service.initiatePass(baton, "W0", "W2").sequence).toBe(1);
   });
 
@@ -109,12 +110,8 @@ describe("PR #1 audit remediation invariants", () => {
     service.recordBroadcast("baton-a", txHash);
 
     service.initiatePass("baton-b", "W0", "W1");
-    expect(() => service.recordBroadcast("baton-b", txHash)).toThrowError(RelayValidationError);
-    try {
-      service.recordBroadcast("baton-b", txHash);
-    } catch (error) {
-      expect((error as RelayValidationError).reason).toBe("TX_HASH_REPLAY");
-    }
+    const replayError = captureRelayError(() => service.recordBroadcast("baton-b", txHash));
+    expect(replayError.reason).toBe("TX_HASH_REPLAY");
 
     expect(service.getPublicView("baton-a").hop_count).toBe(0);
     expect(service.getPublicView("baton-b").hop_count).toBe(0);
