@@ -79,6 +79,37 @@ export class CanonicalRelayService {
   }
 
   /**
+   * Expire an intent deterministically and release the baton for a fresh
+   * sequence-unchanged attempt. Any already-recorded broadcast remains in
+   * history as INVALID; an unbroadcast intent gets an INVALID audit record.
+   */
+  private expireIntent(intent: PassIntent): Hop {
+    const existingHop = this.store.getHop(intent.batonId, intent.sequence);
+    let invalidHop: Hop;
+
+    if (existingHop) {
+      invalidHop = this.store.updateHop(intent.batonId, intent.sequence, { status: "INVALID" });
+    } else {
+      invalidHop = {
+        batonId: intent.batonId,
+        sequence: intent.sequence,
+        currentHolder: intent.currentHolder,
+        recipient: intent.recipient,
+        nonce: intent.nonce,
+        txHash: null,
+        value: null,
+        status: "INVALID",
+        createdAt: intent.createdAt,
+        confirmedAt: null,
+      };
+      this.store.recordHop(invalidHop);
+    }
+
+    this.store.cancelIntent(intent.batonId);
+    return invalidHop;
+  }
+
+  /**
    * Step 3 PASS (server side of it): the client already drove the native
    * approval and got a tx hash back from the Nimiq Provider. Record it as a
    * PENDING hop under the currently active intent — this does not yet trust
@@ -89,6 +120,15 @@ export class CanonicalRelayService {
     if (!intent) {
       throw new RelayValidationError("NO_ACTIVE_INTENT", `No active intent for baton ${batonId} to attach a broadcast to`);
     }
+    if (isIntentStale(intent)) {
+      this.expireIntent(intent);
+      throw new RelayValidationError("STALE_INTENT", `Intent for baton ${batonId} expired before this broadcast was recorded`);
+    }
+
+    // Claim first. A single on-chain transaction can never advance two
+    // different baton/sequence pairs, even when recipient data is absent.
+    this.store.claimTransactionHash(intent.batonId, intent.sequence, txHash);
+
     const hop: Hop = {
       batonId: intent.batonId,
       sequence: intent.sequence,
@@ -107,10 +147,23 @@ export class CanonicalRelayService {
 
   /**
    * Cancellation leaves the baton with the current holder (product law).
-   * Call this when the client observes the user dismissing the native
-   * Nimiq Pay approval dialog before any hash was ever returned.
+   * It is only safe before any tx hash exists. Once a hash is returned, that
+   * transaction may still land on-chain after the client disappears, so the
+   * intent must remain available for reconciliation until it finalizes,
+   * becomes invalid, or expires.
    */
   cancelPass(batonId: string): void {
+    const intent = this.store.getActiveIntent(batonId);
+    if (!intent) return;
+
+    const hop = this.store.getHop(batonId, intent.sequence);
+    if (hop?.txHash) {
+      throw new RelayValidationError(
+        "BROADCAST_ALREADY_RECORDED",
+        `Cannot cancel baton ${batonId} after a transaction hash has been recorded; reconcile it instead`
+      );
+    }
+
     this.store.cancelIntent(batonId);
   }
 
@@ -130,26 +183,7 @@ export class CanonicalRelayService {
     const hop = this.store.getHop(batonId, intent.sequence);
     if (!hop || hop.txHash === null) {
       if (isIntentStale(intent)) {
-        if (hop) {
-          const invalidHop = this.store.updateHop(batonId, intent.sequence, { status: "INVALID" });
-          this.store.cancelIntent(batonId);
-          return invalidHop;
-        }
-        const invalidHop: Hop = {
-          batonId: intent.batonId,
-          sequence: intent.sequence,
-          currentHolder: intent.currentHolder,
-          recipient: intent.recipient,
-          nonce: intent.nonce,
-          txHash: null,
-          value: null,
-          status: "INVALID",
-          createdAt: intent.createdAt,
-          confirmedAt: null,
-        };
-        this.store.recordHop(invalidHop);
-        this.store.cancelIntent(batonId);
-        return invalidHop;
+        return this.expireIntent(intent);
       }
       return hop ?? null; // intent committed, but no broadcast reported yet
     }
@@ -159,7 +193,7 @@ export class CanonicalRelayService {
       // Not observed on-chain yet. Only give up once the intent itself is
       // stale — a transaction can legitimately sit unconfirmed for a while.
       if (isIntentStale(intent)) {
-        return this.store.updateHop(batonId, intent.sequence, { status: "INVALID" });
+        return this.expireIntent(intent);
       }
       return hop;
     }
