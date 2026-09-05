@@ -21,6 +21,8 @@ coverage/
 .cache/
 .turbo/
 .vite/
+.carry-one/
+*.state.json
 
 # Operating-system and editor files
 .DS_Store
