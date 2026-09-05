@@ -28,7 +28,7 @@ function auth(walletAddress: string, action: MissionAction, missionId?: string, 
 
 class MutableRpc implements NimiqRpcClient {
   tx: NimiqTxLookup | null = null;
-  head = 10_000;
+  head = 3_032_100;
   async getTransactionByHash(): Promise<NimiqTxLookup | null> { return this.tx; }
   async getBlockNumber(): Promise<number> { return this.head; }
 }
@@ -108,7 +108,7 @@ describe("durable foundation recovery", () => {
       from: normalizeNimiqAddress(f.creator),
       to: normalizeNimiqAddress(target),
       value: 100_000,
-      blockNumber: 1,
+      blockNumber: 3_032_020,
       confirmations: 999,
     };
 
@@ -135,7 +135,7 @@ describe("durable foundation recovery", () => {
       from: normalizeNimiqAddress(f.creator),
       to: normalizeNimiqAddress(f.candidate),
       value: 100_000,
-      blockNumber: 1,
+      blockNumber: 3_032_020,
       confirmations: 999,
     };
 
