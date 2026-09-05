@@ -13,6 +13,15 @@ export class ReachMissionCoordinator {
     private readonly protector: TargetWalletProtector
   ) {
     missions.setBroadcastGuard((missionId) => relay.hasRecordedBroadcast(missionId));
+    missions.setRouteWalletGuard((missionId, wallet) => this.walletAlreadyInFinalRoute(missionId, wallet));
+  }
+
+  private walletAlreadyInFinalRoute(missionId: string, wallet: string): boolean {
+    const normalized = normalizeNimiqAddress(wallet);
+    return this.relay.getHistory(missionId).some((hop) =>
+      hop.status === "CONFIRMED" &&
+      (normalizeNimiqAddress(hop.current_holder) === normalized || normalizeNimiqAddress(hop.recipient) === normalized)
+    );
   }
 
   async authorizePass(input: {
@@ -49,36 +58,39 @@ export class ReachMissionCoordinator {
     if (invitation.passDeadlineAt === null || now >= invitation.passDeadlineAt) {
       throw new MissionValidationError("PASS_DEADLINE_EXPIRED", "Accepted bridge pass deadline has expired");
     }
+    if (this.walletAlreadyInFinalRoute(mission.id, invitation.candidateWalletNormalized)) {
+      throw new MissionValidationError("ROUTE_WALLET_REUSE", "A finalized route participant cannot re-enter the same mission");
+    }
 
     const existing = this.relay.getActiveIntent(mission.id);
     if (existing) {
       if (
         existing.sequence === invitation.sequence &&
         existing.currentHolder === signer &&
-        existing.recipient === invitation.candidateWalletNormalized
+        existing.recipient === invitation.candidateWalletNormalized &&
+        existing.recipientData !== null
       ) return existing;
       throw new MissionValidationError("RELAY_INTENT_CONFLICT", "A different relay intent is already active for this mission");
     }
 
-    return this.relay.initiatePass(mission.id, signer, invitation.candidateWalletNormalized);
+    const intent = this.relay.initiatePass(mission.id, signer, invitation.candidateWalletNormalized, { requireOpaqueTag: true });
+    if (!intent.recipientData) {
+      throw new MissionValidationError("MISSING_HOP_COMMITMENT", "Reach Mission pass authorization must include an opaque on-chain commitment");
+    }
+    return intent;
   }
 
   async recordBroadcast(input: { missionId: string; invitationId: string; txHash: string }): Promise<Hop> {
     const invitation = await this.missions.getInvitationRecord(input.invitationId);
     const active = this.relay.getActiveIntent(input.missionId);
     if (!active) throw new MissionValidationError("NO_ACTIVE_PASS", "No authorized pass exists for this mission");
+    if (!active.recipientData) throw new MissionValidationError("MISSING_HOP_COMMITMENT", "Authorized Reach Mission pass has no opaque commitment");
     if (invitation.missionId !== input.missionId || invitation.sequence !== active.sequence || invitation.status !== "ACCEPTED") {
       throw new MissionValidationError("INVITATION_PASS_MISMATCH", "Broadcast does not match the accepted invitation");
     }
     return this.relay.recordBroadcast(input.missionId, input.txHash);
   }
 
-  /**
-   * Reconcile chain state and atomically project a newly FINAL relay hop into
-   * the durable Reach Mission record. The second phase also repairs the exact
-   * crash window where relay finality was persisted but mission finalization
-   * had not yet committed before restart.
-   */
   async reconcile(missionId: string): Promise<{ mission: PublicMission; hop: Hop | PublicHop | null }> {
     const observed = await this.relay.reconcile(missionId);
     const applied = await this.applyNextFinalizedHop(missionId);

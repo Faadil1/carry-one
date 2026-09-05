@@ -38,7 +38,12 @@ export class FileMissionRepository implements MissionRepository {
     if (!existsSync(this.filePath)) return emptySnapshot();
     const parsed = JSON.parse(readFileSync(this.filePath, "utf8")) as Partial<MissionStoreSnapshot>;
     return {
-      missions: parsed.missions ?? [],
+      missions: (parsed.missions ?? []).map((mission) => ({
+        ...mission,
+        // Old local snapshots pre-date the explicit Cycle-II target consent policy.
+        // They are never silently upgraded to consented.
+        targetConsentConfirmed: mission.targetConsentConfirmed ?? false,
+      })),
       invitations: parsed.invitations ?? [],
       challenges: parsed.challenges ?? [],
     };
@@ -54,9 +59,7 @@ export class FileMissionRepository implements MissionRepository {
   private async exclusive<T>(fn: () => T | Promise<T>): Promise<T> {
     let release!: () => void;
     const previous = this.queue;
-    this.queue = new Promise<void>((resolve) => {
-      release = resolve;
-    });
+    this.queue = new Promise<void>((resolve) => { release = resolve; });
     await previous;
     try {
       return await fn();
@@ -97,9 +100,7 @@ export class FileMissionRepository implements MissionRepository {
   async cancelMissionPristine(id: string, signerWallet: string, now: number): Promise<MissionRecord> {
     return this.exclusive(() => {
       const mission = this.mission(id);
-      if (mission.status !== "ACTIVE") {
-        throw new MissionValidationError("MISSION_NOT_ACTIVE", `Mission ${id} is ${mission.status}`);
-      }
+      if (mission.status !== "ACTIVE") throw new MissionValidationError("MISSION_NOT_ACTIVE", `Mission ${id} is ${mission.status}`);
       if (mission.creatorWalletNormalized !== signerWallet && mission.currentHolderWalletNormalized !== signerWallet) {
         throw new MissionValidationError("NOT_MISSION_AUTHORITY", "Only the creator/current holder can cancel this mission");
       }
@@ -120,9 +121,7 @@ export class FileMissionRepository implements MissionRepository {
   async createInvitation(record: InvitationRecord): Promise<InvitationRecord> {
     return this.exclusive(() => {
       const mission = this.mission(record.missionId);
-      if (mission.status !== "ACTIVE") {
-        throw new MissionValidationError("MISSION_NOT_ACTIVE", `Mission ${mission.id} is ${mission.status}`);
-      }
+      if (mission.status !== "ACTIVE") throw new MissionValidationError("MISSION_NOT_ACTIVE", `Mission ${mission.id} is ${mission.status}`);
       if (record.inviterWalletNormalized !== mission.currentHolderWalletNormalized) {
         throw new MissionValidationError("WRONG_CURRENT_HOLDER", "Invitation signer is not the canonical current holder");
       }
@@ -139,6 +138,7 @@ export class FileMissionRepository implements MissionRepository {
         throw new MissionValidationError("SELF_PASS", "The current holder cannot invite themselves as the next bridge");
       }
       this.state.invitations.push(clone(record));
+      mission.updatedAt = record.createdAt;
       this.persist();
       return clone(record);
     });
@@ -166,21 +166,16 @@ export class FileMissionRepository implements MissionRepository {
     return this.exclusive(() => {
       const invitation = this.invitation(id);
       const mission = this.mission(invitation.missionId);
-      if (mission.status !== "ACTIVE") {
-        throw new MissionValidationError("MISSION_NOT_ACTIVE", `Mission ${mission.id} is ${mission.status}`);
-      }
-      if (invitation.status !== "INVITED") {
-        throw new MissionValidationError("INVITATION_NOT_INVITED", `Invitation is ${invitation.status}`);
-      }
+      if (mission.status !== "ACTIVE") throw new MissionValidationError("MISSION_NOT_ACTIVE", `Mission ${mission.id} is ${mission.status}`);
+      if (invitation.status !== "INVITED") throw new MissionValidationError("INVITATION_NOT_INVITED", `Invitation is ${invitation.status}`);
       if (now >= invitation.expiresAt) {
         invitation.status = "EXPIRED";
         invitation.closedAt = now;
+        mission.updatedAt = now;
         this.persist();
         throw new MissionValidationError("INVITATION_EXPIRED", "Invitation has expired");
       }
-      if (wallet === invitation.inviterWalletNormalized) {
-        throw new MissionValidationError("SELF_PASS", "The current holder cannot accept their own invitation");
-      }
+      if (wallet === invitation.inviterWalletNormalized) throw new MissionValidationError("SELF_PASS", "The current holder cannot accept their own invitation");
       if (invitation.candidateWalletNormalized && invitation.candidateWalletNormalized !== wallet) {
         throw new MissionValidationError("WRONG_INVITEE_WALLET", "This invitation is pre-bound to a different wallet");
       }
@@ -188,6 +183,7 @@ export class FileMissionRepository implements MissionRepository {
       invitation.status = "ACCEPTED";
       invitation.acceptedAt = now;
       invitation.passDeadlineAt = passDeadlineAt;
+      mission.updatedAt = now;
       this.persist();
       return clone(invitation);
     });
@@ -200,6 +196,7 @@ export class FileMissionRepository implements MissionRepository {
   ): Promise<InvitationRecord> {
     return this.exclusive(() => {
       const invitation = this.invitation(id);
+      const mission = this.mission(invitation.missionId);
       if (!OPEN_INVITATION_STATES.has(invitation.status)) {
         throw new MissionValidationError("INVITATION_ALREADY_CLOSED", `Invitation is already ${invitation.status}`);
       }
@@ -216,6 +213,7 @@ export class FileMissionRepository implements MissionRepository {
       invitation.closedAt = now;
       if (status === "DECLINED") invitation.declinedAt = now;
       if (status === "WITHDRAWN") invitation.withdrawnAt = now;
+      mission.updatedAt = now;
       this.persist();
       return clone(invitation);
     });
@@ -224,6 +222,7 @@ export class FileMissionRepository implements MissionRepository {
   async expireDueInvitations(now: number): Promise<number> {
     return this.exclusive(() => {
       let count = 0;
+      const touched = new Set<string>();
       for (const invitation of this.state.invitations) {
         const due = invitation.status === "INVITED"
           ? now >= invitation.expiresAt
@@ -231,8 +230,10 @@ export class FileMissionRepository implements MissionRepository {
         if (!due) continue;
         invitation.status = "EXPIRED";
         invitation.closedAt = now;
+        touched.add(invitation.missionId);
         count += 1;
       }
+      for (const missionId of touched) this.mission(missionId).updatedAt = now;
       if (count > 0) this.persist();
       return count;
     });
@@ -256,12 +257,8 @@ export class FileMissionRepository implements MissionRepository {
       if (invitation.status === "COMPLETED" && mission.currentSequence >= input.sequence) {
         return { mission: clone(mission), invitation: clone(invitation) };
       }
-      if (mission.status !== "ACTIVE") {
-        throw new MissionValidationError("MISSION_NOT_ACTIVE", `Mission ${mission.id} is ${mission.status}`);
-      }
-      if (invitation.status !== "ACCEPTED") {
-        throw new MissionValidationError("INVITATION_NOT_ACCEPTED", "Only an accepted invitation can finalize a hop");
-      }
+      if (mission.status !== "ACTIVE") throw new MissionValidationError("MISSION_NOT_ACTIVE", `Mission ${mission.id} is ${mission.status}`);
+      if (invitation.status !== "ACCEPTED") throw new MissionValidationError("INVITATION_NOT_ACCEPTED", "Only an accepted invitation can finalize a hop");
       if (invitation.candidateWalletNormalized !== input.recipientWallet) {
         throw new MissionValidationError("WRONG_FINAL_RECIPIENT", "Final recipient does not match the accepted bridge wallet");
       }
@@ -272,7 +269,6 @@ export class FileMissionRepository implements MissionRepository {
       invitation.status = "COMPLETED";
       invitation.completedAt = input.now;
       invitation.closedAt = input.now;
-
       mission.currentSequence = input.sequence;
       mission.finalizedHopCount += 1;
       mission.currentHolderWalletNormalized = input.recipientWallet;

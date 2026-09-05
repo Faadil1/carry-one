@@ -1,196 +1,106 @@
-# Carry One — Security, Wallet Authorization & Invite Threat Model
+# Carry One — Security, Wallet Authorization & Blind-Spot Threat Model
 
-Date: 2026-09-04  
+Date: 2026-09-05  
 Applies to: Reach Mission MVP
 
-## 1. Security posture
+## 1. Authority model
 
-Carry One must treat the wallet as the authority for holder actions and the blockchain as the authority for transfer finality. A browser session, invite link, device identifier, display name or submitted transaction hash is never sufficient authority by itself.
+Wallet signatures authorize holder actions; the blockchain authoritatively determines transfer finality. Browser sessions, invite links, device ids, display names, client-selected accounts and submitted tx hashes are never sufficient authority by themselves.
 
-The Nimiq Mini App provider supports wallet account access and arbitrary message signing. Carry One should use those signatures for action authorization; the server must verify the signature and derive/confirm that the public key corresponds to the claimed Nimiq address.
+## 2. Signed actions
 
-## 2. Canonical signed-action format
+Canonical challenges remain domain-separated under `carry-one:v1`, TTL 5 minutes, >=128-bit random nonce, exact wallet/action/mission/invitation/sequence binding and atomic one-time consumption. Public key must derive to the challenged Nimiq address.
 
-Every state-changing wallet action receives a short-lived server challenge. The client signs one canonical UTF-8 message:
+Signed actions: CREATE_MISSION, CREATE_INVITATION, ACCEPT_INVITATION, WITHDRAW_INVITATION, AUTHORIZE_PASS, CANCEL_MISSION.
 
-```text
-carry-one:v1
-origin=<canonical-origin>
-action=<ACTION>
-wallet=<NORMALIZED_NIMIQ_ADDRESS>
-mission=<MISSION_UUID_OR_NONE>
-invitation=<INVITATION_UUID_OR_NONE>
-sequence=<INTEGER_OR_0>
-nonce=<SERVER_RANDOM_NONCE>
-expires_at=<RFC3339_UTC>
-```
+Token-only DECLINE remains allowed because it cannot move custody or funds.
 
-Rules:
-- nonce: minimum 128 bits cryptographically random;
-- challenge TTL: 5 minutes;
-- nonce stored only as a one-way hash where practical;
-- exact string serialization is server-generated, never client-composed ad hoc;
-- one successful verification marks challenge `USED` atomically;
-- replay of a used/expired challenge is rejected;
-- signature verification also verifies wallet/public-key correspondence.
+## 3. Target policy and anti-spam
 
-## 3. Actions requiring wallet signature
+Cycle-II missions are intentionally limited to a **known target wallet** and require the creator to attest `target_consent_confirmed=true`. This is a policy guard, not cryptographic evidence that the target signed consent.
 
-### `CREATE_MISSION`
-Signer becomes creator and initial canonical holder.
+Before broad public scaling, add stronger target controls such as target-signed consent/pre-registration and block/opt-out handling. Never represent the current boolean as verified identity or unique-human proof.
 
-### `CREATE_INVITATION`
-Signer must equal mission `current_holder_wallet_normalized`.
+## 4. Invite capabilities
 
-### `ACCEPT_INVITATION`
-Invitee signs acceptance. For an unbound invitation, the first valid acceptance binds `candidate_wallet_normalized`. For a pre-bound invitation, signer must match the pre-bound wallet.
+Invite tokens use >=256 bits entropy, are stored only as SHA-256 hashes, expire by default in 12h and cannot authorize payment. Unbound invitations bind the first valid wallet-signed acceptance; pre-bound invitations require exact wallet match. The holder sees the bound wallet fingerprint and separately signs AUTHORIZE_PASS.
 
-### `WITHDRAW_INVITATION`
-Signer must be current holder; forbidden after a transaction hash has been recorded.
+Native Nimiq Pay deeplinks may carry the private Carry One HTTPS invite URL, but no target wallet or mutation secret is placed in the URL beyond the existing opaque invite capability.
 
-### `AUTHORIZE_PASS`
-Signer must be current holder. Challenge is bound to mission id, sequence, invitation id and accepted candidate wallet. Successful authorization creates the atomic server-side pass intent.
+## 5. Multi-account Nimiq Pay threat
 
-### `CANCEL_MISSION`
-Signer must be creator/current holder, mission must have zero finalized hops, no broadcast may be in flight.
+The Mini App provider can list accounts, but the basic send method does not let Carry One force an explicit sender address. Therefore:
 
-## 4. Actions that do not require wallet signature
+1. client preflights that the canonical expected-holder wallet is present in `listAccounts()`;
+2. UI tells the user which wallet must be used;
+3. this preflight is **not** trusted as authorization;
+4. after broadcast, independent RPC verification requires actual tx sender = canonical holder;
+5. wrong sender -> INVALID, custody unchanged.
 
-### `DECLINE_INVITATION`
-MVP may allow decline with possession of the one-time invite capability token without connecting/signing a wallet because decline cannot move custody or funds. Threat impact is limited to denial of one invitation; the holder can reroute.
+A real multi-account Nimiq Pay device test is required before Early Access.
 
-If abuse appears, upgrade decline to signed-wallet-only for pre-bound invitations.
+## 6. Opaque on-chain hop commitment
 
-### Read-only unlisted route view
-Possession of the mission view token may reveal the participant-safe route and target label, but never wallet secrets or mutation authority.
+Reach Mission does not write clear `carryone:<mission>:<sequence>` metadata on-chain. AUTHORIZE_PASS creates a random-nonce-bound opaque commitment:
 
-## 5. Invitation token design
+`co:v1:<sha256-base64url-commitment>`
 
-Invite links use at least 256 bits of cryptographically random entropy.
+It binds mission, sequence, holder, accepted recipient and random pass nonce without revealing those values in recipient data. It must fit Nimiq's transaction-data limit and is mandatory/exact for canonical Reach Mission passes.
 
-Example logical shape:
+This improves metadata privacy and binding but **does not make a Nimiq transfer private**. Sender, recipient, value and transaction existence remain public blockchain information. Carry One must not claim transaction anonymity.
 
-```text
-https://carry.one/i/<opaque-token>
-```
+## 7. Pass verification
 
-Server stores only `SHA-256(token)` or stronger equivalent, never plaintext token.
+A canonical pass requires:
+1. signed AUTHORIZE_PASS by current holder;
+2. durable pass intent;
+3. accepted bridge wallet;
+4. exactly 100000 Luna recipient value;
+5. explicit zero-luna fee requested by the MVP client;
+6. exact opaque `co:v1` commitment;
+7. returned tx hash treated as claim;
+8. independent RPC lookup;
+9. exact actual sender and recipient;
+10. global tx-hash uniqueness;
+11. required finality;
+12. atomic/idempotent mission projection.
 
-Token properties:
-- single invitation scope;
-- default TTL 12 hours;
-- one acceptance only;
-- no power to create a pass intent;
-- no power to submit or approve a transaction;
-- no power to reveal target wallet;
-- after `DECLINED`, `EXPIRED`, `WITHDRAWN` or successful finalized pass, token is dead.
+The zero-fee request is intended to let a bridge holding exactly the received 1 NIM forward that full 1 NIM. A real exact-balance Nimiq Pay test remains required before public release.
 
-## 6. Unbound vs pre-bound invitations
+## 8. Route-loop defense
 
-### Unbound invitation
-Used when the holder knows the person socially but not their Nimiq address.
+A wallet already present in FINAL route history cannot become a recipient again in the same mission. The application rejects this before pass authorization; production PostgreSQL also uses one participant row per `(mission_id, wallet)` as a database-level invariant.
 
-Security model:
-1. private capability link identifies the invitation;
-2. first valid wallet-signed `ACCEPT_INVITATION` binds the candidate wallet;
-3. current holder sees a candidate label + short wallet fingerprint;
-4. holder must explicitly authorize the pass to that bound wallet;
-5. server and on-chain verification enforce exact recipient.
+This prevents A -> B -> C -> A loops and discourages artificial hop inflation. It is not a unique-human mechanism: one person can own multiple wallets, and Carry One never claims otherwise.
 
-Risk: a stolen invite link can be accepted by the thief first.
+## 9. Stalled holder behavior
 
-Mitigations:
-- high-entropy unguessable link;
-- short TTL;
-- do not post invite links publicly;
-- display accepted wallet fingerprint to holder before payment;
-- holder can withdraw before broadcast if identity looks wrong;
-- transaction cannot occur without holder wallet approval.
+If a canonical holder stops participating, Carry One may display the mission as STALLED after inactivity. STALLED is not a custody transition. No server, creator or previous holder may reclaim/reassign the 1 NIM. Users may create a completely new mission/route to the same consented destination.
 
-### Pre-bound invitation
-Used when candidate wallet is already known.
+## 10. RPC availability
 
-Acceptance signer must equal the pre-bound wallet. Stolen link alone cannot claim the invitation.
+A single RPC must not become a false transaction-failure oracle. Deployed verification should use multiple read endpoints. If all configured endpoints fail, Carry One returns `VERIFICATION_DELAYED`, keeps the pass pending and leaves custody unchanged. It must not mark a transaction INVALID solely because RPC infrastructure is unavailable.
 
-Prefer pre-bound invitations for public/high-value missions; unbound remains the default convenience path for warm social routing.
+## 11. Target-wallet privacy at rest/API
 
-## 7. Pass authorization and transaction verification
+- AES-256-GCM authenticated encryption at rest;
+- separate keyed HMAC-SHA256 for equality/arrival matching;
+- no plaintext target wallet in ordinary DTOs/logs/analytics/tokens/client hydration;
+- no plain hash as a confidentiality mechanism;
+- participant UI uses target label and wallet fingerprints only.
 
-The signed `AUTHORIZE_PASS` does not prove payment. It only permits creation of the pass intent.
+## 12. Logging and analytics
 
-The canonical pass still requires:
-1. wallet-approved Nimiq transaction;
-2. returned transaction hash treated as a claim;
-3. independent RPC lookup;
-4. exact sender = current holder;
-5. exact recipient = accepted candidate wallet;
-6. exact recipient value = 100000 Luna;
-7. global tx-hash replay check;
-8. required finality;
-9. atomic persistence update.
+Allowed aggregate evidence: mission count, invitation conversions, FINAL hops, arrival rate, timings and unique participating wallet count.
 
-After a tx hash is recorded, Carry One exposes no user cancel path. It reconciles until `FINAL` or deterministic `INVALID`.
+Never log plaintext targets, invite tokens, full signatures, private why_you, challenge nonces or a raw list of analytics wallets. `unique wallet` must never be relabeled as `unique human`.
 
-## 8. Target-wallet privacy model
+## 13. Early Access gate
 
-The target wallet is sensitive mission metadata even though blockchain addresses are public in general.
-
-Requirements:
-- encrypt normalized target wallet at rest with application-level authenticated encryption;
-- store a keyed HMAC for equality matching at arrival;
-- never return target wallet from general mission, invitation or route APIs;
-- never log plaintext target wallet in application logs, analytics or error telemetry;
-- do not expose target wallet in invite tokens, URLs, client state hydration or page source;
-- public/participant UI shows `target_label` only;
-- backend compares finalized recipient to target internally.
-
-A plain hash is insufficient because public wallet address spaces can be enumerated/correlated. Use a server-secret keyed HMAC for lookup.
-
-## 9. API boundary rules
-
-All mutation endpoints must enforce:
-- HTTPS only in production;
-- schema validation;
-- rate limiting by IP + wallet + mission where applicable;
-- signed challenge for holder-sensitive actions;
-- database transaction + row lock for mission sequence/custody mutations;
-- no client-provided canonical holder/sequence accepted without server comparison;
-- idempotency keys for mutation retries;
-- generic errors to unauthenticated callers; detailed reason codes only to authorized participants where safe.
-
-## 10. Primary threats and fail-closed behavior
-
-| Threat | Required behavior |
-|---|---|
-| stolen invite link | cannot move funds; holder sees bound wallet before pass |
-| replayed wallet signature | rejected by one-time challenge nonce |
-| forged current-holder request | rejected by signature + canonical holder comparison |
-| duplicate invitation race | DB uniqueness + row lock rejects second open invitation |
-| tx hash reused across missions | global unique tx-hash constraint rejects replay |
-| wrong sender/recipient/amount | hop INVALID; custody unchanged |
-| user cancels after broadcast | cancellation rejected; reconciliation continues |
-| app/server restart | durable DB restores mission, invitation and hop state |
-| target wallet scraped from API | impossible through participant/public DTOs |
-| candidate accepts then disappears | accepted-pass deadline expires; holder reroutes |
-| holder sends outside Carry One | ignored unless it exactly matches an active canonical pass intent |
-| concurrent finalization workers | row lock/idempotent state transition prevents double advance |
-
-## 11. Logging and analytics
-
-Allowed analytics:
-- mission count;
-- invitation conversion states;
-- finalized hop count;
-- time-to-accept/time-to-finality/time-to-arrival;
-- unique participating wallet count using privacy-conscious pseudonymous identifiers.
-
-Do not log:
-- plaintext target wallets;
-- invite tokens;
-- full wallet signatures;
-- private `why_you` text in third-party analytics;
-- secrets or private keys.
-
-## 12. Build gate
-
-Public Early Access is blocked until this authorization model, durable persistence and target-wallet API redaction are implemented and covered by tests.
+Still required before public Early Access:
+- production PostgreSQL transactional/row-lock adapter;
+- production HTTP validation/rate limiting/idempotency;
+- secret/privacy review;
+- real multi-account Nimiq Pay sender test;
+- real exactly-1-NIM + data + explicit fee=0 test from an exactly-1-NIM wallet;
+- real native invite-deeplink device test.

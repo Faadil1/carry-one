@@ -19,6 +19,12 @@ export interface PassIntent {
   currentHolder: string; // wallet authorized to make this pass
   recipient: string; // intended next holder
   nonce: string; // uniqueness guard against duplicate/replayed intents
+  /**
+   * Reach Mission production flows bind the pass to an opaque on-chain
+   * commitment. Legacy spike flows may leave this null for backwards-compatible
+   * tests, but the mission coordinator always requires it.
+   */
+  recipientData: string | null;
   createdAt: number; // epoch ms
 }
 
@@ -47,20 +53,14 @@ export interface NimiqTxLookup {
   value: number; // Luna
   blockNumber: number | null; // null while still in mempool
   confirmations: number; // 0 while unconfirmed
-  /**
-   * Optional recipient-data payload read back off-chain. When the sender used
-   * `sendBasicTransactionWithData`, this carries whatever tag was attached at
-   * broadcast time (see `batonDataTag`). Absent for plain transfers.
-   */
+  /** Recipient-data payload read back off-chain. Reach Mission canonical passes require it. */
   recipientData?: string;
 }
 
 /**
- * Compact, self-describing tag embedded in a transaction's recipient data via
- * the Nimiq Provider's `sendBasicTransactionWithData` — the PRD's "optional
- * compact baton/sequence data". Gives the relay a second, on-chain-anchored
- * way to confirm a transaction belongs to this baton/hop, independent of our
- * own off-chain intent store.
+ * Legacy technical-spike tag retained for compatibility with old relay-only
+ * fixtures. Do not use this for Reach Mission production passes because it
+ * exposes baton identity/sequence directly on-chain.
  */
 export function batonDataTag(batonId: string, sequence: number): string {
   return `carryone:${batonId}:${sequence}`;

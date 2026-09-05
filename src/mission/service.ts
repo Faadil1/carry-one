@@ -4,6 +4,7 @@ import {
   MissionValidationError,
   type InvitationRecord,
   type MissionAction,
+  type MissionActivity,
   type MissionRecord,
   type MissionVisibility,
   type PublicInvitation,
@@ -14,6 +15,7 @@ import { normalizeNimiqAddress, TargetWalletProtector, walletFingerprint } from 
 
 export const INVITATION_TTL_MS = 12 * 60 * 60 * 1000;
 export const ACCEPTED_PASS_DEADLINE_MS = 60 * 60 * 1000;
+export const MISSION_STALL_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token, "utf8").digest("base64url");
@@ -44,19 +46,30 @@ function assertAction(
   }
 }
 
-export function toPublicMission(record: MissionRecord): PublicMission {
+export function missionActivity(record: MissionRecord, now = Date.now()): MissionActivity {
+  if (record.status !== "ACTIVE") return "TERMINAL";
+  return now - record.updatedAt > MISSION_STALL_THRESHOLD_MS ? "STALLED" : "ACTIVE";
+}
+
+export function toPublicMission(record: MissionRecord, now = Date.now()): PublicMission {
+  const activity = missionActivity(record, now);
   return {
     id: record.id,
     creator_wallet: walletFingerprint(record.creatorWalletNormalized),
     current_holder: walletFingerprint(record.currentHolderWalletNormalized),
     target_label: record.targetLabel,
+    target_consent_confirmed: record.targetConsentConfirmed,
     mission_note: record.missionNote,
     status: record.status,
+    activity,
     visibility: record.visibility,
     finalized_hop_count: record.finalizedHopCount,
     current_sequence: record.currentSequence,
     created_at: new Date(record.createdAt).toISOString(),
+    last_activity_at: new Date(record.updatedAt).toISOString(),
     arrived_at: record.arrivedAt === null ? null : new Date(record.arrivedAt).toISOString(),
+    route_following_available: record.status !== "CANCELLED",
+    stalled_restart_available: activity === "STALLED",
   };
 }
 
@@ -76,6 +89,7 @@ export function toPublicInvitation(record: InvitationRecord): PublicInvitation {
 
 export class ReachMissionService {
   private broadcastGuard: (missionId: string) => boolean = () => false;
+  private routeWalletGuard: (missionId: string, wallet: string) => boolean = () => false;
 
   constructor(
     private readonly repository: MissionRepository,
@@ -86,16 +100,30 @@ export class ReachMissionService {
     this.broadcastGuard = guard;
   }
 
+  /** Returns true when a wallet already participated in the finalized route. */
+  setRouteWalletGuard(guard: (missionId: string, wallet: string) => boolean): void {
+    this.routeWalletGuard = guard;
+  }
+
   async createMission(input: {
     auth: VerifiedWalletAction;
     targetLabel: string;
     targetWallet: string;
+    /** Cycle-II policy: target is known and has explicitly consented to be this mission's destination. */
+    targetConsentConfirmed?: boolean;
+    /** This is the human purpose/ask shown to bridges and the destination, not a generic memo. */
     missionNote: string;
     creatorDisplayLabel?: string;
     visibility?: MissionVisibility;
     now?: number;
   }): Promise<PublicMission> {
     assertAction(input.auth, "CREATE_MISSION");
+    if (input.targetConsentConfirmed !== true) {
+      throw new MissionValidationError(
+        "TARGET_CONSENT_REQUIRED",
+        "Cycle-II missions require a known destination that explicitly consented to be targeted"
+      );
+    }
     const now = input.now ?? Date.now();
     const creator = normalizeNimiqAddress(input.auth.wallet);
     const target = this.protector.protect(input.targetWallet);
@@ -110,6 +138,7 @@ export class ReachMissionService {
       targetLabel: boundedText(input.targetLabel, 1, 60, "targetLabel"),
       targetWalletCiphertext: target.ciphertext,
       targetWalletHmac: target.hmac,
+      targetConsentConfirmed: true,
       missionNote: boundedText(input.missionNote, 1, 180, "missionNote"),
       status: "ACTIVE",
       visibility: input.visibility ?? "UNLISTED",
@@ -120,11 +149,11 @@ export class ReachMissionService {
       cancelledAt: null,
       updatedAt: now,
     };
-    return toPublicMission(await this.repository.createMission(record));
+    return toPublicMission(await this.repository.createMission(record), now);
   }
 
-  async getMission(id: string): Promise<PublicMission> {
-    return toPublicMission(await this.requireMission(id));
+  async getMission(id: string, now = Date.now()): Promise<PublicMission> {
+    return toPublicMission(await this.requireMission(id), now);
   }
 
   async getMissionRecord(id: string): Promise<MissionRecord> {
@@ -136,7 +165,7 @@ export class ReachMissionService {
     if (this.broadcastGuard(id)) {
       throw new MissionValidationError("BROADCAST_IN_FLIGHT", "Mission cannot be cancelled after a transaction broadcast");
     }
-    return toPublicMission(await this.repository.cancelMissionPristine(id, normalizeNimiqAddress(auth.wallet), now));
+    return toPublicMission(await this.repository.cancelMissionPristine(id, normalizeNimiqAddress(auth.wallet), now), now);
   }
 
   async createInvitation(input: {
@@ -157,6 +186,9 @@ export class ReachMissionService {
     const now = input.now ?? Date.now();
     const token = randomBytes(32).toString("base64url");
     const candidateWallet = input.candidateWallet ? normalizeNimiqAddress(input.candidateWallet) : null;
+    if (candidateWallet && this.routeWalletGuard(mission.id, candidateWallet)) {
+      throw new MissionValidationError("ROUTE_WALLET_REUSE", "A finalized route participant cannot be selected again in the same mission");
+    }
     const record: InvitationRecord = {
       id: randomUUID(),
       missionId: mission.id,
@@ -206,6 +238,9 @@ export class ReachMissionService {
       sequence: invitation.sequence,
     });
     const wallet = normalizeNimiqAddress(input.auth.wallet);
+    if (this.routeWalletGuard(invitation.missionId, wallet)) {
+      throw new MissionValidationError("ROUTE_WALLET_REUSE", "A finalized route participant cannot re-enter the same mission");
+    }
     const now = input.now ?? Date.now();
     const accepted = await this.repository.acceptInvitation(
       invitation.id,
@@ -213,7 +248,6 @@ export class ReachMissionService {
       now,
       now + ACCEPTED_PASS_DEADLINE_MS
     );
-    // Display label is intentionally not persisted in Slice 1; it remains an opt-in UI concern.
     void input.candidateDisplayLabel;
     return toPublicInvitation(accepted);
   }

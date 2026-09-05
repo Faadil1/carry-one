@@ -2,12 +2,13 @@ project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: private
-state_version: 0.5.1
-date: 2026-09-04
+state_version: 0.6.0
+date: 2026-09-05
 
-phase: FOUNDATION_IMPLEMENTATION_SLICE_1_MERGED
+phase: MVP_VERTICAL_SLICE_1_BLINDSPOT_HARDENING_VERIFIED
 problem_locked: true
 foundation_slice_1_complete: true
+blindspot_hardening_complete: true
 full_production_build_authorized: false
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -23,9 +24,7 @@ team:
     condition: revisit_in_writing_if_either_party_steps_away_before_submission
 
 core_product_laws:
-  baton: >-
-    THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT,
-    WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
+  baton: THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT, WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
   destination: EVERY BATON HAS A DESTINATION.
   consent: NO ONE BECOMES A BRIDGE BY SURPRISE.
   custody: THE PATH CHANGES ONLY AFTER VERIFIED FINALITY.
@@ -35,22 +34,37 @@ core_product_laws:
 
 product_positioning:
   category: destination_bound_human_routing
-  working_promise: >-
-    Get this to someone you cannot reach directly — one human bridge at a time.
+  working_promise: Get this to someone you cannot reach directly — one human bridge at a time.
   holder_question: Who can move this one person closer?
+  cycle_ii_target_policy:
+    known_target_wallet_required: true
+    creator_attested_target_consent_required: true
+    cryptographic_target_consent_claim: false
+    public_scale_target_claiming: deferred
+  mission_note_semantics: human_purpose_or_ask_why_should_this_reach_them
 
 mvp_contract:
   mission_states: [ACTIVE, ARRIVED, CANCELLED]
+  mission_activity_display: [ACTIVE, STALLED, TERMINAL]
+  stalled_after_hours: 24
+  stalled_changes_custody: false
+  stalled_recovery: start_new_mission_only_no_clawback
   invitation_states: [INVITED, ACCEPTED, DECLINED, EXPIRED, WITHDRAWN, COMPLETED]
   invitation_open_states: [INVITED, ACCEPTED]
   hop_states: [PENDING, INCLUDED, FINAL, INVALID]
   invitation_expiry_hours: 12
   accepted_pass_deadline_minutes: 60
   recipient_value_luna: 100000
+  requested_fee_luna: 0
   next_pass_unlock: FINAL
   one_active_invitation_per_mission: true
+  finalized_route_wallet_reuse: forbidden
   cancel_or_reroute_after_broadcast: forbidden_fail_closed
   arrival_condition: finalized_recipient_hmac_equals_private_target_wallet_hmac
+  retention_loop:
+    after_pass: authorized_read_only_route_following
+    after_arrival: start_your_own_mission
+    gamification: forbidden
   five_screens:
     - Mission_Home
     - Create_Mission
@@ -58,144 +72,173 @@ mvp_contract:
     - Pass_1_NIM
     - Route_Arrival
 
-foundation_slice_1:
-  branch: foundation/reach-mission-slice-1
-  pull_request: 5
-  merge_sha: 7cb5dba72fa6b4c5d186d637cb0b5f92cd5ab31d
-  status: MERGED_TO_MAIN
-  implemented:
-    - durable mission repository boundary and local restart-proof adapter
-    - RelayStore snapshot/hydration plus durable local relay adapter
-    - AES-256-GCM target-wallet encryption
-    - separate HMAC-SHA256 target equality/arrival matching
-    - Nimiq signed-action challenge verifier
-    - wallet public-key to claimed-address binding
-    - atomic one-time challenge consumption and replay rejection
-    - mission create/read/pristine-cancel service
-    - invitation create/accept/decline/withdraw/expiry state machine
-    - mission/invitation/relay coordinator
-    - FINAL-to-holder/sequence/arrival projection
-    - crash-window repair after durable relay FINAL before mission projection
-    - executable PostgreSQL-oriented migration
-  implementation_discoveries:
-    completed_invitation_state:
-      decision: REQUIRED
-      reason: finalized successful invitation must close as terminal COMPLETED
-    durable_pass_intents:
-      decision: REQUIRED
-      reason: active pass authorization and tx hash must survive restart
+blindspot_hardening:
+  branch: mvp/blindspot-hardening
+  pull_request: 7
+  status: PASS_PENDING_FINAL_FULL_HEAD_CI_AND_MERGE
+  p0:
+    destination_paradox:
+      resolution: known_consenting_target_beachhead
+      implemented: true
+    stalled_holder:
+      resolution: display_only_STALLED_plus_new_mission_no_reassignment
+      implemented: true
+    nimiq_multi_account_sender:
+      resolution: listAccounts_expected_holder_preflight_plus_backend_actual_sender_verification
+      automated_boundary: PASS
+      real_device_validation: PENDING
+    onchain_metadata_privacy:
+      resolution: mandatory_opaque_co_v1_hop_commitment
+      clear_mission_sequence_tag_in_reach_mission: forbidden
+      implemented: true
+  p1:
+    target_receive_reason:
+      resolution: mission_note_is_human_purpose_or_ask
+      implemented_contract: true
+    repeat_value:
+      resolution: follow_route_then_start_own_mission
+      domain_dto_support: true
+      secure_view_token_http_binding: PENDING_VERTICAL_SLICE
+    nimiq_pay_invite_deeplink:
+      custom_scheme_builder: implemented
+      real_device_validation: PENDING
+    route_loops:
+      finalized_wallet_reentry: forbidden
+      implemented: true
+    exact_one_nim_forwardability:
+      explicit_fee_zero_request: implemented
+      exact_balance_real_testnet_validation: PENDING
+    rpc_single_point_failure:
+      resilient_read_client: implemented
+      all_rpc_down_behavior: VERIFICATION_DELAYED
+    usage_evidence:
+      aggregate_metrics: implemented
+      unique_wallet_not_unique_human: true
+  p2:
+    target_consent_anti_spam:
+      creator_attestation: implemented
+      target_signed_consent_or_opt_out_for_public_scale: PENDING_PRE_PUBLIC
+    evidence_dashboard_data_boundary:
+      privacy_safe_aggregator: implemented
+
+onchain_commitment:
+  required_for_reach_mission: true
+  format: co:v1:<opaque-sha256-base64url>
+  max_bytes: 64
+  binds:
+    - mission_id
+    - sequence
+    - current_holder
+    - accepted_recipient
+    - random_pass_nonce
+  cleartext_mission_id: false
+  transaction_anonymity_claim: false
+  public_chain_sender_recipient_value_acknowledged: true
+
+nimiq_pay:
+  expected_holder_account_preflight: listAccounts
+  sender_force_supported_by_client: false
+  actual_sender_backend_verification: authoritative
+  send_method: sendBasicTransactionWithData
+  recipient_value_luna: 100000
+  fee_luna: 0
+  data_required: true
+
+rpc_resilience:
+  multiple_read_endpoints_supported: true
+  env: NIMIQ_RPC_URLS
+  primary_failure_fallback: true
+  all_endpoints_unavailable_error: VERIFICATION_DELAYED
+  infrastructure_failure_marks_tx_invalid: false
 
 persistence:
   contract: docs/REACH-MISSION-PERSISTENCE.sql
   migration: migrations/001_reach_mission_foundation.sql
-  local_proof_adapters:
-    - FileMissionRepository
-    - FileRelayStore
   production_target: PostgreSQL_or_compatible
-  durable_entities:
-    - missions
-    - invitations
-    - pass_intents
-    - hops
-    - participants
-    - auth_challenges
-    - audit_events
   production_multi_instance_adapter_complete: false
-  invariants:
-    - one_open_invitation_per_mission
-    - global_tx_hash_uniqueness
-    - durable_active_pass_state
-    - atomic_finalization_updates_holder_sequence_invitation_and_arrival
-    - restart_recovery
-    - idempotent_crash_window_repair
+  new_invariants:
+    - target_consent_confirmed_true_at_creation
+    - opaque_recipient_data_durable_with_pass_intent
+    - one_finalized_participation_per_wallet_per_mission
+    - mission_updated_at_drives_display_only_stalled_activity
 
 security:
-  contract: docs/REACH-MISSION-SECURITY-AUTH.md
   auth_domain: carry-one:v1
-  challenge_ttl_minutes: 5
-  nonce_minimum_bits: 128
-  one_time_challenge: true
-  invite_token_bits: 256
-  invite_token_server_storage: SHA256_hash_only
   target_wallet_encryption: AES_256_GCM
   target_wallet_equality: keyed_HMAC_SHA256
-  separate_encryption_and_hmac_keys: required
-  target_wallet_in_normal_dto: forbidden
-  signed_actions:
-    - CREATE_MISSION
-    - CREATE_INVITATION
-    - ACCEPT_INVITATION
-    - WITHDRAW_INVITATION
-    - AUTHORIZE_PASS
-    - CANCEL_MISSION
+  invite_token_bits: 256
+  unique_human_claims: forbidden
+  blockchain_privacy_claim: no_transaction_anonymity
 
 verification:
+  pre_hardening_authoritative_tests: 56
   code_bearing_ci:
-    run_id: 33932462066
-    head_sha: 87ec3581de23ea972656076f5610ce0402612301
+    run_id: 33950354706
+    head_sha: e94e2ca9348be10e738ec27ab510bc8eb9642ec5
     conclusion: success
     node: 22
     npm_ci: pass
     typecheck: pass
     tests: pass
     build: pass
-    test_files: 9
-    authoritative_vitest_tests: 56
-  final_pr_head_ci:
-    run_id: 33932685723
-    head_sha: e0982f947799ae687cbaa99e275b595d13809adf
-    conclusion: success
-    npm_ci: pass
-    typecheck: pass
-    tests: pass
-    build: pass
-  baseline_tests_before_slice_1: 44
-  new_foundation_tests: 12
-  proofs:
-    restart_recovery: PASS
-    active_broadcast_recovery: PASS
-    finality_to_mission_projection: PASS
-    finality_crash_window_repair: PASS
-    signature_verification: PASS
-    public_key_wallet_binding: PASS
-    signature_replay_protection: PASS
-    target_wallet_redaction: PASS
-    target_hmac_equality: PASS
-    invitation_race_fail_closed: PASS
-    decline_reroute: PASS
-    expiry_custody_unchanged: PASS
-  note: >-
-    56 is the authoritative independently verified Vitest count for Slice 1.
-    Do not cite the historical collaborator-reported 76 as independently verified.
+    test_files: 13
+    authoritative_vitest_tests: 66
+  new_hardening_tests: 10
+  automated_proofs:
+    target_consent_required: PASS
+    stalled_display_no_custody_mutation: PASS
+    opaque_commitment_required_exact_and_under_64_bytes: PASS
+    cleartext_legacy_tag_rejected_by_reach_mission_client: PASS
+    route_loop_reentry_rejected: PASS
+    expected_holder_wallet_preflight: PASS
+    explicit_zero_fee_request: PASS
+    rpc_fallback: PASS
+    all_rpc_down_verification_delayed: PASS
+    invite_deeplink_builder: PASS
+    privacy_safe_usage_aggregation: PASS
+  runtime_validations_not_claimed:
+    - real_nimiq_pay_multi_account_sender_selection
+    - exact_balance_one_nim_wallet_send_one_nim_with_data_fee_zero
+    - native_nimiq_pay_invite_deeplink_device_launch
+  note: 66 is the current independently verified automated test count on the code-bearing hardening head.
 
-backend_ancestry:
+history:
   pr_1: CLOSED_SUPERSEDED
   pr_3_reconciliation: MERGED
-  pr_3_merge_sha: 147d79c67d73c5563304f9c0ba6e136cd1201bb2
   pr_4_ux_state_contract: MERGED
-  pr_4_merge_sha: 77470bd955ce9e03bf2cd366dcd74062e87dc52d
   pr_5_foundation_slice_1: MERGED
   pr_5_merge_sha: 7cb5dba72fa6b4c5d186d637cb0b5f92cd5ab31d
+  pr_6_foundation_state_closure: MERGED
+  pr_6_merge_sha: 4e77242bcbe30ec379e9c06d487c74300a6ca2a5
 
 current_gate:
-  name: CARRY_ONE_FOUNDATION_IMPLEMENTATION_SLICE_1
-  status: PASS
+  name: CARRY_ONE_BLINDSPOT_HARDENING
+  status: PASS_PENDING_FINAL_FULL_HEAD_CI_AND_PR7_MERGE
 
 next_gate:
   name: CARRY_ONE_MVP_VERTICAL_SLICE_1
-  status: READY
+  status: READY_AFTER_PR7_MERGE
   authorized_scope:
     - production_postgres_repository_adapter_and_migration_runner
     - mission_auth_invitation_pass_http_api_bindings
+    - secure_unlisted_route_following_view_authorization
     - Nimiq_Pay_client_challenge_sign_and_send_flow
     - functional_five_screen_mini_app_skeleton_without_visual_polish
     - end_to_end_testnet_mission_across_2_to_3_real_wallets
     - real_usage_instrumentation_without_unique_human_claims
+    - real_multi_account_sender_validation
+    - exact_balance_fee_zero_forwardability_validation
+    - native_deeplink_device_validation
   exit_criteria:
     - create_invite_accept_authorize_pass_broadcast_final_arrival_e2e_on_testnet
     - production_database_restart_recovery_proven
     - no_unsigned_sensitive_mutation_path
     - target_wallet_never_exposed
+    - no_finalized_route_wallet_loop
+    - opaque_commitment_verified_on_real_testnet_tx
+    - multi_account_holder_flow_proven
+    - exact_1_nim_balance_forwarding_proven
+    - native_invite_deeplink_proven_on_device
     - five_screen_state_mapping_functional
     - all_existing_plus_new_tests_green
     - ci_typecheck_test_build_green
@@ -206,6 +249,7 @@ still_blocked:
   - mainnet_cutover_and_funds
   - marketing_launch
   - full_visual_polish_before_vertical_flow_proof
+  - target_claiming_or_public_target_discovery
   - prizes_or_wagering
   - pooled_funds
   - forwarding_rewards
@@ -215,7 +259,8 @@ still_blocked:
 
 pre_public_followups:
   - production PostgreSQL transaction/row-lock adapter
-  - production HTTP validation rate limits and idempotency middleware
+  - production HTTP schema validation rate limits and idempotency
+  - target-signed consent_or_opt_out_controls_for_public_scale
   - secret scan before publication
   - confirm package-lock MIT metadata consistency
   - privacy review with real-user flows

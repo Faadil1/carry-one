@@ -1,169 +1,116 @@
 # Carry One — Reach Mission Test Matrix
 
-Date: 2026-09-04  
-Gate: `CARRY_ONE_REACH_MISSION_UX_AND_STATE_CONTRACT`
+Date: 2026-09-05  
+Gate: `CARRY_ONE_MVP_VERTICAL_SLICE_1`
 
-This matrix defines the minimum automated coverage required before Early Access. Existing relay-spike tests remain valid; these scenarios add the destination, invitation, authorization, persistence and privacy layers.
+Existing relay/foundation coverage remains required. This matrix adds the blind-spot invariants discovered before the vertical slice.
 
-## A. Mission creation
-
-| ID | Scenario | Expected |
-|---|---|---|
-| M01 | valid creator signature + distinct target | mission ACTIVE, creator holder, sequence 0 |
-| M02 | target = creator wallet | reject `SELF_TARGET` |
-| M03 | invalid target address | reject before persistence |
-| M04 | replay CREATE_MISSION challenge | reject replay |
-| M05 | expired CREATE_MISSION challenge | reject |
-| M06 | service restart after creation | mission still readable with same canonical holder |
-| M07 | public mission without explicit public-target permission | reject/downgrade to UNLISTED |
-| M08 | mission API response | target wallet absent from DTO/log-safe serialization |
-
-## B. Invitation creation
+## A. Mission and target
 
 | ID | Scenario | Expected |
 |---|---|---|
-| I01 | current holder signs CREATE_INVITATION | INVITED created at next sequence |
-| I02 | non-holder signs CREATE_INVITATION | reject `NOT_CURRENT_HOLDER` |
-| I03 | second open invitation while one INVITED | reject `ACTIVE_INVITATION_EXISTS` |
-| I04 | second open invitation while one ACCEPTED | reject |
-| I05 | invite after mission ARRIVED | reject terminal mission |
-| I06 | invite after mission CANCELLED | reject |
-| I07 | token entropy/storage | only token hash persisted; plaintext absent |
-| I08 | invite response payload | no target wallet, no full participant wallet by default |
+| M01 | valid signed creation + distinct target + consent attestation | ACTIVE, creator holder, seq 0 |
+| M02 | missing/false target consent attestation | reject `TARGET_CONSENT_REQUIRED` |
+| M03 | target = creator | reject |
+| M04 | public DTO | no target plaintext/ciphertext/HMAC |
+| M05 | target consent flag | boolean true only; never described as cryptographic consent/identity proof |
+| M06 | 24h no product activity | activity STALLED; holder/sequence unchanged |
+| M07 | stalled restart CTA | creates new mission only; no old-baton reassignment |
 
-## C. Accept / decline / expiry / withdrawal
-
-| ID | Scenario | Expected |
-|---|---|---|
-| A01 | valid unbound invite + wallet-signed accept | candidate wallet bound, status ACCEPTED |
-| A02 | second wallet attempts accept after first acceptance | reject |
-| A03 | pre-bound invite accepted by different wallet | reject `WRONG_INVITEE_WALLET` |
-| A04 | accept expired invite | reject; status EXPIRED |
-| A05 | decline valid INVITED token | DECLINED; holder unchanged |
-| A06 | decline twice | idempotent terminal response, no mutation |
-| A07 | holder withdraws INVITED | WITHDRAWN; holder unchanged |
-| A08 | holder withdraws ACCEPTED before pass intent | WITHDRAWN allowed |
-| A09 | holder withdraws after tx hash recorded | reject fail-closed |
-| A10 | accepted pass deadline expires before broadcast | EXPIRED; holder can invite another |
-| A11 | restart while ACCEPTED | acceptance and deadline survive restart |
-
-## D. Holder authorization
+## B. Invitation and route integrity
 
 | ID | Scenario | Expected |
 |---|---|---|
-| H01 | valid holder signs AUTHORIZE_PASS for accepted candidate | pass intent created |
-| H02 | non-holder signs AUTHORIZE_PASS | reject |
-| H03 | signature valid but wrong mission/sequence | reject challenge binding mismatch |
-| H04 | replay AUTHORIZE_PASS signature | reject used challenge |
-| H05 | expired challenge | reject |
-| H06 | accepted recipient changed client-side after signature | reject server canonical mismatch |
-| H07 | create pass intent with invitation not ACCEPTED | reject |
+| I01 | two open invites race | one succeeds, one `OPEN_INVITATION_EXISTS` |
+| I02 | unbound accept | wallet binds, no custody move |
+| I03 | decline/expiry/withdraw | custody unchanged, reroute allowed before broadcast |
+| I04 | pre-bound wallet already in FINAL route | reject `ROUTE_WALLET_REUSE` |
+| I05 | unbound accept by wallet already in FINAL route | reject `ROUTE_WALLET_REUSE` |
+| I06 | A -> B FINAL then B attempts invite A | reject; no route loop |
+| I07 | COMPLETED invitation | terminal, cannot reopen |
 
-## E. Broadcast and chain verification
-
-| ID | Scenario | Expected |
-|---|---|---|
-| T01 | correct 1 NIM sender/recipient, included not final | INCLUDED, holder unchanged |
-| T02 | same tx finalizes | FINAL, holder advances exactly once |
-| T03 | wrong sender | INVALID, holder unchanged |
-| T04 | wrong recipient | INVALID, holder unchanged |
-| T05 | 0.99999 NIM | INVALID |
-| T06 | 1.00001 NIM | INVALID |
-| T07 | fee causes sender outflow > 1 NIM but recipient gets exactly 1 NIM | valid |
-| T08 | same tx hash reused in different mission | reject global replay |
-| T09 | same tx hash submitted twice to same hop | idempotent, no duplicate advance |
-| T10 | cancel after broadcast | reject; reconciliation continues |
-| T11 | RPC temporary null before stale deadline | remains PENDING |
-| T12 | never-observed tx exceeds validity window | INVALID, holder unchanged |
-| T13 | concurrent finalization workers | one canonical FINAL transition only |
-| T14 | restart during PENDING/INCLUDED | watcher resumes from durable state |
-
-## F. Destination arrival
+## C. Authorization and wallet selection
 
 | ID | Scenario | Expected |
 |---|---|---|
-| D01 | finalized recipient != target | mission remains ACTIVE, recipient becomes holder |
-| D02 | finalized recipient = target | mission ARRIVED atomically with FINAL hop |
-| D03 | target merely accepts invitation | not ARRIVED |
-| D04 | tx to target seen in mempool | not ARRIVED |
-| D05 | included tx to target not final | not ARRIVED |
-| D06 | finalization retried | arrived_at unchanged/idempotent |
-| D07 | invite after ARRIVED | reject |
-| D08 | pass after ARRIVED | reject |
-| D09 | completed route | consists only of FINAL hops in ascending sequence |
+| A01 | valid Nimiq signed challenge | accepted once |
+| A02 | replay/expired/wrong wallet/public key | reject |
+| A03 | multi-account client preflight lacks canonical holder | fail before payment prompt |
+| A04 | preflight sees holder but provider broadcasts another sender | backend rejects `WRONG_SENDER` |
+| A05 | AUTHORIZE_PASS | durable intent + mandatory opaque commitment |
 
-## G. Reroute behavior
+A03/A04 require both automated boundary tests and a real Nimiq Pay multi-account device validation before Early Access.
+
+## D. Opaque on-chain commitment
 
 | ID | Scenario | Expected |
 |---|---|---|
-| R01 | candidate declines | holder creates new invitation at same next sequence |
-| R02 | invite expires | holder creates new invitation at same next sequence |
-| R03 | holder withdraws before broadcast | new invite allowed |
-| R04 | invalid transfer | canonical sequence does not advance; reroute allowed after invalid closes |
-| R05 | broadcast in flight | reroute forbidden |
-| R06 | FINAL pass | previous holder cannot reroute mission |
+| O01 | Reach Mission intent | recipient data starts `co:v1:` |
+| O02 | commitment bytes | <=64 bytes |
+| O03 | inspect commitment | no clear mission id/sequence/recipient |
+| O04 | tx lacks data | reject `MISSING_HOP_COMMITMENT` |
+| O05 | tx commitment differs | reject `WRONG_HOP_COMMITMENT` |
+| O06 | exact commitment + sender/recipient/value | eligible for inclusion/finality verification |
+| O07 | legacy clear-text tag in Reach Mission client | rejected before send |
 
-## H. Mission cancellation
-
-| ID | Scenario | Expected |
-|---|---|---|
-| C01 | creator/current holder cancels before first FINAL, no tx in flight | CANCELLED |
-| C02 | non-authorized wallet cancels | reject |
-| C03 | cancel after first FINAL | reject |
-| C04 | cancel with tx hash in flight | reject |
-| C05 | cancelled mission survives restart | remains terminal |
-
-## I. Privacy and redaction
+## E. Payment and finality
 
 | ID | Scenario | Expected |
 |---|---|---|
-| P01 | unauthenticated mission view | no target wallet ciphertext/HMAC/plaintext |
-| P02 | invitation view | target label yes, target wallet no |
-| P03 | route view | wallet fingerprints only unless policy explicitly allows more |
-| P04 | third-party analytics event | no target wallet, invite token or why_you |
-| P05 | application error | no secret/token/plain target wallet in message |
-| P06 | DB dump of application columns | target wallet encrypted, lookup uses keyed HMAC |
-| P07 | raw invite token search in DB | no plaintext token stored |
+| T01 | client request | exactly 100000 Luna + fee 0 + opaque data |
+| T02 | amount != 100000 | client/server reject |
+| T03 | fee != 0 in Cycle-II MVP client | client reject |
+| T04 | exactly-1-NIM funded wallet | real Nimiq Pay sends 1 NIM + data + fee 0 successfully |
+| T05 | PENDING/INCLUDED | holder unchanged |
+| T06 | FINAL | holder advances exactly once, invite COMPLETED |
+| T07 | tx hash replay | reject globally |
+| T08 | crash after relay FINAL before mission projection | restart repairs idempotently |
 
-## J. Invite-token threat cases
+T04 is a real testnet runtime gate; unit tests alone cannot mark it PASS.
 
-| ID | Scenario | Expected |
-|---|---|---|
-| S01 | random token guessing | rate-limited 404-equivalent, no enumeration signal |
-| S02 | stolen unbound token accepted by wallet X | X binds, but holder must explicitly authorize X before any payment |
-| S03 | holder spots wrong wallet fingerprint and withdraws | no transfer, invitation terminal |
-| S04 | stolen pre-bound token + wrong wallet | cannot accept |
-| S05 | expired token | no state-changing power |
-| S06 | terminal token reused | reject/idempotent terminal response |
-
-## K. UX contract assertions
+## F. RPC resilience
 
 | ID | Scenario | Expected |
 |---|---|---|
-| U01 | ACTIVE holder + no invite | exactly one primary CTA: Choose next bridge |
-| U02 | INVITED | pass CTA unavailable |
-| U03 | ACCEPTED | Pass 1 NIM available only to current holder |
-| U04 | PENDING/INCLUDED | all reroute/cancel CTAs unavailable |
-| U05 | DECLINED/EXPIRED/WITHDRAWN | Choose another bridge available |
-| U06 | ARRIVED | no pass/invite CTA; completed route displayed |
-| U07 | target wallet | never rendered in the five-screen UI |
-| U08 | why_you | visible to inviter/invitee only by default |
+| R01 | primary RPC errors, secondary has tx | secondary result used |
+| R02 | primary has not indexed tx, secondary has tx | secondary result used |
+| R03 | at least one healthy endpoint says not found | null/pending semantics, not infrastructure failure |
+| R04 | all endpoints unavailable | `VERIFICATION_DELAYED`; no INVALID/custody mutation |
+| R05 | block-height primary down | fallback endpoint used |
 
-## L. Real-usage instrumentation
+## G. Privacy and anti-spam
 
 | ID | Scenario | Expected |
 |---|---|---|
-| G01 | same wallet participates twice | counted once in unique-wallet metric |
-| G02 | different wallet final recipients | counted separately |
-| G03 | declined invite with no wallet acceptance | not counted as participating wallet unless rules explicitly define otherwise |
-| G04 | test/demo wallets | tagged/excluded from real-usage competition reporting |
+| P01 | DB/API/log | target encrypted/HMAC'd and redacted |
+| P02 | on-chain data | opaque commitment only; no mission id/sequence clear text |
+| P03 | documentation/UI claim | acknowledges sender/recipient/value remain public on-chain |
+| P04 | Cycle-II create | known target + creator attestation required |
+| P05 | public-scale target consent | remains blocked until stronger target controls/opt-out exist |
 
-## Exit criteria for this test family
+## H. Native invitation and retention
 
-Before public Early Access:
-- all existing spike tests green;
-- all security-critical cases in sections B–J automated;
-- no known path can change current holder without a verified FINAL 1-NIM hop;
-- no known API path reveals the target wallet;
-- restart/recovery tests prove durability;
-- CI runs typecheck + tests + build on every PR.
+| ID | Scenario | Expected |
+|---|---|---|
+| U01 | opaque invite link | HTTPS `/i/<token>` |
+| U02 | Nimiq Pay custom scheme | encodes private HTTPS invite URL |
+| U03 | weak token/insecure public origin | builder rejects |
+| U04 | real phone tap | launches Nimiq Pay into intended invite screen |
+| U05 | former participant | read-only route following available where authorized; no custody power |
+| U06 | ARRIVED | may offer `Start your own mission`; no XP/reward |
+
+U04 is a real-device runtime gate.
+
+## I. Real-usage evidence
+
+| ID | Scenario | Expected |
+|---|---|---|
+| G01 | aggregate evidence | missions/invites/accepts/completions/FINAL hops/arrivals counted |
+| G02 | wallet appears in multiple route positions | counted once in unique-wallet count |
+| G03 | evidence output | no raw wallet list, target, token or private why_you |
+| G04 | terminology | `unique participating wallets`, never `unique humans` |
+| G05 | test/demo wallets | separately tagged/excluded from competition real-usage evidence in deployment layer |
+
+## J. Baseline regression
+
+All 56 verified pre-hardening tests must remain green, plus all new hardening tests. CI must run `npm ci`, strict typecheck, tests and build. No public Early Access until all automated tests are green and the three real-runtime gates (multi-account, exact-balance fee=0, native deeplink) pass.
