@@ -11,8 +11,9 @@ This document defines the API boundary needed by the five-screen Reach Mission U
 - Clients never submit a canonical holder or canonical sequence as trusted facts; the server derives and verifies them.
 - Target wallet plaintext is server-private and absent from every normal response DTO.
 - Full participant wallet addresses are not returned by default; use a display label and short fingerprint.
-- Every mutation accepts an idempotency key.
+- Every production mutation accepts an idempotency key.
 - All timestamps are RFC3339 UTC.
+- Active pass authorization/broadcast state is durable and survives restart.
 
 ## 2. Safe DTOs
 
@@ -46,7 +47,7 @@ interface MissionView {
 interface InvitationView {
   invitation_id: string
   mission_id: string
-  status: 'INVITED' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED' | 'WITHDRAWN'
+  status: 'INVITED' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED' | 'WITHDRAWN' | 'COMPLETED'
   target_label: string
   mission_note: string
   inviter: {
@@ -60,6 +61,8 @@ interface InvitationView {
   accepted_wallet_fingerprint: string | null
 }
 ```
+
+`COMPLETED` means this invitation produced the matching finalized canonical hop. It is historical/terminal and cannot be reopened.
 
 ### `RouteEntry`
 
@@ -86,7 +89,8 @@ Request:
   "wallet": "NQ...",
   "action": "CREATE_MISSION",
   "mission_id": null,
-  "invitation_id": null
+  "invitation_id": null,
+  "sequence": 0
 }
 ```
 
@@ -115,7 +119,7 @@ Mutation requests requiring wallet authorization include:
 }
 ```
 
-Server verifies message, signature, wallet/public-key correspondence, expiry and one-time nonce use atomically.
+Server verifies message, signature, wallet/public-key correspondence, expiry, exact action/mission/invitation/sequence binding and one-time nonce use atomically.
 
 ## 4. Mission endpoints
 
@@ -135,7 +139,7 @@ Body:
 }
 ```
 
-The target wallet is accepted only on this write boundary, encrypted immediately, and never echoed back.
+The target wallet is accepted only on this write boundary, normalized, encrypted immediately with authenticated encryption, and reduced to a keyed HMAC for equality matching. It is never echoed back.
 
 Returns `MissionView` with creator as holder at sequence 0.
 
@@ -145,13 +149,13 @@ Requires participant/unlisted-view authorization appropriate to mission visibili
 
 ### `POST /missions/:missionId/cancel`
 
-Requires `CANCEL_MISSION` signature. Allowed only if zero finalized hops and no tx hash is in flight.
+Requires `CANCEL_MISSION` signature. Allowed only if zero finalized hops, no open invitation and no tx hash is in flight.
 
 ## 5. Invitation endpoints
 
 ### `POST /missions/:missionId/invitations`
 
-Requires `CREATE_INVITATION` signature from canonical holder.
+Requires `CREATE_INVITATION` signature from canonical holder and binds the signed challenge to the mission's next sequence.
 
 Body:
 
@@ -177,7 +181,7 @@ The plaintext invite token is never returned again and never stored plaintext se
 
 ### `GET /i/:opaqueToken`
 
-Token-scoped read. Returns participant-safe `InvitationView`. Invalid/expired tokens return a non-enumerable not-found style response.
+Token-scoped read. Returns participant-safe `InvitationView`. Invalid/expired tokens return a non-enumerable not-found style response in the production API.
 
 ### `POST /i/:opaqueToken/accept`
 
@@ -204,8 +208,9 @@ Preconditions:
 - invitation ACCEPTED;
 - accepted wallet bound;
 - before pass deadline;
-- no active hop/broadcast;
-- signer equals current holder.
+- signer equals current holder;
+- challenge bound to exact mission/invitation/sequence;
+- no conflicting active canonical pass.
 
 Response:
 
@@ -215,12 +220,14 @@ Response:
   "sequence": 4,
   "recipient": "NQ...",
   "value_luna": 100000,
-  "recipient_data": "carryone:<mission-short-id>:4",
+  "recipient_data": "carryone:<mission-id>:4",
   "expires_at": "..."
 }
 ```
 
-This is the one narrow response where the accepted recipient wallet may be returned to the authenticated current holder because the client must construct/confirm the payment. It is never the target wallet unless the accepted bridge is actually the target, and it is scoped to an authorized pass intent.
+This is the one narrow response where the accepted recipient wallet may be returned to the authenticated current holder because the client must construct/confirm the payment. It is never target metadata: it is the wallet the candidate actually accepted with, which may happen to be the target only on the final bridge.
+
+The active pass intent is durable. A server restart must not erase its holder/recipient/sequence/nonce/tx-hash tracking.
 
 ### `POST /missions/:missionId/pass-intent/:intentId/broadcast`
 
@@ -232,18 +239,28 @@ Body:
 { "tx_hash": "..." }
 ```
 
-Server treats the hash as a claim and independently verifies it.
+Server treats the hash as a claim and independently verifies it. Once a hash is recorded, user cancellation/reroute is fail-closed until reconciliation resolves the transaction.
 
 ### `POST /missions/:missionId/reconcile`
 
 May be server-internal/background. Participant-triggered calls are idempotent. Returns safe hop state only.
 
+On a verified `FINAL`, the same logical transition must:
+- advance holder/sequence exactly once;
+- set the invitation to `COMPLETED`;
+- project the finalized route entry;
+- compare the recipient HMAC to the private target HMAC;
+- set `ARRIVED` if matched.
+
+If relay FINAL persisted immediately before a process crash, restart reconciliation must safely project that same next FINAL hop without double-advancing the mission.
+
 ## 7. Arrival behavior
 
-On FINAL verification the service atomically compares the normalized recipient to the private target HMAC.
+On FINAL verification the service atomically compares the normalized recipient's keyed HMAC to the private target HMAC.
 
 If matched:
 - mission -> `ARRIVED`;
+- matching invitation -> `COMPLETED`;
 - `arrived_at` set once;
 - no further invitation/pass endpoints are valid;
 - target receives role `TARGET` if authenticated;
@@ -253,21 +270,21 @@ If matched:
 
 Authorized clients may receive stable reason codes such as:
 
-- `NOT_CURRENT_HOLDER`
-- `ACTIVE_INVITATION_EXISTS`
+- `WRONG_CURRENT_HOLDER`
+- `OPEN_INVITATION_EXISTS`
 - `INVITATION_EXPIRED`
 - `WRONG_INVITEE_WALLET`
 - `INVITATION_NOT_ACCEPTED`
 - `PASS_DEADLINE_EXPIRED`
-- `BROADCAST_ALREADY_RECORDED`
-- `TX_HASH_REPLAY`
+- `BROADCAST_IN_FLIGHT`
+- `DUPLICATE_TX_HASH`
 - `WRONG_SENDER`
 - `WRONG_RECIPIENT`
 - `WRONG_AMOUNT`
-- `MISSION_ALREADY_ARRIVED`
-- `MISSION_TERMINAL`
-- `AUTH_CHALLENGE_EXPIRED`
-- `AUTH_CHALLENGE_REPLAY`
+- `MISSION_NOT_ACTIVE`
+- `CHALLENGE_EXPIRED`
+- `CHALLENGE_REPLAY`
+- `SIGNER_WALLET_MISMATCH`
 - `INVALID_SIGNATURE`
 
 Unauthenticated/token-invalid calls should avoid detailed existence signals.
@@ -290,3 +307,7 @@ Allowed identifiers in routine logs:
 - short wallet fingerprint;
 - reason code;
 - state transition.
+
+## 10. Slice-1 vs deployment boundary
+
+Slice 1 implements and tests the domain/security/persistence foundation plus local durable adapters. Public deployment still requires the HTTP bindings, a production PostgreSQL repository/transaction implementation, deployment rate limits/idempotency middleware, secret/privacy review and explicit Early Access gate.

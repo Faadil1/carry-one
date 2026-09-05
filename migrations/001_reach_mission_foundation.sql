@@ -1,6 +1,4 @@
--- Carry One — Reach Mission persistence contract
--- PostgreSQL-oriented reference schema for the Cycle II MVP.
--- This is the canonical contract; executable migration 001 mirrors this shape.
+BEGIN;
 
 CREATE TYPE mission_status AS ENUM ('ACTIVE', 'ARRIVED', 'CANCELLED');
 CREATE TYPE mission_visibility AS ENUM ('UNLISTED', 'PRIVATE', 'PUBLIC');
@@ -60,9 +58,9 @@ CREATE UNIQUE INDEX one_open_invitation_per_mission
 CREATE UNIQUE INDEX one_invitation_sequence_per_mission
   ON invitations (mission_id, sequence);
 
--- Implementation discovery, Slice 1: pass authorization/broadcast state must
--- survive restart too. A durable mission/invitation table is insufficient if
--- the exact accepted pass intent still lives only in process memory.
+-- Active canonical pass intent. This table was added during implementation
+-- because restart safety is impossible if an accepted/broadcast pass lives
+-- only in process memory.
 CREATE TABLE pass_intents (
   mission_id uuid PRIMARY KEY REFERENCES missions(id) ON DELETE CASCADE,
   invitation_id uuid NOT NULL UNIQUE REFERENCES invitations(id),
@@ -138,52 +136,4 @@ CREATE TABLE audit_events (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Persistence invariants to enforce in service-layer transactions:
---
--- A. CREATE_INVITATION
---    SELECT mission FOR UPDATE;
---    require mission.status = ACTIVE;
---    require signer = current_holder;
---    require no open invitation;
---    insert invitation(sequence = current_sequence + 1).
---
--- B. ACCEPT_INVITATION
---    SELECT invitation + mission FOR UPDATE;
---    require invitation.status = INVITED and now() < expires_at;
---    bind first authenticated candidate wallet;
---    set ACCEPTED, accepted_at, pass_deadline_at = now()+60min.
---
--- C. CREATE_PASS_INTENT / RECORD_BROADCAST
---    SELECT mission + invitation FOR UPDATE;
---    require signer = current_holder;
---    require invitation = ACCEPTED and before pass_deadline_at;
---    insert pass_intents row bound exactly to mission/invitation/sequence/holder/recipient/nonce;
---    on broadcast, store tx_hash fail-closed; after tx_hash exists no cancel/reroute path is legal.
---
--- D. FINALIZE_HOP
---    one DB transaction:
---      verify hop currently PENDING/INCLUDED;
---      set hop FINAL;
---      increment mission.current_sequence and finalized_hop_count;
---      set mission.current_holder_wallet_normalized = recipient;
---      set invitation COMPLETED + completed_at + closed_at;
---      delete/close matching pass_intent only after durable FINAL state is committed;
---      if HMAC(normalized recipient) == target_wallet_hmac:
---          set mission.status = ARRIVED, arrived_at = now();
---      insert/refresh participant record;
---      append audit event.
---
--- E. DECLINE / EXPIRE / WITHDRAW / INVALID
---    close invitation/hop deterministically;
---    never mutate mission.current_holder_wallet_normalized;
---    never increment current_sequence or finalized_hop_count.
---
--- Restart/crash safety:
--- - mission/invitation state, active pass intent, tx hash and hop state all need durable recovery.
--- - if relay FINAL persisted but mission projection did not commit before a crash, reconciliation reapplies
---   the next FINAL hop idempotently from durable history.
---
--- Target privacy:
--- - Encrypt target wallet with an application-level authenticated encryption key.
--- - Store a keyed HMAC of the normalized wallet for equality checks.
--- - Never use a plain unsalted hash: Nimiq addresses are enumerable/public and a plain hash would not provide meaningful confidentiality.
+COMMIT;

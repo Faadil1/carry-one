@@ -10,11 +10,45 @@ export class RelayValidationError extends Error {
   }
 }
 
-/** In-memory store standing in for the canonical relay service's persistence layer. */
+export interface RelayStoreSnapshot {
+  intents: PassIntent[];
+  hops: Hop[];
+  holders: Array<[string, string]>;
+}
+
+function clone<T>(value: T): T {
+  return structuredClone(value);
+}
+
+/**
+ * Canonical relay store. It is in-memory by default, but now exposes a stable
+ * snapshot/hydration boundary and a mutation hook so durable adapters can
+ * persist the exact same fail-closed state machine without reimplementing it.
+ */
 export class RelayStore {
   private intents = new Map<string, PassIntent>(); // key: batonId
   private hops: Hop[] = [];
   private holders = new Map<string, string>(); // last canonical holder by baton
+
+  constructor(snapshot?: RelayStoreSnapshot) {
+    if (snapshot) {
+      this.intents = new Map(snapshot.intents.map((intent) => [intent.batonId, clone(intent)]));
+      this.hops = snapshot.hops.map(clone);
+      this.holders = new Map(snapshot.holders);
+    }
+  }
+
+  protected onMutation(): void {
+    // Durable adapters override this hook.
+  }
+
+  snapshot(): RelayStoreSnapshot {
+    return {
+      intents: [...this.intents.values()].map(clone),
+      hops: this.hops.map(clone),
+      holders: [...this.holders.entries()],
+    };
+  }
 
   key(batonId: string) {
     return batonId;
@@ -79,11 +113,13 @@ export class RelayStore {
     };
     this.intents.set(this.key(batonId), intent);
     this.holders.set(this.key(batonId), currentHolder);
+    this.onMutation();
     return intent;
   }
 
   cancelIntent(batonId: string) {
-    this.intents.delete(this.key(batonId));
+    const changed = this.intents.delete(this.key(batonId));
+    if (changed) this.onMutation();
   }
 
   /**
@@ -114,6 +150,7 @@ export class RelayStore {
       this.holders.set(this.key(hop.batonId), hop.recipient);
       this.intents.delete(this.key(hop.batonId));
     }
+    this.onMutation();
   }
 
   /** Mutates a recorded hop in place (reconciliation: PENDING -> INCLUDED -> FINAL, or -> INVALID). */
@@ -127,6 +164,7 @@ export class RelayStore {
       this.holders.set(this.key(batonId), hop.recipient);
       this.intents.delete(this.key(batonId));
     }
+    this.onMutation();
     return hop;
   }
 }

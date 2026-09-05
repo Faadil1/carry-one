@@ -1,0 +1,258 @@
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import type { MissionRepository } from "./repository.js";
+import {
+  MissionValidationError,
+  type InvitationRecord,
+  type MissionAction,
+  type MissionRecord,
+  type MissionVisibility,
+  type PublicInvitation,
+  type PublicMission,
+  type VerifiedWalletAction,
+} from "./types.js";
+import { normalizeNimiqAddress, TargetWalletProtector, walletFingerprint } from "./target-wallet-crypto.js";
+
+export const INVITATION_TTL_MS = 12 * 60 * 60 * 1000;
+export const ACCEPTED_PASS_DEADLINE_MS = 60 * 60 * 1000;
+
+function hashToken(token: string): string {
+  return createHash("sha256").update(token, "utf8").digest("base64url");
+}
+
+function boundedText(value: string, min: number, max: number, field: string): string {
+  const text = value.trim();
+  if (text.length < min || text.length > max) {
+    throw new MissionValidationError("INVALID_TEXT_LENGTH", `${field} must be between ${min} and ${max} characters`);
+  }
+  return text;
+}
+
+function assertAction(
+  auth: VerifiedWalletAction,
+  action: MissionAction,
+  bindings: { missionId?: string; invitationId?: string; sequence?: number } = {}
+): void {
+  if (auth.action !== action) throw new MissionValidationError("WRONG_AUTH_ACTION", `Expected ${action} authorization`);
+  if (bindings.missionId !== undefined && auth.missionId !== bindings.missionId) {
+    throw new MissionValidationError("AUTH_MISSION_MISMATCH", "Authorization is bound to another mission");
+  }
+  if (bindings.invitationId !== undefined && auth.invitationId !== bindings.invitationId) {
+    throw new MissionValidationError("AUTH_INVITATION_MISMATCH", "Authorization is bound to another invitation");
+  }
+  if (bindings.sequence !== undefined && auth.sequence !== bindings.sequence) {
+    throw new MissionValidationError("AUTH_SEQUENCE_MISMATCH", "Authorization is bound to another sequence");
+  }
+}
+
+export function toPublicMission(record: MissionRecord): PublicMission {
+  return {
+    id: record.id,
+    creator_wallet: walletFingerprint(record.creatorWalletNormalized),
+    current_holder: walletFingerprint(record.currentHolderWalletNormalized),
+    target_label: record.targetLabel,
+    mission_note: record.missionNote,
+    status: record.status,
+    visibility: record.visibility,
+    finalized_hop_count: record.finalizedHopCount,
+    current_sequence: record.currentSequence,
+    created_at: new Date(record.createdAt).toISOString(),
+    arrived_at: record.arrivedAt === null ? null : new Date(record.arrivedAt).toISOString(),
+  };
+}
+
+export function toPublicInvitation(record: InvitationRecord): PublicInvitation {
+  return {
+    id: record.id,
+    mission_id: record.missionId,
+    sequence: record.sequence,
+    candidate_label: record.candidateLabel,
+    candidate_wallet_fingerprint: record.candidateWalletNormalized ? walletFingerprint(record.candidateWalletNormalized) : null,
+    why_you: record.whyYou,
+    status: record.status,
+    expires_at: new Date(record.expiresAt).toISOString(),
+    pass_deadline_at: record.passDeadlineAt === null ? null : new Date(record.passDeadlineAt).toISOString(),
+  };
+}
+
+export class ReachMissionService {
+  private broadcastGuard: (missionId: string) => boolean = () => false;
+
+  constructor(
+    private readonly repository: MissionRepository,
+    private readonly protector: TargetWalletProtector
+  ) {}
+
+  setBroadcastGuard(guard: (missionId: string) => boolean): void {
+    this.broadcastGuard = guard;
+  }
+
+  async createMission(input: {
+    auth: VerifiedWalletAction;
+    targetLabel: string;
+    targetWallet: string;
+    missionNote: string;
+    creatorDisplayLabel?: string;
+    visibility?: MissionVisibility;
+    now?: number;
+  }): Promise<PublicMission> {
+    assertAction(input.auth, "CREATE_MISSION");
+    const now = input.now ?? Date.now();
+    const creator = normalizeNimiqAddress(input.auth.wallet);
+    const target = this.protector.protect(input.targetWallet);
+    if (creator === target.normalized) {
+      throw new MissionValidationError("TARGET_IS_CREATOR", "A mission destination must differ from its creator");
+    }
+    const record: MissionRecord = {
+      id: randomUUID(),
+      creatorWalletNormalized: creator,
+      creatorDisplayLabel: input.creatorDisplayLabel?.trim() || null,
+      currentHolderWalletNormalized: creator,
+      targetLabel: boundedText(input.targetLabel, 1, 60, "targetLabel"),
+      targetWalletCiphertext: target.ciphertext,
+      targetWalletHmac: target.hmac,
+      missionNote: boundedText(input.missionNote, 1, 180, "missionNote"),
+      status: "ACTIVE",
+      visibility: input.visibility ?? "UNLISTED",
+      finalizedHopCount: 0,
+      currentSequence: 0,
+      createdAt: now,
+      arrivedAt: null,
+      cancelledAt: null,
+      updatedAt: now,
+    };
+    return toPublicMission(await this.repository.createMission(record));
+  }
+
+  async getMission(id: string): Promise<PublicMission> {
+    return toPublicMission(await this.requireMission(id));
+  }
+
+  async getMissionRecord(id: string): Promise<MissionRecord> {
+    return this.requireMission(id);
+  }
+
+  async cancelMission(id: string, auth: VerifiedWalletAction, now = Date.now()): Promise<PublicMission> {
+    assertAction(auth, "CANCEL_MISSION", { missionId: id });
+    if (this.broadcastGuard(id)) {
+      throw new MissionValidationError("BROADCAST_IN_FLIGHT", "Mission cannot be cancelled after a transaction broadcast");
+    }
+    return toPublicMission(await this.repository.cancelMissionPristine(id, normalizeNimiqAddress(auth.wallet), now));
+  }
+
+  async createInvitation(input: {
+    missionId: string;
+    auth: VerifiedWalletAction;
+    candidateLabel?: string;
+    candidateWallet?: string;
+    whyYou?: string;
+    now?: number;
+  }): Promise<{ invitation: PublicInvitation; inviteToken: string }> {
+    const mission = await this.requireMission(input.missionId);
+    const sequence = mission.currentSequence + 1;
+    assertAction(input.auth, "CREATE_INVITATION", { missionId: mission.id, sequence });
+    const signer = normalizeNimiqAddress(input.auth.wallet);
+    if (signer !== mission.currentHolderWalletNormalized) {
+      throw new MissionValidationError("WRONG_CURRENT_HOLDER", "Only the canonical current holder can invite the next bridge");
+    }
+    const now = input.now ?? Date.now();
+    const token = randomBytes(32).toString("base64url");
+    const candidateWallet = input.candidateWallet ? normalizeNimiqAddress(input.candidateWallet) : null;
+    const record: InvitationRecord = {
+      id: randomUUID(),
+      missionId: mission.id,
+      sequence,
+      inviterWalletNormalized: signer,
+      candidateLabel: input.candidateLabel ? boundedText(input.candidateLabel, 1, 60, "candidateLabel") : null,
+      candidateWalletNormalized: candidateWallet,
+      candidateDisplayLabel: null,
+      whyYou: input.whyYou ? boundedText(input.whyYou, 1, 120, "whyYou") : null,
+      inviteTokenHash: hashToken(token),
+      status: "INVITED",
+      createdAt: now,
+      expiresAt: now + INVITATION_TTL_MS,
+      acceptedAt: null,
+      passDeadlineAt: null,
+      declinedAt: null,
+      withdrawnAt: null,
+      completedAt: null,
+      closedAt: null,
+    };
+    const created = await this.repository.createInvitation(record);
+    return { invitation: toPublicInvitation(created), inviteToken: token };
+  }
+
+  async getInvitationByToken(token: string): Promise<PublicInvitation> {
+    const record = await this.repository.getInvitationByTokenHash(hashToken(token));
+    if (!record) throw new MissionValidationError("INVITATION_NOT_FOUND", "Invite link is invalid or no longer recognized");
+    return toPublicInvitation(record);
+  }
+
+  async getInvitationRecord(id: string): Promise<InvitationRecord> {
+    const record = await this.repository.getInvitation(id);
+    if (!record) throw new MissionValidationError("INVITATION_NOT_FOUND", `Invitation ${id} does not exist`);
+    return record;
+  }
+
+  async acceptInvitation(input: {
+    token: string;
+    auth: VerifiedWalletAction;
+    candidateDisplayLabel?: string;
+    now?: number;
+  }): Promise<PublicInvitation> {
+    const invitation = await this.requireInvitationToken(input.token);
+    assertAction(input.auth, "ACCEPT_INVITATION", {
+      missionId: invitation.missionId,
+      invitationId: invitation.id,
+      sequence: invitation.sequence,
+    });
+    const wallet = normalizeNimiqAddress(input.auth.wallet);
+    const now = input.now ?? Date.now();
+    const accepted = await this.repository.acceptInvitation(
+      invitation.id,
+      wallet,
+      now,
+      now + ACCEPTED_PASS_DEADLINE_MS
+    );
+    // Display label is intentionally not persisted in Slice 1; it remains an opt-in UI concern.
+    void input.candidateDisplayLabel;
+    return toPublicInvitation(accepted);
+  }
+
+  async declineInvitation(token: string, now = Date.now()): Promise<PublicInvitation> {
+    const invitation = await this.requireInvitationToken(token);
+    return toPublicInvitation(await this.repository.closeInvitation(invitation.id, "DECLINED", now));
+  }
+
+  async withdrawInvitation(id: string, auth: VerifiedWalletAction, now = Date.now()): Promise<PublicInvitation> {
+    const invitation = await this.getInvitationRecord(id);
+    assertAction(auth, "WITHDRAW_INVITATION", {
+      missionId: invitation.missionId,
+      invitationId: invitation.id,
+      sequence: invitation.sequence,
+    });
+    const mission = await this.requireMission(invitation.missionId);
+    if (normalizeNimiqAddress(auth.wallet) !== mission.currentHolderWalletNormalized) {
+      throw new MissionValidationError("WRONG_CURRENT_HOLDER", "Only the current holder can withdraw an invitation");
+    }
+    if (this.broadcastGuard(mission.id)) {
+      throw new MissionValidationError("BROADCAST_IN_FLIGHT", "Invitation cannot be withdrawn after transaction broadcast");
+    }
+    return toPublicInvitation(await this.repository.closeInvitation(id, "WITHDRAWN", now));
+  }
+
+  async expireDueInvitations(now = Date.now()): Promise<number> {
+    return this.repository.expireDueInvitations(now);
+  }
+
+  private async requireMission(id: string): Promise<MissionRecord> {
+    const mission = await this.repository.getMission(id);
+    if (!mission) throw new MissionValidationError("MISSION_NOT_FOUND", `Mission ${id} does not exist`);
+    return mission;
+  }
+
+  private async requireInvitationToken(token: string): Promise<InvitationRecord> {
+    const invitation = await this.repository.getInvitationByTokenHash(hashToken(token));
+    if (!invitation) throw new MissionValidationError("INVITATION_NOT_FOUND", "Invite link is invalid or no longer recognized");
+    return invitation;
+  }
+}
