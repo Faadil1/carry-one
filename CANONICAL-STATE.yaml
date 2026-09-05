@@ -2,13 +2,13 @@ project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: private
-state_version: 0.3.0
+state_version: 0.4.0
 date: 2026-09-04
 
-phase: REACH_MISSION_PRODUCT_LAW_LOCKED
-build_authorized: false
-ux_contract_authorized: true
+phase: REACH_MISSION_UX_STATE_CONTRACT_LOCKED
 problem_locked: true
+full_production_build_authorized: false
+foundation_implementation_authorized: true
 
 team:
   faadil:
@@ -39,166 +39,213 @@ core_product_laws:
 
 product_positioning:
   category: destination_bound_human_routing
-  primary_problem: >-
-    Warm introductions and community routing become opaque after the first handoff;
-    Carry One gives the request a verified chain of custody until it reaches one destination.
-  primary_audience:
-    - builder_and_hackathon_communities
-    - open_source_communities
-    - professional_and_founder_groups
-    - interest_based_online_communities
   working_promise: >-
     Get this to someone you cannot reach directly — one human bridge at a time.
   holder_question: Who can move this one person closer?
   emotional_loop: >-
     I was chosen -> I can move this closer -> I leave a verified place in the path -> I can see if it arrives.
+  primary_audience:
+    - builder_and_hackathon_communities
+    - open_source_communities
+    - professional_and_founder_groups
+    - interest_based_online_communities
 
-collision_scan:
-  nimiq_cycle2_nim_relay:
-    risk: HIGH_FOR_GENERIC_RELAY
-    avoid:
-      - generic_one_coin_journey_positioning
-      - skill_challenges_before_pass
-      - streaks
-      - leaderboards
-      - country_or_map_progression_as_core
-  nimiq_cycle2_ralli:
-    risk: MEDIUM_HIGH_FOR_CHALLENGE_CHAIN
-    avoid:
-      - social_challenge_feed
-      - response_chain_as_core
-      - boosted_reward_pool
-      - creator_tipping_as_core
-  cycle1_62_entry_scan:
-    result: >-
-      Dense in payments, rewards, games, challenges, gifting, bounties, savings,
-      commerce, proof and creator tools; no identified entry uses destination-bound
-      sequential human routing with one canonical transferable baton as its core.
-  white_space: >-
-    A consented, destination-specific referral path whose chain of custody is verified by Nimiq.
-
-mvp_contract:
-  mission_target:
-    target_wallet: required_private_server_side
-    target_label: required
-    mission_note: short
-  invitation:
-    states:
-      - INVITED
-      - ACCEPTED
-      - DECLINED
-      - EXPIRED
-    suggested_expiry_hours: 12
-    accepted_before_payment: true
-  pass:
-    recipient_value_luna: 100000
-    fee_part_of_amount_validation: false
-    canonical_confirmation_states:
-      - PENDING
-      - INCLUDED
-      - FINAL
-    next_pass_unlock: FINAL
-  reroute: invite_another_candidate_before_any_finalized_pass
-  dormant_behavior: display_only_no_clawback_no_reassignment
-  five_screens:
-    - Mission_Home
-    - Create_Mission
-    - Bridge_Invitation
-    - Pass_1_NIM
-    - Route_Arrival
-
-privacy:
-  target_wallet_public: false
-  full_wallet_addresses_in_ui: false
-  participant_names: opt_in_only
-  why_you_visibility: participant_only
-  public_named_target: consent_or_legitimate_public_launch_basis_required
-  active_missions_default: private_or_unlisted
-
-anti_features_cycle2:
-  - mini_games
-  - skill_challenges
-  - xp
-  - streaks
-  - leaderboards
-  - map_as_core_product
-  - prize_pools
-  - wagers
-  - forwarding_rewards
-  - ai_routing
-  - marketplace_matching
-  - auto_next_recipient
-  - unique_human_claims
-  - public_social_feed
-  - multiple_mission_types
-
-technical_baseline:
-  active_pass_intent: one_atomic_intent_per_baton_plus_sequence
-  canonical_order_source: included_transaction_matching_active_intent
-  mempool_order_is_canonical: false
+mvp_state_contract:
+  mission_states:
+    - ACTIVE
+    - ARRIVED
+    - CANCELLED
+  invitation_states:
+    - INVITED
+    - ACCEPTED
+    - DECLINED
+    - EXPIRED
+    - WITHDRAWN
+  hop_states:
+    - PENDING
+    - INCLUDED
+    - FINAL
+    - INVALID
+  one_active_invitation_per_mission: true
+  invitation_expiry_hours: 12
+  accepted_pass_deadline_minutes: 60
   recipient_value_luna: 100000
-  fee_part_of_amount_validation: false
   next_pass_unlock: FINAL
-  known_verified_remediation_evidence:
-    mit_license: pass_on_remediated_branch
-    cancel_after_broadcast_guard: pass_on_remediated_branch
-    stale_intent_cleanup: pass_on_remediated_branch
-    transaction_hash_replay_protection: pass_on_remediated_branch
-    github_actions_ci: pass_on_remediated_branch
-    authoritative_vitest_count_at_verified_run: 42
+  mission_cancel_after_first_final_hop: forbidden
+  cancel_or_reroute_after_broadcast: forbidden_fail_closed
+  arrival_condition: finalized_recipient_equals_private_target_wallet
 
-pr1_integration:
-  number: 1
-  status: BLOCKED_BRANCH_ANCESTRY_RECONCILIATION
-  pr_metadata_head_observed: ecac9cb59231294489ee68d09f8179b9b7c1fa62
-  collaborator_branch_ref_observed: 51185896105878358d30cb5df040c58f65807714
-  merge_attempt: rejected_head_out_of_date
-  compare_to_main: no_common_ancestor_reported
-  rule: >-
-    Do not force merge or overwrite collaborator work. Reconcile ancestry and preserve
-    both the verified remediation and any later collaborator commits before main integration.
+five_screen_contract:
+  - Mission_Home
+  - Create_Mission
+  - Bridge_Invitation
+  - Pass_1_NIM
+  - Route_Arrival
+  spec: docs/REACH-MISSION-UX-STATE-CONTRACT.md
 
-research_evidence:
-  cycle2_scoring:
-    functionality_reliability_usefulness: 45
-    nimiq_integration: 25
-    real_usage: 15
-    design_ux: 10
-    builder_promotion: 5
-  full_usage_threshold_unique_wallets: 25
-  cycle1_entries_scanned: 62
+persistence_contract:
+  spec: docs/REACH-MISSION-PERSISTENCE.sql
+  database_shape: postgres_or_compatible
+  durable_entities:
+    - missions
+    - invitations
+    - hops
+    - participants
+    - auth_challenges
+    - audit_events
+  target_wallet_storage:
+    ciphertext: required
+    keyed_hmac_for_equality: required
+    plaintext_hash_only: forbidden
+  invariants:
+    - one_open_invitation_per_mission
+    - one_hop_sequence_per_mission
+    - global_tx_hash_uniqueness
+    - atomic_finalization_updates_holder_sequence_and_arrival
+
+security_contract:
+  spec: docs/REACH-MISSION-SECURITY-AUTH.md
+  nimiq_wallet_auth:
+    provider_method: sign
+    canonical_domain: carry-one:v1
+    challenge_ttl_minutes: 5
+    one_time_nonce: true
+    verify_public_key_to_claimed_wallet: true
+  signed_actions:
+    - CREATE_MISSION
+    - CREATE_INVITATION
+    - ACCEPT_INVITATION
+    - WITHDRAW_INVITATION
+    - AUTHORIZE_PASS
+    - CANCEL_MISSION
+  invite_token:
+    entropy_bits_minimum: 256
+    server_storage: hash_only
+    default_ttl_hours: 12
+    bearer_power: locate_invitation_and_low_risk_decline_only
+    acceptance_requires_wallet_signature: true
+  target_wallet_api_public: false
+
+api_contract:
+  spec: docs/REACH-MISSION-API-CONTRACT.md
+  public_target_wallet_field: forbidden
+  normal_wallet_rendering: fingerprint_only
+  mutation_idempotency: required
+  target_wallet_allowed_client_response: >-
+    Never as mission target metadata. A recipient wallet may be returned only to the authenticated
+    current holder inside a server-authorized pass intent after a bridge has accepted.
+
+test_contract:
+  spec: docs/REACH-MISSION-TEST-MATRIX.md
+  required_families:
+    - mission_creation
+    - invitation_single_open_rule
+    - accept_decline_expiry_withdraw
+    - holder_signature_authorization
+    - pass_and_finality
+    - target_arrival
+    - reroute
+    - mission_cancellation
+    - privacy_redaction
+    - invite_token_threats
+    - five_screen_state_assertions
+    - real_usage_instrumentation
+
+backend_integration:
+  original_pr: 1
+  original_branch: feat/carry-one-spike-v2
+  latest_collaborator_head_imported: 93cc22675b7912e2e56e7133f1024431c3a12a04
+  reconciliation_pr: 3
+  reconciliation_branch: integration/backend-spike-reconciled
+  reconciliation_head: 93434d93cf60756b79e6820d9311ca0cd0c20382
+  reconciliation_merge_sha: 147d79c67d73c5563304f9c0ba6e136cd1201bb2
+  reconciliation_status: MERGED_TO_MAIN
+  method: >-
+    Rebuilt the collaborator backend tree on top of canonical main ancestry, preserving the
+    Reach Mission product-law documents and avoiding force-merge/overwrite of collaborator history.
+  ci:
+    pull_request_run_id: 33931435087
+    conclusion: success
+    node: 22
+    npm_ci: pass
+    typecheck: pass
+    tests: pass
+    build: pass
+    test_files: 6
+    authoritative_vitest_tests: 44
+  note: >-
+    44 is the current independently verified test count on the reconciled backend. Do not cite
+    the earlier collaborator-reported 76 as independently verified.
+
+collision_guardrails:
+  avoid:
+    - generic_one_coin_journey_positioning
+    - mini_games
+    - skill_challenges
+    - xp
+    - streaks
+    - leaderboards
+    - map_as_core_product
+    - prize_pools
+    - wagers
+    - forwarding_rewards
+    - ai_routing
+    - marketplace_matching
+    - auto_next_recipient
+    - unique_human_claims
+    - public_social_feed
+    - multiple_mission_types
 
 current_gate:
-  name: CARRY_ONE_REACH_MISSION_PRODUCT_LAW_VALIDATION
+  name: CARRY_ONE_REACH_MISSION_UX_AND_STATE_CONTRACT
   owner: Faadil
-  spec: docs/REACH-MISSION-PRODUCT-LAW.md
   status: PASS
+  deliverables:
+    exact_five_screen_wire_contract: PASS
+    mission_and_invitation_persistence_schema: PASS
+    holder_authorization_or_signature_scheme: PASS
+    invite_token_threat_model: PASS
+    target_wallet_privacy_api_contract: PASS
+    accept_decline_expiry_target_arrival_test_matrix: PASS
+    pr1_ancestry_reconciliation: PASS_VIA_PR3
 
 next_gate:
-  name: CARRY_ONE_REACH_MISSION_UX_AND_STATE_CONTRACT
+  name: CARRY_ONE_FOUNDATION_IMPLEMENTATION_SLICE_1
   status: READY
-  deliverables:
-    - exact_five_screen_wire_contract
-    - mission_and_invitation_persistence_schema
-    - holder_authorization_or_signature_scheme
-    - invite_token_threat_model
-    - target_wallet_privacy_api_contract
-    - accept_decline_expiry_target_arrival_test_matrix
-    - pr1_ancestry_reconciliation
+  authorized_scope:
+    - durable_persistence_adapter_and_migrations
+    - wallet_signature_challenge_verifier
+    - mission_create_read_cancel_service
+    - single_active_invitation_create_accept_decline_withdraw_expiry
+    - target_wallet_encryption_hmac_and_api_redaction
+    - integrate_existing_relay_pass_service_with_mission_invitation_ids
+    - automate_security_critical_tests_from_contract
+  blocked_scope:
+    - full_visual_frontend_polish
+    - public_early_access
+    - mainnet_cutover
+    - marketing_launch
+  exit_criteria:
+    - restart_recovery_proven
+    - signature_replay_protection_proven
+    - target_wallet_not_exposed
+    - invitation_race_fail_closed
+    - all_existing_44_tests_still_green
+    - new_foundation_tests_green
+    - ci_typecheck_test_build_green
 
 pre_public_followups:
-  - durable persistence before real multi-user production
-  - cryptographically authorize write endpoints before public production use
-  - regenerate package-lock metadata after MIT package metadata change
   - perform secret scan before repository publication
+  - regenerate package-lock metadata if licensing metadata remains stale
   - deliberate mainnet RPC and network-policy cutover
+  - complete real-user privacy review
+  - complete Early Access deployment hardening
 
 blocked:
-  - full frontend_or_production_build_before_next_gate
-  - force_merging_pr1
+  - public_repository_before_secret_scan_and_intentional_early_access_opening
+  - mainnet_funds_before_explicit_cutover_gate
   - prizes_or_wagering
   - pooled_funds
   - autonomous_ai_spend
   - marketplace_expansion
   - unique_human_claims
-  - public_repository_before_secret_scan_and_intentional_early_access_opening
