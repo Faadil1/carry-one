@@ -1,4 +1,5 @@
 export type MissionStatus = "ACTIVE" | "ARRIVED" | "CANCELLED";
+export type MissionActivity = "ACTIVE" | "STALLED" | "TERMINAL";
 export type MissionVisibility = "UNLISTED" | "PRIVATE" | "PUBLIC";
 export type InvitationStatus = "INVITED" | "ACCEPTED" | "DECLINED" | "EXPIRED" | "WITHDRAWN" | "COMPLETED";
 export type ChallengeStatus = "ISSUED" | "USED" | "EXPIRED";
@@ -28,6 +29,8 @@ export interface MissionRecord {
   targetLabel: string;
   targetWalletCiphertext: string;
   targetWalletHmac: string;
+  /** Cycle-II MVP requires a known destination that explicitly consented to be the target. */
+  targetConsentConfirmed: boolean;
   missionNote: string;
   status: MissionStatus;
   visibility: MissionVisibility;
@@ -80,13 +83,21 @@ export interface PublicMission {
   creator_wallet: string;
   current_holder: string;
   target_label: string;
+  /** Boolean disclosure only; the target wallet itself remains private. */
+  target_consent_confirmed: boolean;
   mission_note: string;
   status: MissionStatus;
+  activity: MissionActivity;
   visibility: MissionVisibility;
   finalized_hop_count: number;
   current_sequence: number;
   created_at: string;
+  last_activity_at: string;
   arrived_at: string | null;
+  /** Following is social retention, not custody or a reward mechanic. */
+  route_following_available: boolean;
+  /** A stalled route may inspire a new mission; the old baton is never clawed back. */
+  stalled_restart_available: boolean;
 }
 
 export interface PublicInvitation {
