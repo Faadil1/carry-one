@@ -1,0 +1,115 @@
+export type MissionStatus = "ACTIVE" | "ARRIVED" | "CANCELLED";
+export type MissionVisibility = "UNLISTED" | "PRIVATE" | "PUBLIC";
+export type InvitationStatus = "INVITED" | "ACCEPTED" | "DECLINED" | "EXPIRED" | "WITHDRAWN" | "COMPLETED";
+export type ChallengeStatus = "ISSUED" | "USED" | "EXPIRED";
+
+export type MissionAction =
+  | "CREATE_MISSION"
+  | "CREATE_INVITATION"
+  | "ACCEPT_INVITATION"
+  | "WITHDRAW_INVITATION"
+  | "AUTHORIZE_PASS"
+  | "CANCEL_MISSION";
+
+export interface VerifiedWalletAction {
+  wallet: string;
+  action: MissionAction;
+  missionId?: string;
+  invitationId?: string;
+  sequence?: number;
+  challengeId?: string;
+}
+
+export interface MissionRecord {
+  id: string;
+  creatorWalletNormalized: string;
+  creatorDisplayLabel: string | null;
+  currentHolderWalletNormalized: string;
+  targetLabel: string;
+  targetWalletCiphertext: string;
+  targetWalletHmac: string;
+  missionNote: string;
+  status: MissionStatus;
+  visibility: MissionVisibility;
+  finalizedHopCount: number;
+  currentSequence: number;
+  createdAt: number;
+  arrivedAt: number | null;
+  cancelledAt: number | null;
+  updatedAt: number;
+}
+
+export interface InvitationRecord {
+  id: string;
+  missionId: string;
+  sequence: number;
+  inviterWalletNormalized: string;
+  candidateLabel: string | null;
+  candidateWalletNormalized: string | null;
+  candidateDisplayLabel: string | null;
+  whyYou: string | null;
+  inviteTokenHash: string;
+  status: InvitationStatus;
+  createdAt: number;
+  expiresAt: number;
+  acceptedAt: number | null;
+  passDeadlineAt: number | null;
+  declinedAt: number | null;
+  withdrawnAt: number | null;
+  completedAt: number | null;
+  closedAt: number | null;
+}
+
+export interface AuthChallengeRecord {
+  id: string;
+  walletNormalized: string;
+  action: MissionAction;
+  missionId: string | null;
+  invitationId: string | null;
+  sequence: number;
+  nonceHash: string;
+  canonicalMessage: string;
+  status: ChallengeStatus;
+  expiresAt: number;
+  usedAt: number | null;
+  createdAt: number;
+}
+
+export interface PublicMission {
+  id: string;
+  creator_wallet: string;
+  current_holder: string;
+  target_label: string;
+  mission_note: string;
+  status: MissionStatus;
+  visibility: MissionVisibility;
+  finalized_hop_count: number;
+  current_sequence: number;
+  created_at: string;
+  arrived_at: string | null;
+}
+
+export interface PublicInvitation {
+  id: string;
+  mission_id: string;
+  sequence: number;
+  candidate_label: string | null;
+  candidate_wallet_fingerprint: string | null;
+  why_you: string | null;
+  status: InvitationStatus;
+  expires_at: string;
+  pass_deadline_at: string | null;
+}
+
+export interface MissionStoreSnapshot {
+  missions: MissionRecord[];
+  invitations: InvitationRecord[];
+  challenges: AuthChallengeRecord[];
+}
+
+export class MissionValidationError extends Error {
+  constructor(public reason: string, message: string) {
+    super(message);
+    this.name = "MissionValidationError";
+  }
+}
