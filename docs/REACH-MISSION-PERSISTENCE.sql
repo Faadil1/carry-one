@@ -1,0 +1,173 @@
+-- Carry One — Reach Mission persistence contract
+-- PostgreSQL-oriented reference schema for the Cycle II MVP.
+-- This is a contract, not a migration to run blindly in production.
+
+CREATE TYPE mission_status AS ENUM ('ACTIVE', 'ARRIVED', 'CANCELLED');
+CREATE TYPE mission_visibility AS ENUM ('UNLISTED', 'PRIVATE', 'PUBLIC');
+CREATE TYPE invitation_status AS ENUM ('INVITED', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'WITHDRAWN');
+CREATE TYPE hop_status AS ENUM ('PENDING', 'INCLUDED', 'FINAL', 'INVALID');
+CREATE TYPE challenge_status AS ENUM ('ISSUED', 'USED', 'EXPIRED');
+
+CREATE TABLE missions (
+  id uuid PRIMARY KEY,
+  creator_wallet_normalized text NOT NULL,
+  creator_display_label text,
+  current_holder_wallet_normalized text NOT NULL,
+  target_label text NOT NULL CHECK (char_length(target_label) BETWEEN 1 AND 60),
+  target_wallet_ciphertext bytea NOT NULL,
+  target_wallet_hmac text NOT NULL,
+  mission_note text NOT NULL CHECK (char_length(mission_note) BETWEEN 1 AND 180),
+  status mission_status NOT NULL DEFAULT 'ACTIVE',
+  visibility mission_visibility NOT NULL DEFAULT 'UNLISTED',
+  finalized_hop_count integer NOT NULL DEFAULT 0 CHECK (finalized_hop_count >= 0),
+  current_sequence integer NOT NULL DEFAULT 0 CHECK (current_sequence >= 0),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  arrived_at timestamptz,
+  cancelled_at timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (creator_wallet_normalized <> ''),
+  CHECK (current_holder_wallet_normalized <> ''),
+  CHECK ((status = 'ARRIVED' AND arrived_at IS NOT NULL) OR status <> 'ARRIVED')
+);
+
+CREATE UNIQUE INDEX missions_target_hmac_lookup
+  ON missions (id, target_wallet_hmac);
+
+CREATE TABLE invitations (
+  id uuid PRIMARY KEY,
+  mission_id uuid NOT NULL REFERENCES missions(id) ON DELETE CASCADE,
+  sequence integer NOT NULL CHECK (sequence >= 1),
+  inviter_wallet_normalized text NOT NULL,
+  candidate_label text,
+  candidate_wallet_normalized text,
+  candidate_display_label text,
+  why_you text CHECK (why_you IS NULL OR char_length(why_you) <= 120),
+  invite_token_hash text NOT NULL UNIQUE,
+  status invitation_status NOT NULL DEFAULT 'INVITED',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  accepted_at timestamptz,
+  pass_deadline_at timestamptz,
+  declined_at timestamptz,
+  withdrawn_at timestamptz,
+  closed_at timestamptz,
+  CHECK ((status = 'ACCEPTED' AND candidate_wallet_normalized IS NOT NULL AND accepted_at IS NOT NULL)
+      OR status <> 'ACCEPTED')
+);
+
+-- One active/non-terminal invitation per mission.
+CREATE UNIQUE INDEX one_open_invitation_per_mission
+  ON invitations (mission_id)
+  WHERE status IN ('INVITED', 'ACCEPTED');
+
+CREATE UNIQUE INDEX one_invitation_sequence_per_mission
+  ON invitations (mission_id, sequence);
+
+CREATE TABLE hops (
+  id uuid PRIMARY KEY,
+  mission_id uuid NOT NULL REFERENCES missions(id) ON DELETE CASCADE,
+  invitation_id uuid NOT NULL REFERENCES invitations(id),
+  sequence integer NOT NULL CHECK (sequence >= 1),
+  sender_wallet_normalized text NOT NULL,
+  recipient_wallet_normalized text NOT NULL,
+  tx_hash text,
+  recipient_value_luna bigint,
+  status hop_status NOT NULL DEFAULT 'PENDING',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  included_at timestamptz,
+  finalized_at timestamptz,
+  invalidated_at timestamptz,
+  invalid_reason text,
+  CHECK (sender_wallet_normalized <> recipient_wallet_normalized),
+  CHECK (recipient_value_luna IS NULL OR recipient_value_luna = 100000),
+  CHECK ((status = 'FINAL' AND tx_hash IS NOT NULL AND finalized_at IS NOT NULL AND recipient_value_luna = 100000)
+      OR status <> 'FINAL')
+);
+
+CREATE UNIQUE INDEX one_hop_sequence_per_mission
+  ON hops (mission_id, sequence);
+
+CREATE UNIQUE INDEX global_tx_hash_replay_guard
+  ON hops (tx_hash)
+  WHERE tx_hash IS NOT NULL;
+
+CREATE TABLE participants (
+  mission_id uuid NOT NULL REFERENCES missions(id) ON DELETE CASCADE,
+  wallet_normalized text NOT NULL,
+  display_label text,
+  display_name_opt_in boolean NOT NULL DEFAULT false,
+  first_final_sequence integer,
+  joined_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (mission_id, wallet_normalized)
+);
+
+CREATE TABLE auth_challenges (
+  id uuid PRIMARY KEY,
+  wallet_normalized text NOT NULL,
+  action text NOT NULL,
+  mission_id uuid REFERENCES missions(id) ON DELETE CASCADE,
+  invitation_id uuid REFERENCES invitations(id) ON DELETE CASCADE,
+  nonce_hash text NOT NULL UNIQUE,
+  canonical_message text NOT NULL,
+  status challenge_status NOT NULL DEFAULT 'ISSUED',
+  expires_at timestamptz NOT NULL,
+  used_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX auth_challenge_lookup
+  ON auth_challenges (wallet_normalized, action, status, expires_at);
+
+CREATE TABLE audit_events (
+  id bigserial PRIMARY KEY,
+  mission_id uuid REFERENCES missions(id) ON DELETE CASCADE,
+  invitation_id uuid REFERENCES invitations(id) ON DELETE SET NULL,
+  hop_id uuid REFERENCES hops(id) ON DELETE SET NULL,
+  actor_wallet_normalized text,
+  event_type text NOT NULL,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Persistence invariants to enforce in service-layer transactions:
+--
+-- A. CREATE_INVITATION
+--    SELECT mission FOR UPDATE;
+--    require mission.status = ACTIVE;
+--    require signer = current_holder;
+--    require no open invitation;
+--    insert invitation(sequence = current_sequence + 1).
+--
+-- B. ACCEPT_INVITATION
+--    SELECT invitation + mission FOR UPDATE;
+--    require invitation.status = INVITED and now() < expires_at;
+--    bind first authenticated candidate wallet;
+--    set ACCEPTED, accepted_at, pass_deadline_at = now()+60min.
+--
+-- C. CREATE_PASS_INTENT / RECORD_BROADCAST
+--    SELECT mission + invitation FOR UPDATE;
+--    require signer = current_holder;
+--    require invitation = ACCEPTED and before pass_deadline_at;
+--    bind recipient exactly to candidate_wallet_normalized.
+--
+-- D. FINALIZE_HOP
+--    one DB transaction:
+--      verify hop currently PENDING/INCLUDED;
+--      set hop FINAL;
+--      increment mission.current_sequence and finalized_hop_count;
+--      set mission.current_holder_wallet_normalized = recipient;
+--      close invitation;
+--      if HMAC(normalized recipient) == target_wallet_hmac:
+--          set mission.status = ARRIVED, arrived_at = now();
+--      insert/refresh participant record;
+--      append audit event.
+--
+-- E. DECLINE / EXPIRE / WITHDRAW / INVALID
+--    close invitation/hop deterministically;
+--    never mutate mission.current_holder_wallet_normalized;
+--    never increment current_sequence or finalized_hop_count.
+--
+-- Target privacy:
+-- - Encrypt target wallet with an application-level encryption key.
+-- - Store a keyed HMAC of the normalized wallet for equality checks.
+-- - Never use a plain unsalted hash: Nimiq addresses are enumerable/public and a plain hash would not provide meaningful confidentiality.
