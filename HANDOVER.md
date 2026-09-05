@@ -1,7 +1,7 @@
 # HANDOVER — Carry One
 
 Date: 2026-09-05  
-State: `MVP_VERTICAL_SLICE_1_BLINDSPOT_HARDENING_VERIFIED`
+State: `MVP_VERTICAL_SLICE_1_BLINDSPOT_HARDENING_MERGED`
 
 ## Product
 
@@ -24,10 +24,11 @@ One verified 1-NIM baton moves through consenting human bridges until the define
 9. A stalled mission never reassigns/claws back the baton.
 10. Reach Mission uses mandatory opaque on-chain hop commitments, not clear mission/sequence tags.
 
-## Blind-spot hardening — PR #7
+## Blind-spot hardening — COMPLETE
 
-Branch: `mvp/blindspot-hardening`  
-PR: **#7 — Harden Carry One blind spots before vertical slice**
+PR **#7 — Harden Carry One blind spots before vertical slice** merged to `main`.
+
+Merge SHA: `c35389047639b7ba8b7a1ebad240ec30fcce07cc`
 
 ### P0 resolved in code/contracts
 
@@ -37,11 +38,11 @@ PR: **#7 — Harden Carry One blind spots before vertical slice**
 
 **Multi-account sender mismatch** — Mini App payment preflights `listAccounts()` for the canonical expected holder. The send API cannot force a sender account, so this remains UX protection only; independent on-chain sender verification is authoritative.
 
-**On-chain metadata privacy** — Reach Mission pass intents now bind a required opaque `co:v1:<sha256-base64url>` commitment <=64 bytes to mission/sequence/holder/recipient/random nonce. Missing/wrong commitment is rejected. Legacy clear-text tags remain only for relay-spike compatibility and the Reach Mission client refuses them.
+**On-chain metadata privacy** — Reach Mission pass intents bind a required opaque `co:v1:<sha256-base64url>` commitment <=64 bytes to mission/sequence/holder/recipient/random nonce. Missing/wrong commitment is rejected. Legacy clear-text tags remain only for relay-spike compatibility and the Reach Mission client refuses them.
 
 ### P1/P2 resolved or bounded
 
-- `mission_note` is now the human purpose/ask: **Why should this reach them?**
+- `mission_note` is the human purpose/ask: **Why should this reach them?**
 - former participants can follow the route read-only where authorized; ARRIVED may offer `Start your own mission`; no gamification.
 - native Nimiq Pay private invite deeplink builder added.
 - finalized route wallet reuse blocked (`ROUTE_WALLET_REUSE`).
@@ -52,55 +53,49 @@ PR: **#7 — Harden Carry One blind spots before vertical slice**
 
 ## Verification
 
-Latest code-bearing CI run: **33950354706**  
-Verified head: `e94e2ca9348be10e738ec27ab510bc8eb9642ec5`
-
+Code-bearing CI:
+- run **33950354706**
+- head `e94e2ca9348be10e738ec27ab510bc8eb9642ec5`
 - npm ci ✅
 - strict TypeScript ✅
 - **66/66 Vitest tests across 13 files ✅**
 - build ✅
 
-Pre-hardening authoritative count was 56, so this block adds 10 automated tests while preserving the existing baseline.
+Final full PR-head CI after README/contracts/canonical-state updates:
+- run **33950458528**
+- head `e3b5d56d29e9cf4ee8d79a578a4dbdbd70e1295e`
+- install ✅
+- typecheck ✅
+- tests ✅
+- build ✅
 
-New automated proofs include:
-- target consent required;
-- STALLED does not change custody;
-- opaque commitment mandatory/exact/<=64 bytes/no clear mission id;
-- route-loop rejection;
-- expected-holder Nimiq Pay preflight;
-- explicit zero-fee request;
-- RPC fallback + verification-delay behavior;
-- native invite deeplink construction;
-- privacy-safe usage aggregation;
-- restart recovery preserves opaque pass commitment.
+Pre-hardening authoritative count was 56; the block adds 10 automated tests with no baseline regression. **66 is now the authoritative automated test count.**
+
+New automated proofs include target consent, STALLED/no custody mutation, opaque commitment strictness, route-loop rejection, expected-holder wallet preflight, zero-fee request shape, RPC fallback/verification delay, Nimiq Pay invite deeplink construction, privacy-safe usage aggregation and restart persistence of opaque pass intent.
 
 ## Runtime validations deliberately NOT claimed PASS
 
-These cannot be proven by repository CI alone and remain explicit vertical-slice gates:
+These remain explicit vertical-slice gates and require actual Nimiq Pay/testnet/device execution:
 
-1. real Nimiq Pay multi-account session uses/identifies the canonical holder correctly;
-2. a wallet funded with **exactly 1 NIM** successfully forwards exactly 1 NIM with recipient data and explicit fee 0;
+1. multi-account Nimiq Pay session identifies/uses the canonical holder correctly;
+2. a wallet funded with **exactly 1 NIM** forwards exactly 1 NIM with recipient data and explicit fee 0;
 3. native Nimiq Pay invite deeplink launches the intended private invite screen on a real device.
-
-Do not report these three as complete until executed on actual Nimiq Pay/testnet.
 
 ## Privacy reality
 
 Target wallet remains encrypted/HMAC'd and redacted from normal APIs. Opaque recipient data removes unnecessary clear-text mission metadata, but Carry One does **not** claim blockchain transaction anonymity: sender, recipient, value and transaction existence remain public.
 
-## Persistence
+## Persistence boundary
 
-Foundation local durability remains proven. PostgreSQL schema/migration now include target-consent enforcement and durable opaque `recipient_data` on pass intents; participant uniqueness is the production DB-level route-loop invariant.
-
-Production multi-instance PostgreSQL repository/row-lock implementation is still pending.
+Local restart durability remains proven. PostgreSQL schema/migration now encode target-consent enforcement and opaque recipient data on pass intents; participant uniqueness is the intended production DB-level route-loop guard. Production multi-instance PostgreSQL repository/row-lock implementation is still pending.
 
 ## Current gate
 
-`CARRY_ONE_BLINDSPOT_HARDENING = PASS_PENDING_FINAL_FULL_HEAD_CI_AND_PR7_MERGE`
+`CARRY_ONE_BLINDSPOT_HARDENING = PASS`
 
-## NEXT EXACT GATE after PR #7 merge
+## NEXT EXACT GATE
 
-`CARRY_ONE_MVP_VERTICAL_SLICE_1`
+`CARRY_ONE_MVP_VERTICAL_SLICE_1 = READY`
 
 Scope:
 1. production PostgreSQL repository + migration runner;
