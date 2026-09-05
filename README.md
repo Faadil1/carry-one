@@ -1,45 +1,61 @@
 # Carry One
 
-Carry One is a Nimiq Cycle II social relay prototype where **1 NIM acts as the baton**.
+Carry One is a **destination-bound human routing Mini App** for Nimiq Cycle II:
 
-The current holder passes exactly 1 NIM to the next wallet. A verified transaction advances the canonical relay, and the recipient becomes the next holder.
+> **Get this to someone you cannot reach directly — one human bridge at a time.**
 
-## Current phase
+One verified **1 NIM** baton moves through consenting human bridges until the defined destination becomes the finalized recipient. Each holder chooses the next person who can move the mission closer.
 
-**PRE-BUILD / W0→W5 TECHNICAL SPIKE**
+## Product laws
 
-This repository is private during early collaboration and validation. Full product production is not yet authorized.
+- **The baton is a verified 1-NIM handoff** — not an investment, wager, prize pool or unique-human proof.
+- **Every mission has a destination.** Cycle-II missions use a known target wallet and require creator-attested target consent.
+- **No one becomes a bridge by surprise.** Invitation acceptance happens before payment.
+- **Only FINAL changes custody.** A reported tx hash, mempool observation or acceptance never advances the route.
+- **The path is the product.** No XP, streaks, leaderboards, forwarding rewards or AI routing.
+- **No clawback.** An inactive route may display STALLED, but the baton is never reassigned automatically.
+- **No route loops.** A wallet already in the finalized path cannot re-enter the same mission.
 
-## Core product law
+## Five-screen MVP
 
-> THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT, WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
+1. Mission Home
+2. Create Mission
+3. Bridge Invitation
+4. Pass 1 NIM
+5. Route / Arrival
+
+## Security and Nimiq integration
+
+- Nimiq wallet signatures authorize holder-sensitive actions.
+- Target wallet is encrypted with AES-256-GCM and matched at arrival with a separate keyed HMAC-SHA256.
+- Reach Mission transactions require an opaque `co:v1:<commitment>` recipient-data value rather than exposing mission/sequence identifiers in clear text.
+- Recipient value is exactly **100,000 Luna = 1 NIM**; the Cycle-II client requests **fee 0** so a bridge holding exactly the received 1 NIM can forward it intact.
+- Client preflights that the canonical holder wallet exists in the Nimiq Pay session; the backend still independently verifies the actual on-chain sender.
+- Multiple read RPC endpoints can be configured; infrastructure outages surface as `VERIFICATION_DELAYED`, never as a false custody change.
+
+## Current build state
+
+Foundation Slice 1 is merged. It includes durable restart-proof local adapters, mission/invitation services, wallet authorization, target privacy, relay-to-mission finality projection and PostgreSQL-oriented migration contracts.
+
+Blind-spot hardening is being integrated before the MVP vertical slice. CI currently verifies the baseline plus target-consent, stalled-route, route-loop, opaque-commitment, wallet-preflight, RPC-fallback, deeplink and privacy-safe usage-evidence tests.
+
+Public Early Access and mainnet remain blocked until the vertical flow, production PostgreSQL adapter, production HTTP bindings, secret/privacy hardening and real Nimiq Pay runtime tests pass.
 
 ## Team
 
 - **Faadil Boussari** — repo owner / product lead
-- **Opeyemi** — collaborator / technical lead (GitHub handle pending)
+- **Opeyemi (`opeblow`)** — collaborator / technical lead
 
-Collaboration alignment confirmed by email: joint Cycle II concept, team submission, no solo build/submission of the same concept, and 50/50 prize split while both contributors carry their planned responsibilities through submission. If either collaborator steps away, the split is revisited in writing before submission.
+Current collaboration alignment: joint Cycle II concept and team submission; prize split 50/50 while both contributors carry planned responsibilities through submission, revisited in writing if either party steps away.
 
-## Technical decisions frozen for the spike
+## Source of truth
 
-- One atomic active pass intent per `baton + sequence`, bound to intended recipient + nonce.
-- Canonical hop = valid included transaction matching the active intent; mempool observation order is not canonical.
-- Exactly 1 NIM means **recipient receives 100,000 Luna**; fee is separate.
-- State progression: `PENDING → INCLUDED → FINAL`.
-- Next canonical pass unlocks only after `FINAL` during the spike.
-- A relay may display as `DORMANT` after inactivity without claw-back or automatic reassignment.
-- Invalid/stale/duplicate/wrong-value transfers never advance canonical state.
+- [`CANONICAL-STATE.yaml`](CANONICAL-STATE.yaml)
+- [`HANDOVER.md`](HANDOVER.md)
+- [`docs/REACH-MISSION-PRODUCT-LAW.md`](docs/REACH-MISSION-PRODUCT-LAW.md)
+- [`docs/REACH-MISSION-UX-STATE-CONTRACT.md`](docs/REACH-MISSION-UX-STATE-CONTRACT.md)
+- [`docs/REACH-MISSION-SECURITY-AUTH.md`](docs/REACH-MISSION-SECURITY-AUTH.md)
+- [`docs/REACH-MISSION-API-CONTRACT.md`](docs/REACH-MISSION-API-CONTRACT.md)
+- [`docs/REACH-MISSION-TEST-MATRIX.md`](docs/REACH-MISSION-TEST-MATRIX.md)
 
-## First gate
-
-See [`docs/W0-W5-SPIKE.md`](docs/W0-W5-SPIKE.md).
-
-## Repository state
-
-Canonical continuity is stored in [`CANONICAL-STATE.yaml`](CANONICAL-STATE.yaml) and [`HANDOVER.md`](HANDOVER.md).
-
----
-
-Working title: **Carry One**  
 Target: **Nimiq Mini Apps Competition — Cycle II**
