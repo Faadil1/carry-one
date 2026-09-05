@@ -1,95 +1,87 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const sendBasicTransaction = vi.fn();
+const listAccounts = vi.fn();
 const sendBasicTransactionWithData = vi.fn();
 
 vi.mock("@nimiq/mini-app-sdk", () => ({
-  init: vi.fn(async () => ({
-    sendBasicTransaction,
-    sendBasicTransactionWithData,
-  })),
+  init: vi.fn(async () => ({ listAccounts, sendBasicTransactionWithData })),
 }));
 
-// Imported after the mock so MiniAppSdkPayProvider picks up the mocked `init`.
-const { MiniAppSdkPayProvider } = await import("../../src/nimiq/pay-provider.js");
-const { UserCancelledPaymentError } = await import("../../src/nimiq/pay-provider.js");
+const { MiniAppSdkPayProvider, MockPayProvider, UserCancelledPaymentError, WrongWalletSelectionError } = await import(
+  "../../src/nimiq/pay-provider.js"
+);
 
 const VALID_HASH = "a".repeat(64);
+const HOLDER = "NQ11 HOLDER";
+const RECIPIENT = "NQ22 RECIPIENT";
+const DATA = `co:v1:${"x".repeat(43)}`;
+const canonicalRequest = {
+  expectedSender: HOLDER,
+  recipient: RECIPIENT,
+  amountLuna: 100_000,
+  data: DATA,
+};
 
-describe("MiniAppSdkPayProvider (client-side Nimiq Pay wallet integration)", () => {
+describe("MiniAppSdkPayProvider", () => {
   beforeEach(() => {
-    sendBasicTransaction.mockReset();
+    listAccounts.mockReset();
     sendBasicTransactionWithData.mockReset();
+    listAccounts.mockResolvedValue([HOLDER]);
   });
 
-  it("resolves with the tx hash on a successful send without data", async () => {
-    sendBasicTransaction.mockResolvedValue(VALID_HASH);
-    const provider = new MiniAppSdkPayProvider();
-
-    const result = await provider.sendPass({ recipient: "NQ_R", amountLuna: 100_000 });
-
-    expect(result.txHash).toBe(VALID_HASH);
-    expect(sendBasicTransaction).toHaveBeenCalledWith({ recipient: "NQ_R", value: 100_000, validityStartHeight: undefined });
-    expect(sendBasicTransactionWithData).not.toHaveBeenCalled();
-  });
-
-  it("uses sendBasicTransactionWithData when a baton tag is provided", async () => {
+  it("preflights the canonical holder and explicitly requests a zero-fee 1 NIM data transaction", async () => {
     sendBasicTransactionWithData.mockResolvedValue(VALID_HASH);
     const provider = new MiniAppSdkPayProvider();
-
-    const result = await provider.sendPass({
-      recipient: "NQ_R",
-      amountLuna: 100_000,
-      data: "carryone:baton-1:1",
-    });
+    const result = await provider.sendPass(canonicalRequest);
 
     expect(result.txHash).toBe(VALID_HASH);
+    expect(listAccounts).toHaveBeenCalledTimes(1);
     expect(sendBasicTransactionWithData).toHaveBeenCalledWith({
-      recipient: "NQ_R",
+      recipient: RECIPIENT,
       value: 100_000,
-      data: "carryone:baton-1:1",
+      fee: 0,
+      data: DATA,
       validityStartHeight: undefined,
     });
   });
 
-  it("surfaces a cancelled/rejected native approval as UserCancelledPaymentError, not a silent hash", async () => {
-    sendBasicTransaction.mockResolvedValue({ error: { type: "USER_REJECTED", message: "dismissed" } });
+  it("fails before payment when the canonical holder wallet is not available in the session", async () => {
+    listAccounts.mockResolvedValue(["NQ99 OTHER"]);
     const provider = new MiniAppSdkPayProvider();
-
-    await expect(provider.sendPass({ recipient: "NQ_R", amountLuna: 100_000 })).rejects.toBeInstanceOf(
-      UserCancelledPaymentError
-    );
+    await expect(provider.sendPass(canonicalRequest)).rejects.toBeInstanceOf(WrongWalletSelectionError);
+    expect(sendBasicTransactionWithData).not.toHaveBeenCalled();
   });
 
-  it("refuses to silently treat a non-hash return value as a transaction hash", async () => {
-    // Guards against the SDK's ambiguous "returns the serialized transaction"
-    // doc comment actually meaning something other than a hash.
-    sendBasicTransaction.mockResolvedValue("not-a-real-hash");
+  it("rejects clear-text/legacy data and non-zero-fee canonical passes", async () => {
     const provider = new MiniAppSdkPayProvider();
+    await expect(provider.sendPass({ ...canonicalRequest, data: "carryone:mission:1" })).rejects.toThrow(/opaque co:v1/);
+    await expect(provider.sendPass({ ...canonicalRequest, feeLuna: 1 })).rejects.toThrow(/zero-luna/);
+  });
 
-    await expect(provider.sendPass({ recipient: "NQ_R", amountLuna: 100_000 })).rejects.toThrow(
-      /doesn't look like a transaction hash/
-    );
+  it("surfaces a cancelled native approval as UserCancelledPaymentError", async () => {
+    sendBasicTransactionWithData.mockResolvedValue({ error: { type: "USER_REJECTED", message: "dismissed" } });
+    const provider = new MiniAppSdkPayProvider();
+    await expect(provider.sendPass(canonicalRequest)).rejects.toBeInstanceOf(UserCancelledPaymentError);
+  });
+
+  it("refuses a non-hash provider return value", async () => {
+    sendBasicTransactionWithData.mockResolvedValue("not-a-real-hash");
+    const provider = new MiniAppSdkPayProvider();
+    await expect(provider.sendPass(canonicalRequest)).rejects.toThrow(/doesn't look like a transaction hash/);
   });
 });
 
-describe("MockPayProvider (test/dev double, no Nimiq Pay runtime required)", () => {
-  it("resolves the queued approval with a well-formed hash", async () => {
-    const { MockPayProvider } = await import("../../src/nimiq/pay-provider.js");
+describe("MockPayProvider", () => {
+  it("resolves a canonical queued approval", async () => {
     const provider = new MockPayProvider();
     provider.queueApproval();
-
-    const result = await provider.sendPass({ recipient: "NQ_R", amountLuna: 100_000 });
+    const result = await provider.sendPass(canonicalRequest);
     expect(result.txHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("rejects with UserCancelledPaymentError when a cancellation is queued", async () => {
-    const { MockPayProvider } = await import("../../src/nimiq/pay-provider.js");
+  it("rejects with UserCancelledPaymentError when cancellation is queued", async () => {
     const provider = new MockPayProvider();
     provider.queueCancellation();
-
-    await expect(provider.sendPass({ recipient: "NQ_R", amountLuna: 100_000 })).rejects.toBeInstanceOf(
-      UserCancelledPaymentError
-    );
+    await expect(provider.sendPass(canonicalRequest)).rejects.toBeInstanceOf(UserCancelledPaymentError);
   });
 });
