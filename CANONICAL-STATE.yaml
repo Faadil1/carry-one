@@ -2,10 +2,10 @@ project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: private
-state_version: 0.6.0
+state_version: 0.6.1
 date: 2026-09-05
 
-phase: MVP_VERTICAL_SLICE_1_BLINDSPOT_HARDENING_VERIFIED
+phase: MVP_VERTICAL_SLICE_1_BLINDSPOT_HARDENING_MERGED
 problem_locked: true
 foundation_slice_1_complete: true
 blindspot_hardening_complete: true
@@ -75,7 +75,8 @@ mvp_contract:
 blindspot_hardening:
   branch: mvp/blindspot-hardening
   pull_request: 7
-  status: PASS_PENDING_FINAL_FULL_HEAD_CI_AND_MERGE
+  merge_sha: c35389047639b7ba8b7a1ebad240ec30fcce07cc
+  status: MERGED_TO_MAIN
   p0:
     destination_paradox:
       resolution: known_consenting_target_beachhead
@@ -183,6 +184,14 @@ verification:
     build: pass
     test_files: 13
     authoritative_vitest_tests: 66
+  final_pr_head_ci:
+    run_id: 33950458528
+    head_sha: e3b5d56d29e9cf4ee8d79a578a4dbdbd70e1295e
+    conclusion: success
+    npm_ci: pass
+    typecheck: pass
+    tests: pass
+    build: pass
   new_hardening_tests: 10
   automated_proofs:
     target_consent_required: PASS
@@ -200,7 +209,7 @@ verification:
     - real_nimiq_pay_multi_account_sender_selection
     - exact_balance_one_nim_wallet_send_one_nim_with_data_fee_zero
     - native_nimiq_pay_invite_deeplink_device_launch
-  note: 66 is the current independently verified automated test count on the code-bearing hardening head.
+  note: 66 is the authoritative independently verified automated test count after blind-spot hardening.
 
 history:
   pr_1: CLOSED_SUPERSEDED
@@ -210,14 +219,16 @@ history:
   pr_5_merge_sha: 7cb5dba72fa6b4c5d186d637cb0b5f92cd5ab31d
   pr_6_foundation_state_closure: MERGED
   pr_6_merge_sha: 4e77242bcbe30ec379e9c06d487c74300a6ca2a5
+  pr_7_blindspot_hardening: MERGED
+  pr_7_merge_sha: c35389047639b7ba8b7a1ebad240ec30fcce07cc
 
 current_gate:
   name: CARRY_ONE_BLINDSPOT_HARDENING
-  status: PASS_PENDING_FINAL_FULL_HEAD_CI_AND_PR7_MERGE
+  status: PASS
 
 next_gate:
   name: CARRY_ONE_MVP_VERTICAL_SLICE_1
-  status: READY_AFTER_PR7_MERGE
+  status: READY
   authorized_scope:
     - production_postgres_repository_adapter_and_migration_runner
     - mission_auth_invitation_pass_http_api_bindings
