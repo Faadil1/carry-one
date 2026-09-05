@@ -78,6 +78,17 @@ export class CanonicalRelayService {
     return this.store.createIntent(batonId, currentHolder, recipient);
   }
 
+  getActiveIntent(batonId: string): PassIntent | null {
+    return this.store.getActiveIntent(batonId) ?? null;
+  }
+
+  hasRecordedBroadcast(batonId: string): boolean {
+    const intent = this.store.getActiveIntent(batonId);
+    if (!intent) return false;
+    const hop = this.store.getHop(batonId, intent.sequence);
+    return Boolean(hop?.txHash);
+  }
+
   /**
    * Step 3 PASS (server side of it): the client already drove the native
    * approval and got a tx hash back from the Nimiq Provider. Record it as a
