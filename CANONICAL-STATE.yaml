@@ -2,13 +2,12 @@ project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: private
-state_version: 0.5.0
+state_version: 0.5.1
 date: 2026-09-04
 
-phase: FOUNDATION_IMPLEMENTATION_SLICE_1_VERIFIED
+phase: FOUNDATION_IMPLEMENTATION_SLICE_1_MERGED
 problem_locked: true
 foundation_slice_1_complete: true
-foundation_implementation_authorized: true
 full_production_build_authorized: false
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -39,84 +38,59 @@ product_positioning:
   working_promise: >-
     Get this to someone you cannot reach directly — one human bridge at a time.
   holder_question: Who can move this one person closer?
-  emotional_loop: >-
-    I was chosen -> I can move this closer -> I leave a verified place in the path -> I can see if it arrives.
 
-mvp_state_contract:
-  mission_states:
-    - ACTIVE
-    - ARRIVED
-    - CANCELLED
-  invitation_states:
-    - INVITED
-    - ACCEPTED
-    - DECLINED
-    - EXPIRED
-    - WITHDRAWN
-    - COMPLETED
-  invitation_open_states:
-    - INVITED
-    - ACCEPTED
-  hop_states:
-    - PENDING
-    - INCLUDED
-    - FINAL
-    - INVALID
-  one_active_invitation_per_mission: true
+mvp_contract:
+  mission_states: [ACTIVE, ARRIVED, CANCELLED]
+  invitation_states: [INVITED, ACCEPTED, DECLINED, EXPIRED, WITHDRAWN, COMPLETED]
+  invitation_open_states: [INVITED, ACCEPTED]
+  hop_states: [PENDING, INCLUDED, FINAL, INVALID]
   invitation_expiry_hours: 12
   accepted_pass_deadline_minutes: 60
   recipient_value_luna: 100000
   next_pass_unlock: FINAL
-  invitation_success_terminal_state: COMPLETED
-  mission_cancel_after_first_final_hop: forbidden
+  one_active_invitation_per_mission: true
   cancel_or_reroute_after_broadcast: forbidden_fail_closed
   arrival_condition: finalized_recipient_hmac_equals_private_target_wallet_hmac
-
-five_screen_contract:
-  spec: docs/REACH-MISSION-UX-STATE-CONTRACT.md
-  screens:
+  five_screens:
     - Mission_Home
     - Create_Mission
     - Bridge_Invitation
     - Pass_1_NIM
     - Route_Arrival
 
-foundation_implementation:
+foundation_slice_1:
   branch: foundation/reach-mission-slice-1
   pull_request: 5
-  code_verification_head: 87ec3581de23ea972656076f5610ce0402612301
-  modules:
-    - src/mission/types.ts
-    - src/mission/repository.ts
-    - src/mission/file-repository.ts
-    - src/mission/target-wallet-crypto.ts
-    - src/mission/wallet-auth.ts
-    - src/mission/service.ts
-    - src/mission/coordinator.ts
-    - src/persistence/file-relay-store.ts
-  runtime_changes:
-    - RelayStore snapshot/hydration boundary
-    - durable file relay adapter for restart-recovery proof
-    - optional CARRY_ONE_RELAY_STATE_FILE runtime binding
-    - mission/relay coordinator with crash-window repair
-  migration:
-    file: migrations/001_reach_mission_foundation.sql
-    target: PostgreSQL_or_compatible
+  merge_sha: 7cb5dba72fa6b4c5d186d637cb0b5f92cd5ab31d
+  status: MERGED_TO_MAIN
+  implemented:
+    - durable mission repository boundary and local restart-proof adapter
+    - RelayStore snapshot/hydration plus durable local relay adapter
+    - AES-256-GCM target-wallet encryption
+    - separate HMAC-SHA256 target equality/arrival matching
+    - Nimiq signed-action challenge verifier
+    - wallet public-key to claimed-address binding
+    - atomic one-time challenge consumption and replay rejection
+    - mission create/read/pristine-cancel service
+    - invitation create/accept/decline/withdraw/expiry state machine
+    - mission/invitation/relay coordinator
+    - FINAL-to-holder/sequence/arrival projection
+    - crash-window repair after durable relay FINAL before mission projection
+    - executable PostgreSQL-oriented migration
   implementation_discoveries:
-    invitation_completed_state:
+    completed_invitation_state:
       decision: REQUIRED
-      reason: >-
-        A successful finalized pass needs an explicit terminal invitation state;
-        ACCEPTED cannot remain open after canonical custody advances.
+      reason: finalized successful invitation must close as terminal COMPLETED
     durable_pass_intents:
       decision: REQUIRED
-      reason: >-
-        Restart safety is incomplete if mission/invitation records persist while the
-        exact active pass intent and broadcast hash exist only in process memory.
+      reason: active pass authorization and tx hash must survive restart
 
-persistence_contract:
-  spec: docs/REACH-MISSION-PERSISTENCE.sql
-  local_proof_adapter: FileMissionRepository_plus_FileRelayStore
+persistence:
+  contract: docs/REACH-MISSION-PERSISTENCE.sql
+  migration: migrations/001_reach_mission_foundation.sql
+  local_proof_adapters:
+    - FileMissionRepository
+    - FileRelayStore
   production_target: PostgreSQL_or_compatible
   durable_entities:
     - missions
@@ -126,30 +100,27 @@ persistence_contract:
     - participants
     - auth_challenges
     - audit_events
-  target_wallet_storage:
-    authenticated_encryption: AES_256_GCM
-    keyed_hmac_for_equality: HMAC_SHA256
-    encryption_and_hmac_keys_separate: required
-    plaintext_target_in_normal_dto: forbidden
-    plaintext_hash_only: forbidden
+  production_multi_instance_adapter_complete: false
   invariants:
     - one_open_invitation_per_mission
-    - one_hop_sequence_per_mission
     - global_tx_hash_uniqueness
     - durable_active_pass_state
     - atomic_finalization_updates_holder_sequence_invitation_and_arrival
-    - restart_recovery_of_active_intent_and_broadcast
-    - crash_window_final_projection_is_idempotently_repairable
+    - restart_recovery
+    - idempotent_crash_window_repair
 
-security_contract:
-  spec: docs/REACH-MISSION-SECURITY-AUTH.md
-  nimiq_wallet_auth:
-    canonical_domain: carry-one:v1
-    challenge_ttl_minutes: 5
-    nonce_minimum_bits: 128
-    one_time_consume: true
-    verify_public_key_to_claimed_wallet: true
-    nimiq_signed_message_prefix_compatible: true
+security:
+  contract: docs/REACH-MISSION-SECURITY-AUTH.md
+  auth_domain: carry-one:v1
+  challenge_ttl_minutes: 5
+  nonce_minimum_bits: 128
+  one_time_challenge: true
+  invite_token_bits: 256
+  invite_token_server_storage: SHA256_hash_only
+  target_wallet_encryption: AES_256_GCM
+  target_wallet_equality: keyed_HMAC_SHA256
+  separate_encryption_and_hmac_keys: required
+  target_wallet_in_normal_dto: forbidden
   signed_actions:
     - CREATE_MISSION
     - CREATE_INVITATION
@@ -157,26 +128,12 @@ security_contract:
     - WITHDRAW_INVITATION
     - AUTHORIZE_PASS
     - CANCEL_MISSION
-  invite_token:
-    entropy_bits: 256
-    server_storage: SHA256_hash_only
-    default_ttl_hours: 12
-    bearer_power: locate_invitation_and_low_risk_decline_only
-    acceptance_requires_wallet_signature: true
-  target_wallet_api_public: false
-
-api_contract:
-  spec: docs/REACH-MISSION-API-CONTRACT.md
-  slice_1_domain_services_implemented: true
-  production_http_bindings_complete: false
-  public_target_wallet_field: forbidden
-  normal_wallet_rendering: fingerprint_only
-  production_mutation_idempotency: required_before_public_release
 
 verification:
   code_bearing_ci:
     run_id: 33932462066
     head_sha: 87ec3581de23ea972656076f5610ce0402612301
+    conclusion: success
     node: 22
     npm_ci: pass
     typecheck: pass
@@ -184,107 +141,82 @@ verification:
     build: pass
     test_files: 9
     authoritative_vitest_tests: 56
-  baseline_preservation:
-    pre_foundation_tests: 44
-    baseline_regression: PASS
-    new_foundation_tests: 12
-  foundation_proofs:
+  final_pr_head_ci:
+    run_id: 33932685723
+    head_sha: e0982f947799ae687cbaa99e275b595d13809adf
+    conclusion: success
+    npm_ci: pass
+    typecheck: pass
+    tests: pass
+    build: pass
+  baseline_tests_before_slice_1: 44
+  new_foundation_tests: 12
+  proofs:
     restart_recovery: PASS
     active_broadcast_recovery: PASS
     finality_to_mission_projection: PASS
     finality_crash_window_repair: PASS
-    signature_valid_verification: PASS
-    signature_public_key_wallet_binding: PASS
+    signature_verification: PASS
+    public_key_wallet_binding: PASS
     signature_replay_protection: PASS
-    target_wallet_encryption_redaction: PASS
-    target_wallet_hmac_equality: PASS
+    target_wallet_redaction: PASS
+    target_hmac_equality: PASS
     invitation_race_fail_closed: PASS
-    decline_then_reroute: PASS
-    invitation_expiry_custody_unchanged: PASS
-    open_invitation_blocks_pristine_cancel: PASS
+    decline_reroute: PASS
+    expiry_custody_unchanged: PASS
   note: >-
-    56 is the current independently verified Vitest count for the code-bearing Slice 1 head.
+    56 is the authoritative independently verified Vitest count for Slice 1.
     Do not cite the historical collaborator-reported 76 as independently verified.
 
 backend_ancestry:
-  original_pr_1: CLOSED_SUPERSEDED
-  reconciliation_pr_3: MERGED
-  reconciliation_merge_sha: 147d79c67d73c5563304f9c0ba6e136cd1201bb2
-  ux_state_pr_4: MERGED
-  ux_state_merge_sha: 77470bd955ce9e03bf2cd366dcd74062e87dc52d
-
-collision_guardrails:
-  avoid:
-    - generic_one_coin_journey_positioning
-    - mini_games
-    - skill_challenges
-    - xp
-    - streaks
-    - leaderboards
-    - map_as_core_product
-    - prize_pools
-    - wagers
-    - forwarding_rewards
-    - ai_routing
-    - marketplace_matching
-    - auto_next_recipient
-    - unique_human_claims
-    - public_social_feed
-    - multiple_mission_types
+  pr_1: CLOSED_SUPERSEDED
+  pr_3_reconciliation: MERGED
+  pr_3_merge_sha: 147d79c67d73c5563304f9c0ba6e136cd1201bb2
+  pr_4_ux_state_contract: MERGED
+  pr_4_merge_sha: 77470bd955ce9e03bf2cd366dcd74062e87dc52d
+  pr_5_foundation_slice_1: MERGED
+  pr_5_merge_sha: 7cb5dba72fa6b4c5d186d637cb0b5f92cd5ab31d
 
 current_gate:
   name: CARRY_ONE_FOUNDATION_IMPLEMENTATION_SLICE_1
-  owner: Faadil
-  status: PASS_PENDING_PR5_FINAL_CI_AND_MERGE
-  deliverables:
-    durable_persistence_adapter_and_migrations: PASS
-    wallet_signature_challenge_verifier: PASS
-    mission_create_read_cancel_service: PASS
-    single_active_invitation_create_accept_decline_withdraw_expiry: PASS
-    target_wallet_encryption_hmac_and_api_redaction: PASS
-    relay_pass_mission_invitation_coordinator: PASS
-    security_critical_tests: PASS
-    restart_recovery_proven: PASS
-    existing_44_tests_preserved: PASS
+  status: PASS
 
 next_gate:
   name: CARRY_ONE_MVP_VERTICAL_SLICE_1
-  status: READY_AFTER_PR5_MERGE
+  status: READY
   authorized_scope:
     - production_postgres_repository_adapter_and_migration_runner
     - mission_auth_invitation_pass_http_api_bindings
     - Nimiq_Pay_client_challenge_sign_and_send_flow
-    - functional_five_screen_mini_app_skeleton_without_polish
+    - functional_five_screen_mini_app_skeleton_without_visual_polish
     - end_to_end_testnet_mission_across_2_to_3_real_wallets
     - real_usage_instrumentation_without_unique_human_claims
-  blocked_scope:
-    - public_early_access
-    - mainnet_cutover
-    - marketing_launch
-    - full_visual_polish_before_vertical_flow_is_proven
   exit_criteria:
     - create_invite_accept_authorize_pass_broadcast_final_arrival_e2e_on_testnet
     - production_database_restart_recovery_proven
     - no_unsigned_sensitive_mutation_path
     - target_wallet_never_exposed
     - five_screen_state_mapping_functional
-    - all_56_plus_new_tests_green
+    - all_existing_plus_new_tests_green
     - ci_typecheck_test_build_green
 
-pre_public_followups:
-  - production PostgreSQL adapter must replace local file adapter for deployed multi-instance use
-  - production HTTP schema validation rate limits and idempotency middleware
-  - perform secret scan before repository publication
-  - confirm package-lock licensing metadata remains MIT-consistent
-  - deliberate mainnet RPC and network-policy cutover
-  - complete real-user privacy review
-  - complete Early Access deployment hardening
-
-blocked:
-  - public_repository_before_secret_scan_and_intentional_early_access_opening
-  - mainnet_funds_before_explicit_cutover_gate
+still_blocked:
+  - public_early_access
+  - public_repository_before_secret_scan
+  - mainnet_cutover_and_funds
+  - marketing_launch
+  - full_visual_polish_before_vertical_flow_proof
   - prizes_or_wagering
   - pooled_funds
+  - forwarding_rewards
   - autonomous_ai_spend
   - marketplace_expansion
   - unique_human_claims
+
+pre_public_followups:
+  - production PostgreSQL transaction/row-lock adapter
+  - production HTTP validation rate limits and idempotency middleware
+  - secret scan before publication
+  - confirm package-lock MIT metadata consistency
+  - privacy review with real-user flows
+  - Early Access deployment hardening
