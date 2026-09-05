@@ -52,6 +52,7 @@ async function acceptedMission(dir: string, targetWallet = wallet()) {
     auth: auth(creator, "CREATE_MISSION"),
     targetLabel: "Destination",
     targetWallet,
+    targetConsentConfirmed: true,
     missionNote: "Reach this person through a real human bridge.",
     now: 1_000,
   });
@@ -71,23 +72,22 @@ async function acceptedMission(dir: string, targetWallet = wallet()) {
 }
 
 describe("durable foundation recovery", () => {
-  it("rehydrates mission and active relay broadcast state after process restart", async () => {
+  it("rehydrates mission and opaque active relay broadcast state after process restart", async () => {
     const dir = tempDir();
     const f = await acceptedMission(dir, wallet());
-    await f.coordinator.authorizePass({
+    const intent = await f.coordinator.authorizePass({
       missionId: f.mission.id,
       invitationId: f.invitationId,
       auth: auth(f.creator, "AUTHORIZE_PASS", f.mission.id, f.invitationId, 1),
       now: 4_000,
     });
+    expect(intent.recipientData).toMatch(/^co:v1:/);
     await f.coordinator.recordBroadcast({ missionId: f.mission.id, invitationId: f.invitationId, txHash: "ab".repeat(32) });
 
     const repoAfterRestart = new FileMissionRepository(f.missionPath);
     const relayAfterRestart = new CanonicalRelayService(new FileRelayStore(f.relayPath), new MutableRpc());
-    const recoveredMission = await repoAfterRestart.getMission(f.mission.id);
-
-    expect(recoveredMission?.currentSequence).toBe(0);
-    expect(relayAfterRestart.getActiveIntent(f.mission.id)?.sequence).toBe(1);
+    expect((await repoAfterRestart.getMission(f.mission.id))?.currentSequence).toBe(0);
+    expect(relayAfterRestart.getActiveIntent(f.mission.id)?.recipientData).toBe(intent.recipientData);
     expect(relayAfterRestart.hasRecordedBroadcast(f.mission.id)).toBe(true);
   });
 
@@ -95,7 +95,7 @@ describe("durable foundation recovery", () => {
     const dir = tempDir();
     const target = wallet();
     const f = await acceptedMission(dir, target);
-    await f.coordinator.authorizePass({
+    const intent = await f.coordinator.authorizePass({
       missionId: f.mission.id,
       invitationId: f.invitationId,
       auth: auth(f.creator, "AUTHORIZE_PASS", f.mission.id, f.invitationId, 1),
@@ -110,6 +110,7 @@ describe("durable foundation recovery", () => {
       value: 100_000,
       blockNumber: 3_032_020,
       confirmations: 999,
+      recipientData: intent.recipientData!,
     };
 
     const result = await f.coordinator.reconcile(f.mission.id);
@@ -122,7 +123,7 @@ describe("durable foundation recovery", () => {
   it("repairs the crash window where relay finality persisted before mission projection", async () => {
     const dir = tempDir();
     const f = await acceptedMission(dir, wallet());
-    await f.coordinator.authorizePass({
+    const intent = await f.coordinator.authorizePass({
       missionId: f.mission.id,
       invitationId: f.invitationId,
       auth: auth(f.creator, "AUTHORIZE_PASS", f.mission.id, f.invitationId, 1),
@@ -137,9 +138,9 @@ describe("durable foundation recovery", () => {
       value: 100_000,
       blockNumber: 3_032_020,
       confirmations: 999,
+      recipientData: intent.recipientData!,
     };
 
-    // Simulate crash after relay FINAL persistence but before mission DB projection.
     const finalHop = await f.relay.reconcile(f.mission.id);
     expect(finalHop?.status).toBe("FINAL");
     expect((await f.repo.getMission(f.mission.id))?.currentSequence).toBe(0);
