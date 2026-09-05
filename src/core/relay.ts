@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Hop, HopStatus, NimiqTxLookup, PassIntent } from "./types.js";
 import { batonDataTag, ONE_NIM_IN_LUNA } from "./types.js";
+import { opaqueHopCommitment } from "./hop-commitment.js";
 import { INTENT_VALIDITY_WINDOW_MS } from "../nimiq/policy.js";
 
 /** Thrown for every rejection path — callers switch on `.reason` for tests/logging. */
@@ -21,7 +22,7 @@ function clone<T>(value: T): T {
 }
 
 /**
- * Canonical relay store. It is in-memory by default, but now exposes a stable
+ * Canonical relay store. It is in-memory by default, but exposes a stable
  * snapshot/hydration boundary and a mutation hook so durable adapters can
  * persist the exact same fail-closed state machine without reimplementing it.
  */
@@ -32,7 +33,9 @@ export class RelayStore {
 
   constructor(snapshot?: RelayStoreSnapshot) {
     if (snapshot) {
-      this.intents = new Map(snapshot.intents.map((intent) => [intent.batonId, clone(intent)]));
+      // Backward-compatible hydration: snapshots written before the opaque
+      // commitment hardening did not have recipientData.
+      this.intents = new Map(snapshot.intents.map((intent) => [intent.batonId, clone({ ...intent, recipientData: intent.recipientData ?? null })]));
       this.hops = snapshot.hops.map(clone);
       this.holders = new Map(snapshot.holders);
     }
@@ -80,11 +83,16 @@ export class RelayStore {
   }
 
   /**
-   * Commit an atomic intent BEFORE any transaction is broadcast. Only one
-   * active intent per baton at a time — this is what closes the race
-   * condition where two devices for the same holder could both start a pass.
+   * Commit an atomic intent BEFORE any transaction is broadcast. Reach Mission
+   * calls this with `requireOpaqueTag`, which binds the only acceptable
+   * on-chain transaction to an opaque recipient-data commitment.
    */
-  createIntent(batonId: string, currentHolder: string, recipient: string): PassIntent {
+  createIntent(
+    batonId: string,
+    currentHolder: string,
+    recipient: string,
+    options: { requireOpaqueTag?: boolean } = {}
+  ): PassIntent {
     const existing = this.getActiveIntent(batonId);
     if (existing) {
       throw new RelayValidationError(
@@ -103,12 +111,17 @@ export class RelayStore {
       );
     }
 
+    const sequence = this.getCurrentSequence(batonId) + 1;
+    const nonce = randomUUID();
     const intent: PassIntent = {
       batonId,
-      sequence: this.getCurrentSequence(batonId) + 1,
+      sequence,
       currentHolder,
       recipient,
-      nonce: randomUUID(),
+      nonce,
+      recipientData: options.requireOpaqueTag
+        ? opaqueHopCommitment({ batonId, sequence, currentHolder, recipient, nonce })
+        : null,
       createdAt: Date.now(),
     };
     this.intents.set(this.key(batonId), intent);
@@ -122,14 +135,7 @@ export class RelayStore {
     if (changed) this.onMutation();
   }
 
-  /**
-   * Record a hop for (batonId, sequence), replacing any existing record at
-   * that same slot rather than appending a duplicate. This matters for
-   * recovery: if a first broadcast attempt is observed to be INVALID (wrong
-   * recipient, forged, etc.) the active intent is deliberately left in place
-   * so the holder can retry — and that retry must overwrite the stale
-   * record, or `getHop`/reconciliation would keep finding the invalid one.
-   */
+  /** Record a hop for (batonId, sequence), replacing the same slot on retry. */
   recordHop(hop: Hop) {
     if (hop.txHash) {
       const existing = this.findHopByTxHash(hop.txHash);
@@ -141,11 +147,8 @@ export class RelayStore {
       }
     }
     const idx = this.hops.findIndex((h) => h.batonId === hop.batonId && h.sequence === hop.sequence);
-    if (idx >= 0) {
-      this.hops[idx] = hop;
-    } else {
-      this.hops.push(hop);
-    }
+    if (idx >= 0) this.hops[idx] = hop;
+    else this.hops.push(hop);
     if (hop.status === "FINAL") {
       this.holders.set(this.key(hop.batonId), hop.recipient);
       this.intents.delete(this.key(hop.batonId));
@@ -153,51 +156,51 @@ export class RelayStore {
     this.onMutation();
   }
 
-  /** Mutates a recorded hop in place (reconciliation: PENDING -> INCLUDED -> FINAL, or -> INVALID). */
+  /** Mutates a recorded hop in place (PENDING -> INCLUDED -> FINAL, or -> INVALID). */
   updateHop(batonId: string, sequence: number, patch: Partial<Pick<Hop, "status" | "value" | "confirmedAt">>): Hop {
     const hop = this.getHop(batonId, sequence);
-    if (!hop) {
-      throw new RelayValidationError("HOP_NOT_FOUND", `No hop at sequence ${sequence} for baton ${batonId}`);
-    }
+    if (!hop) throw new RelayValidationError("HOP_NOT_FOUND", `No hop at sequence ${sequence} for baton ${batonId}`);
     Object.assign(hop, patch);
     if (hop.status === "FINAL") {
-      this.holders.set(this.key(batonId), hop.recipient);
-      this.intents.delete(this.key(batonId));
+      this.holders.set(this.key(hop.batonId), hop.recipient);
+      this.intents.delete(this.key(hop.batonId));
     }
     this.onMutation();
     return hop;
   }
 }
 
-/**
- * Validate an observed transaction against the committed intent. This is
- * where every negative test in the spike is actually enforced. Throws
- * RelayValidationError on any failure — the relay must NEVER advance on a
- * failed validation (per the PRD's "fail closed" law).
- */
+/** Validate an observed transaction against the committed intent. */
 export function validateTransactionAgainstIntent(intent: PassIntent, tx: NimiqTxLookup): void {
   if (tx.from !== intent.currentHolder) {
-    throw new RelayValidationError(
-      "WRONG_SENDER",
-      `Transaction sender ${tx.from} does not match committed holder ${intent.currentHolder}`
-    );
+    throw new RelayValidationError("WRONG_SENDER", `Transaction sender ${tx.from} does not match committed holder ${intent.currentHolder}`);
   }
   if (tx.to !== intent.recipient) {
-    throw new RelayValidationError(
-      "WRONG_RECIPIENT",
-      `Transaction recipient ${tx.to} does not match committed recipient ${intent.recipient}`
-    );
+    throw new RelayValidationError("WRONG_RECIPIENT", `Transaction recipient ${tx.to} does not match committed recipient ${intent.recipient}`);
   }
-  // Validate on transaction VALUE only — fee is separate and not part of this
-  // check. Sender outflow may be 1 NIM + fee; that's fine.
   if (tx.value !== ONE_NIM_IN_LUNA) {
     throw new RelayValidationError(
       "WRONG_AMOUNT",
       `Transaction value ${tx.value} Luna does not equal exactly ${ONE_NIM_IN_LUNA} Luna (1 NIM)`
     );
   }
-  // Optional second, on-chain-anchored check: only enforced when the sender's
-  // wallet actually attached recipient data (not all send paths do).
+
+  // Reach Mission production intents make recipient data mandatory and exact.
+  if (intent.recipientData !== null) {
+    if (tx.recipientData === undefined) {
+      throw new RelayValidationError("MISSING_HOP_COMMITMENT", "Canonical Reach Mission pass is missing its opaque on-chain commitment");
+    }
+    if (tx.recipientData !== intent.recipientData) {
+      throw new RelayValidationError(
+        "WRONG_HOP_COMMITMENT",
+        `Transaction recipient data does not match the authorized opaque hop commitment`
+      );
+    }
+    return;
+  }
+
+  // Legacy spike compatibility: if a legacy caller attached a clear-text tag,
+  // validate it, but Reach Mission never uses this branch.
   if (tx.recipientData !== undefined) {
     const expected = batonDataTag(intent.batonId, intent.sequence);
     if (tx.recipientData !== expected) {
@@ -215,8 +218,8 @@ export function isIntentStale(intent: PassIntent, now = Date.now()): boolean {
   return now - intent.createdAt > INTENT_VALIDITY_WINDOW_MS;
 }
 
-/** Dormancy is a pure display concern — never mutates status, never reassigns the baton. */
-export const DORMANCY_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24h
+/** Dormancy is display-only and never mutates custody. */
+export const DORMANCY_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
 export function isDormant(lastActionAt: number, now = Date.now()): boolean {
   return now - lastActionAt > DORMANCY_THRESHOLD_MS;
