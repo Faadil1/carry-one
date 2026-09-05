@@ -14,6 +14,7 @@ CREATE TABLE missions (
   target_label text NOT NULL CHECK (char_length(target_label) BETWEEN 1 AND 60),
   target_wallet_ciphertext bytea NOT NULL,
   target_wallet_hmac text NOT NULL,
+  target_consent_confirmed boolean NOT NULL DEFAULT false,
   mission_note text NOT NULL CHECK (char_length(mission_note) BETWEEN 1 AND 180),
   status mission_status NOT NULL DEFAULT 'ACTIVE',
   visibility mission_visibility NOT NULL DEFAULT 'UNLISTED',
@@ -25,6 +26,7 @@ CREATE TABLE missions (
   updated_at timestamptz NOT NULL DEFAULT now(),
   CHECK (creator_wallet_normalized <> ''),
   CHECK (current_holder_wallet_normalized <> ''),
+  CHECK (target_consent_confirmed = true),
   CHECK ((status = 'ARRIVED' AND arrived_at IS NOT NULL) OR status <> 'ARRIVED')
 );
 
@@ -54,13 +56,8 @@ CREATE TABLE invitations (
 CREATE UNIQUE INDEX one_open_invitation_per_mission
   ON invitations (mission_id)
   WHERE status IN ('INVITED', 'ACCEPTED');
+CREATE UNIQUE INDEX one_invitation_sequence_per_mission ON invitations (mission_id, sequence);
 
-CREATE UNIQUE INDEX one_invitation_sequence_per_mission
-  ON invitations (mission_id, sequence);
-
--- Active canonical pass intent. This table was added during implementation
--- because restart safety is impossible if an accepted/broadcast pass lives
--- only in process memory.
 CREATE TABLE pass_intents (
   mission_id uuid PRIMARY KEY REFERENCES missions(id) ON DELETE CASCADE,
   invitation_id uuid NOT NULL UNIQUE REFERENCES invitations(id),
@@ -68,9 +65,12 @@ CREATE TABLE pass_intents (
   current_holder_wallet_normalized text NOT NULL,
   recipient_wallet_normalized text NOT NULL,
   nonce text NOT NULL UNIQUE,
+  recipient_data text NOT NULL,
   tx_hash text UNIQUE,
   created_at timestamptz NOT NULL DEFAULT now(),
-  CHECK (current_holder_wallet_normalized <> recipient_wallet_normalized)
+  CHECK (current_holder_wallet_normalized <> recipient_wallet_normalized),
+  CHECK (recipient_data LIKE 'co:v1:%'),
+  CHECK (octet_length(recipient_data) <= 64)
 );
 
 CREATE TABLE hops (
@@ -106,6 +106,9 @@ CREATE TABLE participants (
   joined_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (mission_id, wallet_normalized)
 );
+-- The creator is inserted as the first participant at mission creation. The
+-- primary key then becomes a database-level no-route-loop guard: a wallet may
+-- not become a finalized participant twice in one mission.
 
 CREATE TABLE auth_challenges (
   id uuid PRIMARY KEY,
@@ -122,8 +125,7 @@ CREATE TABLE auth_challenges (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX auth_challenge_lookup
-  ON auth_challenges (wallet_normalized, action, status, expires_at);
+CREATE INDEX auth_challenge_lookup ON auth_challenges (wallet_normalized, action, status, expires_at);
 
 CREATE TABLE audit_events (
   id bigserial PRIMARY KEY,
