@@ -1,13 +1,11 @@
 # HANDOVER — Carry One
 
 Date: 2026-09-04  
-State: `REACH_MISSION_PRODUCT_LAW_LOCKED`
+State: `REACH_MISSION_UX_STATE_CONTRACT_LOCKED`
 
-## Product direction now locked for the Cycle II MVP
+## Product
 
-Carry One is no longer positioned as a generic relay game.
-
-It is a **destination-bound human routing product**:
+Carry One is a **destination-bound human routing product**:
 
 > One verified 1-NIM baton moves through consenting human bridges until it reaches one defined destination.
 
@@ -19,33 +17,20 @@ Core holder question:
 
 > **Who can move this one person closer?**
 
-The path itself is the product. No points, streaks, leaderboards, mini-games, prize pools or forwarding rewards are authorized for the MVP.
+The path is the product. No points, streaks, leaderboards, mini-games, prize pools, forwarding rewards, AI routing or marketplace matching are authorized for the Cycle II MVP.
 
-## Why this direction was selected
+## Product laws
 
-A collision-first scan found that Cycle II competitor **NIM Relay** occupies the generic one-coin relay / challenge / onward-pass territory, while **Ralli** occupies social challenge chains with responses, rewards, boosts and tips.
+1. The baton is exactly 1 NIM to the recipient; network fee is separate.
+2. Every mission has one private destination wallet.
+3. No one becomes a bridge by surprise: invitation acceptance happens before payment.
+4. Only a finalized independently verified transaction changes custody.
+5. Decline, expiry, withdrawal and invalid transactions leave custody unchanged.
+6. After a transaction hash is recorded, Carry One does not permit cancel/reroute; it reconciles fail-closed.
+7. The mission ends only when the destination is the finalized recipient.
+8. The verified route is the reward.
 
-The official Cycle I showcase was scanned across all 62 entries. The field is dense in payments, settlement, rewards, gifting, games, challenges, bounties, savings, commerce, proof and creator tools, but no identified Cycle I entry uses destination-bound sequential human routing with one canonical transferable baton as its core.
-
-Carry One therefore freezes the white space as:
-
-> **A consented, destination-specific referral path whose chain of custody is verified by Nimiq.**
-
-See `docs/REACH-MISSION-PRODUCT-LAW.md` for the full collision scan, scoring attack and MVP contract.
-
-## Frozen product laws
-
-1. **The baton is exactly 1 NIM.**
-2. **Every baton has one destination.**
-3. **No one becomes a bridge by surprise — candidate acceptance occurs before payment.**
-4. **Only a finalized verified transaction changes custody.**
-5. **A decline or expired invitation leaves custody with the current holder.**
-6. **The mission ends only when the destination becomes the finalized recipient.**
-7. **The path is the reward.**
-
-## MVP interaction contract
-
-Five screens maximum:
+## Five-screen UX contract
 
 1. `Mission Home`
 2. `Create Mission`
@@ -53,91 +38,171 @@ Five screens maximum:
 4. `Pass 1 NIM`
 5. `Route / Arrival`
 
-Core loop:
+The detailed wire/state contract is frozen in:
 
-`SEE TARGET → THINK OF SOMEONE CLOSER → INVITE → ACCEPT → PASS 1 NIM → VERIFY → FOLLOW`.
+`docs/REACH-MISSION-UX-STATE-CONTRACT.md`
 
-Invitation states:
+Key behavior:
 
-`INVITED → ACCEPTED | DECLINED | EXPIRED`
+- Mission Home exposes one primary action only.
+- One mission may have only one open invitation at a time.
+- Invitation states: `INVITED / ACCEPTED / DECLINED / EXPIRED / WITHDRAWN`.
+- Invitation default TTL: 12h.
+- After acceptance, holder has a 60-minute pass window.
+- `ACCEPTED` never changes custody.
+- `FINAL` alone advances the holder.
+- `ARRIVED` is terminal.
 
-Suggested invitation expiry: 12 hours. Expiry never reassigns custody automatically.
+## Persistence contract
 
-## Privacy baseline
+Reference PostgreSQL-compatible contract:
 
-- target wallet is private server-side;
-- full wallet addresses are not displayed in normal product UI;
-- names are opt-in;
-- `why_you` context is participant-only;
-- active missions default to private/unlisted;
-- public named targets should be consenting participants or an agreed public/community destination.
+`docs/REACH-MISSION-PERSISTENCE.sql`
 
-## Technical spike status
+Durable entities:
 
-The backend spike was previously audited and an owner-side remediation produced evidence for:
+- missions;
+- invitations;
+- hops;
+- participants;
+- auth challenges;
+- audit events.
 
-- fail-closed cancellation after broadcast;
-- stale-intent cleanup;
-- cross-baton transaction-hash replay protection;
-- MIT project licensing;
-- GitHub Actions CI with typecheck, tests and build passing;
-- 42 repository tests verified in CI at that point.
+Critical invariants:
 
-Do **not** cite the earlier collaborator-reported 76 tests as independently verified.
+- one open invitation per mission;
+- one hop per mission sequence;
+- global transaction-hash uniqueness;
+- atomic finalization updates hop + holder + sequence + arrival;
+- decline/expiry/withdraw/invalid never advances custody.
 
-## Important repository integration issue discovered
+Target wallet storage uses encrypted ciphertext plus a **keyed HMAC** for equality matching. Do not use a plain hash as a privacy mechanism.
 
-PR #1 has **not** been merged.
+## Wallet authorization and invitation security
 
-A merge attempt was rejected as `head out of date`. Repository reads then showed inconsistent integration state:
+Security contract:
 
-- PR metadata still referenced remediated head `ecac9cb...`;
-- collaborator branch `feat/carry-one-spike-v2` was observed at later commit `5118589...`;
-- a direct compare to `main` reported no common ancestor.
+`docs/REACH-MISSION-SECURITY-AUTH.md`
 
-Do not force-merge or overwrite collaborator commits.
+Nimiq Pay's Mini App provider supports message signing. Carry One uses a canonical domain-separated challenge (`carry-one:v1`) with short-lived one-time nonces for holder-sensitive mutations.
 
-The product-law work is therefore isolated on clean branch:
+Signed actions:
 
-`product/reach-mission-law-v2`
+- CREATE_MISSION
+- CREATE_INVITATION
+- ACCEPT_INVITATION
+- WITHDRAW_INVITATION
+- AUTHORIZE_PASS
+- CANCEL_MISSION
 
-rooted from `main`.
+Invite links are private high-entropy capabilities (>=256 bits), stored server-side only as a hash. For unbound invitations, the first valid signed acceptance binds a wallet, but the holder still sees the resulting wallet fingerprint and explicitly authorizes the pass before funds can move.
+
+## API privacy contract
+
+`docs/REACH-MISSION-API-CONTRACT.md`
+
+Rules:
+
+- target wallet is never returned in normal Mission/Invitation/Route DTOs;
+- full wallet addresses are not rendered by default;
+- the accepted recipient wallet may be returned only to the authenticated current holder inside a server-authorized pass intent because the holder must approve the payment;
+- invite tokens, target wallet data, wallet signatures and private `why_you` text are excluded/redacted from routine logs and analytics;
+- mutation retries require idempotency.
+
+## Test contract
+
+`docs/REACH-MISSION-TEST-MATRIX.md`
+
+Coverage is defined for:
+
+- mission creation;
+- single-open-invitation enforcement;
+- accept / decline / expiry / withdrawal;
+- wallet signature replay and authorization;
+- pass verification/finality;
+- target arrival;
+- reroute;
+- cancellation;
+- privacy/redaction;
+- stolen/expired invite-token cases;
+- five-screen state assertions;
+- real-usage instrumentation.
+
+## Backend ancestry issue — RESOLVED
+
+The old PR #1 had diverged/no-common-ancestor behavior and was deliberately not force-merged.
+
+Resolution:
+
+- latest observed Opeyemi branch head imported: `93cc22675b7912e2e56e7133f1024431c3a12a04`;
+- clean integration branch built from canonical `main`: `integration/backend-spike-reconciled`;
+- backend/source/tests/CI/MIT files copied by Git object identity while preserving canonical product docs;
+- reconciliation PR: **#3**;
+- reconciliation PR head: `93434d93cf60756b79e6820d9311ca0cd0c20382`;
+- PR #3 CI: **GREEN**;
+- PR #3 merged to main at `147d79c67d73c5563304f9c0ba6e136cd1201bb2`.
+
+Verified PR #3 CI evidence:
+
+- npm ci ✅
+- TypeScript typecheck ✅
+- Vitest: **44 / 44 tests passed** across 6 test files ✅
+- production build ✅
+
+44 is now the authoritative independently verified test count for the reconciled backend. Do not cite the older collaborator-reported 76 as verified.
 
 ## Current gate
 
-`CARRY_ONE_REACH_MISSION_PRODUCT_LAW_VALIDATION = PASS`
+`CARRY_ONE_REACH_MISSION_UX_AND_STATE_CONTRACT = PASS`
 
-Human product-law GO has been given.
+Completed:
+
+- exact five-screen wire contract ✅
+- durable persistence schema ✅
+- wallet-signature authorization scheme ✅
+- invite-token threat model ✅
+- target-wallet privacy/API contract ✅
+- accept/decline/expiry/arrival test matrix ✅
+- backend ancestry reconciliation ✅
 
 ## Next exact gate
 
-`CARRY_ONE_REACH_MISSION_UX_AND_STATE_CONTRACT`
+`CARRY_ONE_FOUNDATION_IMPLEMENTATION_SLICE_1`
 
-Complete before full frontend/product implementation:
+Authorized scope only:
 
-1. exact wire contract for all five screens;
-2. durable mission + invitation persistence schema;
-3. holder authorization/signature scheme for write endpoints;
-4. invite-token threat model;
-5. target-wallet privacy API contract;
-6. accept / decline / expiry / target-arrival test matrix;
-7. reconcile PR #1 ancestry while preserving both verified remediation and Opeyemi's later commits.
+1. implement durable persistence + migrations;
+2. implement Nimiq signed-action challenge verification;
+3. implement mission create/read/cancel;
+4. implement one-active-invitation create/accept/decline/withdraw/expiry;
+5. implement target-wallet encryption + keyed HMAC + API redaction;
+6. bind the existing relay/pass service to mission/invitation state;
+7. automate the security-critical contract tests.
 
-## First real-user experiment after the next gate
+Exit criteria:
 
-Use a consenting destination inside the Nimiq builder community.
+- restart/recovery proven;
+- signature replay protection proven;
+- target wallet never leaks at API/log boundary;
+- invitation race closes fail-safe;
+- existing 44 tests remain green;
+- new foundation tests green;
+- CI typecheck/test/build green.
 
-Dry run target: at least 10 genuine bridges. Then run a public mission during the official measurement period aimed at exceeding the competition's 25-unique-wallet threshold through genuine users, never bots or manufactured wallets.
+## Still blocked
 
-## Do not do yet
+- full visual frontend polish before foundation gate passes;
+- public Early Access before secret/privacy/deployment hardening;
+- mainnet cutover before explicit gate;
+- prizes/wagering/pools;
+- forwarding rewards;
+- AI routing;
+- marketplace expansion;
+- unique-human claims.
 
-- Do not add mini-games, skill challenges, XP, streaks or leaderboards.
-- Do not add prize pools, wagering or forwarding rewards.
-- Do not add AI routing or marketplace matching.
-- Do not auto-select or auto-reassign a next bridge.
-- Do not make unique-human claims.
-- Do not make the repository public before secret scan and intentional Early Access opening.
-- Do not force-merge PR #1 until ancestry is reconciled.
+## First real-user experiment later
+
+After the foundation + UX implementation gates, use a consenting destination inside the Nimiq builder community. Dry run with genuine users first, then a public mission during the official measurement period. Never manufacture wallets or usage.
 
 ## Source of truth
 
