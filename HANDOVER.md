@@ -1,7 +1,7 @@
 # HANDOVER — Carry One
 
 Date: 2026-09-04  
-State: `REACH_MISSION_UX_STATE_CONTRACT_LOCKED`
+State: `FOUNDATION_IMPLEMENTATION_SLICE_1_VERIFIED`
 
 ## Product
 
@@ -30,7 +30,9 @@ The path is the product. No points, streaks, leaderboards, mini-games, prize poo
 7. The mission ends only when the destination is the finalized recipient.
 8. The verified route is the reward.
 
-## Five-screen UX contract
+## UX/state contract
+
+Five screens remain frozen:
 
 1. `Mission Home`
 2. `Create Mission`
@@ -38,55 +40,82 @@ The path is the product. No points, streaks, leaderboards, mini-games, prize poo
 4. `Pass 1 NIM`
 5. `Route / Arrival`
 
-The detailed wire/state contract is frozen in:
+Canonical mission states: `ACTIVE / ARRIVED / CANCELLED`.
 
-`docs/REACH-MISSION-UX-STATE-CONTRACT.md`
+Canonical invitation states are now:
 
-Key behavior:
+`INVITED / ACCEPTED / DECLINED / EXPIRED / WITHDRAWN / COMPLETED`.
 
-- Mission Home exposes one primary action only.
-- One mission may have only one open invitation at a time.
-- Invitation states: `INVITED / ACCEPTED / DECLINED / EXPIRED / WITHDRAWN`.
-- Invitation default TTL: 12h.
-- After acceptance, holder has a 60-minute pass window.
-- `ACCEPTED` never changes custody.
-- `FINAL` alone advances the holder.
-- `ARRIVED` is terminal.
+`COMPLETED` was added during implementation because a successful finalized pass needs an explicit terminal invitation state. Leaving it as `ACCEPTED` after custody advances would make the one-open-invitation invariant ambiguous.
 
-## Persistence contract
+Only `INVITED` and `ACCEPTED` count as open invitations.
 
-Reference PostgreSQL-compatible contract:
+## Foundation Slice 1 — implemented
 
-`docs/REACH-MISSION-PERSISTENCE.sql`
+Branch: `foundation/reach-mission-slice-1`  
+PR: **#5 — Implement Reach Mission foundation slice 1**
 
-Durable entities:
+Implemented modules:
 
-- missions;
-- invitations;
-- hops;
-- participants;
-- auth challenges;
-- audit events.
+- `src/mission/types.ts` — mission/invitation/challenge domain types and safe DTOs;
+- `src/mission/repository.ts` — persistence port;
+- `src/mission/file-repository.ts` — durable local/dev mission repository with serialized fail-closed mutations;
+- `src/mission/target-wallet-crypto.ts` — target wallet normalization, AES-256-GCM encryption and keyed HMAC-SHA256 equality;
+- `src/mission/wallet-auth.ts` — Nimiq signed-action challenge issuance, wallet/public-key binding and one-time replay protection;
+- `src/mission/service.ts` — mission create/read/cancel and invitation create/accept/decline/withdraw/expiry;
+- `src/mission/coordinator.ts` — accepted invitation -> authorized canonical relay intent -> broadcast -> finality -> mission projection;
+- `src/persistence/file-relay-store.ts` — durable relay snapshot adapter proving restart recovery;
+- `migrations/001_reach_mission_foundation.sql` — executable PostgreSQL-oriented foundation migration.
 
-Critical invariants:
+The legacy `RelayStore` now has a stable snapshot/hydration boundary and persistence hook without changing the verified relay semantics.
 
-- one open invitation per mission;
-- one hop per mission sequence;
-- global transaction-hash uniqueness;
-- atomic finalization updates hop + holder + sequence + arrival;
-- decline/expiry/withdraw/invalid never advances custody.
+## Important implementation discovery: active pass state must be durable
 
-Target wallet storage uses encrypted ciphertext plus a **keyed HMAC** for equality matching. Do not use a plain hash as a privacy mechanism.
+The earlier persistence contract covered missions, invitations and hops but not the exact active pass intent.
 
-## Wallet authorization and invitation security
+That was insufficient for restart safety: if the server died after `AUTHORIZE_PASS` or after recording a tx hash, a process-memory-only pass intent could disappear while the transaction could still finalize on-chain.
 
-Security contract:
+The contract/migration now therefore includes durable **`pass_intents`** bound to:
 
-`docs/REACH-MISSION-SECURITY-AUTH.md`
+- mission;
+- invitation;
+- sequence;
+- current holder;
+- accepted recipient;
+- nonce;
+- optional tx hash.
 
-Nimiq Pay's Mini App provider supports message signing. Carry One uses a canonical domain-separated challenge (`carry-one:v1`) with short-lived one-time nonces for holder-sensitive mutations.
+The local Slice-1 proof uses durable relay snapshots; production deployment will implement the same boundary with PostgreSQL transactions/locks.
 
-Signed actions:
+## Target-wallet privacy
+
+Implemented and tested:
+
+- Nimiq address normalization;
+- AES-256-GCM authenticated encryption at rest;
+- separate HMAC-SHA256 key for equality/arrival matching;
+- encryption key and HMAC key must be different 32-byte secrets;
+- target plaintext absent from public mission/invitation DTOs;
+- normal participant wallets render as short fingerprints;
+- local durable state is gitignored.
+
+Do not replace keyed HMAC with a plain hash.
+
+## Wallet authorization
+
+Canonical challenge domain remains `carry-one:v1`.
+
+Slice 1 implements:
+
+- 5-minute challenge TTL;
+- cryptographically random one-time nonce;
+- exact action/mission/invitation/sequence binding;
+- Nimiq public-key -> claimed-wallet verification;
+- Nimiq signed-message digest verification;
+- atomic one-time challenge consumption;
+- replay rejection.
+
+Signed sensitive actions remain:
 
 - CREATE_MISSION
 - CREATE_INVITATION
@@ -95,114 +124,137 @@ Signed actions:
 - AUTHORIZE_PASS
 - CANCEL_MISSION
 
-Invite links are private high-entropy capabilities (>=256 bits), stored server-side only as a hash. For unbound invitations, the first valid signed acceptance binds a wallet, but the holder still sees the resulting wallet fingerprint and explicitly authorizes the pass before funds can move.
+Token-only `DECLINE` remains intentionally low-risk because it cannot move custody or funds.
 
-## API privacy contract
+## Mission/invitation behavior implemented
 
-`docs/REACH-MISSION-API-CONTRACT.md`
+- creator becomes holder at sequence 0;
+- target cannot equal creator;
+- default visibility remains UNLISTED;
+- at most one `INVITED`/`ACCEPTED` invitation per mission;
+- invitation token = 256 random bits and only its SHA-256 hash is stored;
+- pre-bound invitation requires exact wallet match;
+- unbound invitation binds the first valid signed accepting wallet;
+- invitation TTL = 12h;
+- accepted pass window = 60 minutes;
+- decline/expiry/withdraw never move custody;
+- cancellation is allowed only while mission is pristine and no invitation/broadcast is open;
+- broadcast blocks withdrawal/cancellation fail-closed.
 
-Rules:
+## Relay integration + crash recovery
 
-- target wallet is never returned in normal Mission/Invitation/Route DTOs;
-- full wallet addresses are not rendered by default;
-- the accepted recipient wallet may be returned only to the authenticated current holder inside a server-authorized pass intent because the holder must approve the payment;
-- invite tokens, target wallet data, wallet signatures and private `why_you` text are excluded/redacted from routine logs and analytics;
-- mutation retries require idempotency.
+`ReachMissionCoordinator` binds mission/invitation state to the existing canonical relay service.
 
-## Test contract
+A holder can authorize a pass only when:
 
-`docs/REACH-MISSION-TEST-MATRIX.md`
+- mission is ACTIVE;
+- signer is canonical current holder;
+- invitation is ACCEPTED;
+- invitation is the next canonical sequence;
+- accepted bridge wallet is bound;
+- pass deadline has not expired.
 
-Coverage is defined for:
+The transaction hash remains only a claim. Existing independent Nimiq RPC verification and Albatross finality logic still decide `FINAL`.
 
-- mission creation;
-- single-open-invitation enforcement;
-- accept / decline / expiry / withdrawal;
-- wallet signature replay and authorization;
-- pass verification/finality;
-- target arrival;
-- reroute;
-- cancellation;
-- privacy/redaction;
-- stolen/expired invite-token cases;
-- five-screen state assertions;
-- real-usage instrumentation.
+On FINAL:
 
-## Backend ancestry issue — RESOLVED
+- matching invitation -> `COMPLETED`;
+- mission sequence/hop count advance exactly once;
+- recipient becomes current holder;
+- recipient HMAC is compared to target HMAC;
+- match -> mission `ARRIVED`.
 
-The old PR #1 had diverged/no-common-ancestor behavior and was deliberately not force-merged.
+Critical restart proof: if relay FINAL is persisted and the process dies before mission projection commits, the next startup reconciliation replays that exact next FINAL hop idempotently into mission state instead of losing or double-counting it.
 
-Resolution:
+## Persistence/deployment boundary
 
-- latest observed Opeyemi branch head imported: `93cc22675b7912e2e56e7133f1024431c3a12a04`;
-- clean integration branch built from canonical `main`: `integration/backend-spike-reconciled`;
-- backend/source/tests/CI/MIT files copied by Git object identity while preserving canonical product docs;
-- reconciliation PR: **#3**;
-- reconciliation PR head: `93434d93cf60756b79e6820d9311ca0cd0c20382`;
-- PR #3 CI: **GREEN**;
-- PR #3 merged to main at `147d79c67d73c5563304f9c0ba6e136cd1201bb2`.
+Slice 1 includes durable **local/dev proof adapters** plus the PostgreSQL migration/contract.
 
-Verified PR #3 CI evidence:
+This does **not** mean public multi-instance production persistence is complete. Before deployment, implement a PostgreSQL `MissionRepository`/relay persistence adapter with database transactions, row locks and idempotency at the same interfaces.
 
-- npm ci ✅
-- TypeScript typecheck ✅
-- Vitest: **44 / 44 tests passed** across 6 test files ✅
-- production build ✅
+Reference files:
 
-44 is now the authoritative independently verified test count for the reconciled backend. Do not cite the older collaborator-reported 76 as verified.
+- `docs/REACH-MISSION-PERSISTENCE.sql`
+- `migrations/001_reach_mission_foundation.sql`
+- `docs/REACH-MISSION-SECURITY-AUTH.md`
+- `docs/REACH-MISSION-API-CONTRACT.md`
+- `docs/REACH-MISSION-UX-STATE-CONTRACT.md`
+- `docs/REACH-MISSION-TEST-MATRIX.md`
+
+## Verification
+
+Code-bearing PR #5 CI run: **33932462066**  
+Verified head: `87ec3581de23ea972656076f5610ce0402612301`
+
+Result:
+
+- `npm ci` ✅
+- TypeScript strict typecheck ✅
+- **56 / 56 Vitest tests passed across 9 files** ✅
+- build ✅
+
+The original reconciled backend had 44 verified tests. Slice 1 adds 12 security/foundation tests while preserving all 44 baseline tests.
+
+New proof coverage includes:
+
+- target encryption/HMAC + wrong-key rejection;
+- Nimiq signed challenge verification;
+- signer public-key/wallet binding;
+- one-time challenge replay rejection;
+- public target-wallet redaction;
+- concurrent invitation race fail-closed;
+- decline then reroute;
+- invitation expiry leaves custody unchanged;
+- open invitation blocks mission cancellation;
+- mission + active broadcast restart recovery;
+- FINAL relay projection to holder/arrival;
+- crash-window recovery after relay FINAL but before mission projection.
+
+A first CI attempt correctly caught a bad new finality fixture that used a block before the configured Nimiq testnet PoS genesis. The fixture was corrected to a post-genesis block; no production finality code was weakened.
+
+**56 is now the authoritative independently verified code-bearing test count. Do not cite the historical collaborator-reported 76 as verified.**
 
 ## Current gate
 
-`CARRY_ONE_REACH_MISSION_UX_AND_STATE_CONTRACT = PASS`
+`CARRY_ONE_FOUNDATION_IMPLEMENTATION_SLICE_1 = PASS_PENDING_PR5_FINAL_CI_AND_MERGE`
 
-Completed:
+All code exit criteria have passed. PR #5 only needs its final full-head CI after state/documentation updates, then merge.
 
-- exact five-screen wire contract ✅
-- durable persistence schema ✅
-- wallet-signature authorization scheme ✅
-- invite-token threat model ✅
-- target-wallet privacy/API contract ✅
-- accept/decline/expiry/arrival test matrix ✅
-- backend ancestry reconciliation ✅
+## Next exact gate after PR #5 merge
 
-## Next exact gate
+`CARRY_ONE_MVP_VERTICAL_SLICE_1`
 
-`CARRY_ONE_FOUNDATION_IMPLEMENTATION_SLICE_1`
+Authorized scope:
 
-Authorized scope only:
-
-1. implement durable persistence + migrations;
-2. implement Nimiq signed-action challenge verification;
-3. implement mission create/read/cancel;
-4. implement one-active-invitation create/accept/decline/withdraw/expiry;
-5. implement target-wallet encryption + keyed HMAC + API redaction;
-6. bind the existing relay/pass service to mission/invitation state;
-7. automate the security-critical contract tests.
+1. implement production PostgreSQL repository + migration runner;
+2. wire auth/mission/invitation/pass domain services into the HTTP API;
+3. wire the Mini App client to challenge -> Nimiq Pay `sign()` -> action submission;
+4. wire accepted pass -> Nimiq Pay transaction -> tx hash -> reconcile;
+5. implement the functional five-screen skeleton without visual polish creep;
+6. execute a real 2–3 wallet end-to-end testnet mission through arrival;
+7. add real-usage instrumentation without claiming unique-human identity.
 
 Exit criteria:
 
-- restart/recovery proven;
-- signature replay protection proven;
-- target wallet never leaks at API/log boundary;
-- invitation race closes fail-safe;
-- existing 44 tests remain green;
-- new foundation tests green;
-- CI typecheck/test/build green.
+- real testnet `CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> PASS 1 NIM -> FINAL -> ARRIVE` works end-to-end;
+- production DB restart recovery works;
+- no unsigned sensitive mutation path;
+- target wallet never leaks;
+- five-screen state mapping is functional;
+- all existing tests plus new vertical tests are green.
 
 ## Still blocked
 
-- full visual frontend polish before foundation gate passes;
-- public Early Access before secret/privacy/deployment hardening;
-- mainnet cutover before explicit gate;
+- public Early Access;
+- public repository before secret scan;
+- mainnet funds/cutover;
+- marketing launch;
+- full visual polish before vertical flow proof;
 - prizes/wagering/pools;
 - forwarding rewards;
 - AI routing;
 - marketplace expansion;
 - unique-human claims.
-
-## First real-user experiment later
-
-After the foundation + UX implementation gates, use a consenting destination inside the Nimiq builder community. Dry run with genuine users first, then a public mission during the official measurement period. Never manufacture wallets or usage.
 
 ## Source of truth
 
