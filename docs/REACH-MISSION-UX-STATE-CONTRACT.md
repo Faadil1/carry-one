@@ -2,7 +2,7 @@
 
 Date: 2026-09-04  
 Gate: `CARRY_ONE_REACH_MISSION_UX_AND_STATE_CONTRACT`  
-Decision target: **PASS / BUILD-READY CONTRACT**
+Decision: **PASS / BUILD-READY CONTRACT**
 
 ## 1. Contract objective
 
@@ -25,8 +25,9 @@ The five-screen rule is strict. Dialogs, native Nimiq Pay confirmation sheets an
 - `DECLINED` — candidate declined; custody is unchanged.
 - `EXPIRED` — invitation or accepted-pass window expired; custody is unchanged.
 - `WITHDRAWN` — current holder withdrew the invitation before a broadcast; custody is unchanged.
+- `COMPLETED` — the invitation produced its matching finalized canonical hop. Terminal success state.
 
-Only one non-terminal invitation may exist per active mission.
+Only `INVITED` and `ACCEPTED` are non-terminal/open invitation states. Only one may exist per active mission.
 
 ### Hop status
 
@@ -43,12 +44,14 @@ Only one non-terminal invitation may exist per active mission.
 4. An invitee never becomes a bridge merely by opening a link.
 5. `ACCEPTED` binds one wallet but does not change custody.
 6. No pass intent is created until an invitation is `ACCEPTED`.
-7. Exactly `100000` Luna is the canonical recipient value. Fee is separate.
-8. Only `FINAL` changes the canonical holder.
-9. Decline, expiry, withdrawal, cancellation-before-broadcast and invalid transactions leave custody unchanged.
-10. Arrival is detected server-side when a finalized recipient equals the mission target wallet.
-11. The target wallet is never returned by public/client-readable mission APIs except to the target after authenticated arrival where strictly required.
-12. The path is derived from finalized hops; it is never manually editable.
+7. Active pass intent/broadcast state must be durable across restart, not process-memory-only.
+8. Exactly `100000` Luna is the canonical recipient value. Fee is separate.
+9. Only `FINAL` changes the canonical holder.
+10. A successful FINAL transition closes the matching invitation as `COMPLETED`.
+11. Decline, expiry, withdrawal, cancellation-before-broadcast and invalid transactions leave custody unchanged.
+12. Arrival is detected server-side when a finalized recipient equals the mission target wallet.
+13. The target wallet is never returned by public/client-readable mission APIs except to the target after authenticated arrival where strictly required.
+14. The path is derived from finalized hops; it is never manually editable.
 
 ## 4. Five-screen wire contract
 
@@ -74,6 +77,7 @@ Holder-state CTA mapping:
 | ACCEPTED | `Pass 1 NIM` |
 | hop PENDING/INCLUDED | `Verifying transfer…` (disabled) |
 | DECLINED/EXPIRED/WITHDRAWN | `Choose another bridge` |
+| COMPLETED + mission ACTIVE | `Continue route` |
 | ARRIVED | `View completed route` |
 
 `Choose next bridge` opens an inline/bottom-sheet action within Mission Home: candidate label or share target, optional pre-bound wallet, and `why_you` up to 120 characters. Submitting creates one invitation and produces a private invite link/deeplink.
@@ -130,11 +134,11 @@ Shows:
 Flow:
 1. server issues a holder-bound pass authorization challenge;
 2. holder signs the action;
-3. server creates atomic pass intent bound to mission, sequence, holder and accepted recipient;
+3. server creates a **durable** atomic pass intent bound to mission, invitation, sequence, holder and accepted recipient;
 4. client opens Nimiq Pay native transaction approval for exactly 100000 Luna;
-5. returned tx hash is submitted as a claim;
+5. returned tx hash is submitted as a claim and persisted on the active pass;
 6. UI enters `PENDING` / `INCLUDED` until backend independently verifies finality;
-7. `FINAL` advances holder and route;
+7. `FINAL` advances holder and route and closes the invitation as `COMPLETED`;
 8. if recipient is target wallet, mission -> `ARRIVED`; otherwise return to Mission Home for the new holder.
 
 ### Screen 5 — Route / Arrival
@@ -168,24 +172,26 @@ holder invites candidate
       -> WITHDRAWN -> holder unchanged -> may invite another
       -> ACCEPTED
           -> pass deadline reached without broadcast -> EXPIRED
-          -> pass intent + wallet broadcast
+          -> durable pass intent + wallet broadcast
               -> PENDING -> INCLUDED -> FINAL
+                  -> invitation -> COMPLETED
                   -> recipient != target -> recipient becomes holder
                   -> recipient == target -> ARRIVED
-              -> INVALID -> holder unchanged; invitation closes; holder may reroute
+              -> INVALID -> holder unchanged; invitation closes/reroutes under deterministic recovery policy
 ```
 
 ## 6. Reroute rules
 
-- Reroute is permitted only while no finalized pass to the invited candidate exists.
+- Reroute is permitted only while no transaction hash has been recorded for the canonical pass.
 - Before acceptance: holder may withdraw invitation and choose another candidate.
 - After acceptance but before pass intent/broadcast: holder may withdraw; candidate is notified when possible.
 - After transaction hash is recorded: no withdrawal/cancel path exists; reconciliation must finish fail-closed.
 - A declined/expired/withdrawn candidate cannot be silently reactivated; create a new invitation.
+- A `COMPLETED` invitation is historical proof of the finalized route segment and cannot be reopened.
 
 ## 7. Mission cancellation
 
-MVP rule: mission cancellation is allowed only while `finalized_hop_count = 0` and no transaction hash is in flight. After the first finalized hop, the originator cannot revoke a mission from a later canonical holder.
+MVP rule: mission cancellation is allowed only while `finalized_hop_count = 0`, there is no open invitation and no transaction hash is in flight. After the first finalized hop, the originator cannot revoke a mission from a later canonical holder.
 
 ## 8. Privacy defaults
 
@@ -200,7 +206,7 @@ MVP rule: mission cancellation is allowed only while `finalized_hop_count = 0` a
 ## 9. Build acceptance criteria
 
 This contract is implementable only if the backend can prove:
-- durable persistence across restart;
+- durable mission, invitation, pass-intent and relay persistence across restart;
 - wallet-signature authorization for state-changing holder actions;
 - opaque invite tokens with one-time/expiry controls;
 - target-wallet privacy at API boundary;
@@ -208,6 +214,7 @@ This contract is implementable only if the backend can prove:
 - exact 1-NIM + finality verification;
 - global tx-hash replay protection;
 - deterministic decline/expiry/withdraw/reroute behavior;
-- deterministic target-arrival transition.
+- deterministic `COMPLETED` and target-arrival transitions;
+- crash-window reconciliation if relay FINAL persists before mission projection.
 
 No frontend polish work should outrun these invariants.
