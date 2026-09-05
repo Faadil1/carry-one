@@ -1,220 +1,130 @@
 # Carry One — Reach Mission UX & State Contract
 
-Date: 2026-09-04  
-Gate: `CARRY_ONE_REACH_MISSION_UX_AND_STATE_CONTRACT`  
-Decision: **PASS / BUILD-READY CONTRACT**
+Date: 2026-09-05  
+Gate: `CARRY_ONE_MVP_VERTICAL_SLICE_1`  
+Decision: **BLIND-SPOT HARDENED / BUILD-READY CONTRACT**
 
-## 1. Contract objective
+## 1. Product boundary
 
-This document converts the locked Reach Mission product law into an implementation contract. It intentionally limits the Cycle II MVP to one destination-bound mission, one canonical holder, one active bridge invitation, one verified 1-NIM handoff at a time.
+Carry One remains one destination-bound mission, one canonical holder, one open bridge invitation and one verified 1-NIM handoff at a time. The path is the product; there are no points, streaks, leaderboards, prizes, wagering, AI routing or marketplace matching.
 
-The five-screen rule is strict. Dialogs, native Nimiq Pay confirmation sheets and inline state changes do not count as additional product screens.
+Cycle-II beachhead: the creator must already know the destination wallet and must explicitly attest that the named destination consented to be targeted by the mission. This is policy enforcement, not cryptographic proof of target consent. Public-scale target discovery/claiming is deferred.
 
-## 2. Canonical product states
+The five-screen rule remains strict. Dialogs, native Nimiq Pay sheets and inline state changes do not add screens.
 
-### Mission status
+## 2. Canonical state
 
-- `ACTIVE` — mission exists and has not reached its destination.
-- `ARRIVED` — target wallet is the recipient of a finalized canonical hop. Terminal.
-- `CANCELLED` — allowed only before the first finalized hop. Terminal.
+Mission status: `ACTIVE / ARRIVED / CANCELLED`.
 
-### Invitation status
+Mission activity is display-only: `ACTIVE / STALLED / TERMINAL`.
 
-- `INVITED` — one bridge candidate has been invited; no transfer may begin.
-- `ACCEPTED` — candidate has explicitly accepted and bound a Nimiq wallet.
-- `DECLINED` — candidate declined; custody is unchanged.
-- `EXPIRED` — invitation or accepted-pass window expired; custody is unchanged.
-- `WITHDRAWN` — current holder withdrew the invitation before a broadcast; custody is unchanged.
-- `COMPLETED` — the invitation produced its matching finalized canonical hop. Terminal success state.
+- `STALLED` means an ACTIVE mission has had no product activity for 24h.
+- STALLED never changes holder, sequence or funds.
+- There is no clawback/reassignment. The UX may offer `Start a new route` as a new mission to the same consented destination.
 
-Only `INVITED` and `ACCEPTED` are non-terminal/open invitation states. Only one may exist per active mission.
+Invitation status: `INVITED / ACCEPTED / DECLINED / EXPIRED / WITHDRAWN / COMPLETED`. Only `INVITED` and `ACCEPTED` are open.
 
-### Hop status
-
-- `PENDING` — transaction hash reported but not yet included.
-- `INCLUDED` — independently observed on-chain but not final.
-- `FINAL` — independently verified sender, recipient, value and finality; canonical holder changes.
-- `INVALID` — failed verification or expired unreconciled transfer; holder does not change.
+Hop status: `PENDING / INCLUDED / FINAL / INVALID`. Only `FINAL` changes custody.
 
 ## 3. Hard invariants
 
-1. Every mission has exactly one private target wallet.
-2. A mission has exactly one canonical holder at any time.
-3. A holder can have at most one active bridge invitation for that mission.
-4. An invitee never becomes a bridge merely by opening a link.
-5. `ACCEPTED` binds one wallet but does not change custody.
-6. No pass intent is created until an invitation is `ACCEPTED`.
-7. Active pass intent/broadcast state must be durable across restart, not process-memory-only.
-8. Exactly `100000` Luna is the canonical recipient value. Fee is separate.
-9. Only `FINAL` changes the canonical holder.
-10. A successful FINAL transition closes the matching invitation as `COMPLETED`.
-11. Decline, expiry, withdrawal, cancellation-before-broadcast and invalid transactions leave custody unchanged.
-12. Arrival is detected server-side when a finalized recipient equals the mission target wallet.
-13. The target wallet is never returned by public/client-readable mission APIs except to the target after authenticated arrival where strictly required.
-14. The path is derived from finalized hops; it is never manually editable.
+1. Every Cycle-II mission has one private, creator-attested consented target wallet.
+2. A mission has one canonical holder at any time.
+3. At most one invitation is open per mission.
+4. Opening an invite never makes someone a bridge.
+5. ACCEPTED binds a wallet but does not change custody.
+6. No pass intent exists before ACCEPTED.
+7. Pass intent/broadcast state survives restart.
+8. Recipient receives exactly `100000` Luna; Carry One MVP requests an explicit zero-luna fee so a bridge holding exactly the received 1 NIM can forward it intact.
+9. Reach Mission passes require an opaque `co:v1:<commitment>` recipient-data value <=64 bytes. Clear mission id/sequence tags are forbidden in the product flow.
+10. The actual on-chain sender must equal the canonical holder even after client-side wallet preflight.
+11. Only FINAL advances holder and route, then closes the invitation as COMPLETED.
+12. A wallet already present in the finalized route cannot re-enter the same mission.
+13. Decline/expiry/withdraw/invalid leave custody unchanged.
+14. A temporary RPC outage is `VERIFICATION_DELAYED`, not transaction failure; custody remains unchanged.
+15. Arrival occurs only when the finalized recipient matches the private target HMAC.
+16. The target wallet never appears in normal participant/public DTOs.
+17. The route is derived only from FINAL hops and cannot be edited.
 
-## 4. Five-screen wire contract
+## 4. Five screens
 
 ### Screen 1 — Mission Home
 
-**Purpose:** one place to understand the mission and the holder’s next action.
+Shows target label, the mission purpose/ask, current holder fingerprint/display label, verified route, state banner and at most one primary action.
 
-Always shows:
-- target label, never raw target wallet;
-- short mission note;
-- current holder display label or wallet fingerprint;
-- verified route so far;
-- one current state banner;
-- one primary CTA maximum.
-
-Holder-state CTA mapping:
-
-| State | Primary CTA |
+| State | Primary action |
 |---|---|
 | no mission | `Create a mission` |
-| ACTIVE + no invitation | `Choose next bridge` |
-| INVITED | `Waiting for response` (disabled) |
+| ACTIVE + no invite | `Choose next bridge` |
+| INVITED | `Waiting for response` |
 | ACCEPTED | `Pass 1 NIM` |
-| hop PENDING/INCLUDED | `Verifying transfer…` (disabled) |
+| PENDING/INCLUDED | `Verifying transfer…` |
+| verification backend unavailable | `Verification delayed — your pass is still pending` |
 | DECLINED/EXPIRED/WITHDRAWN | `Choose another bridge` |
 | COMPLETED + mission ACTIVE | `Continue route` |
+| STALLED | `Waiting on current bridge` + secondary `Start a new route` |
 | ARRIVED | `View completed route` |
 
-`Choose next bridge` opens an inline/bottom-sheet action within Mission Home: candidate label or share target, optional pre-bound wallet, and `why_you` up to 120 characters. Submitting creates one invitation and produces a private invite link/deeplink.
+Any former bridge may retain read-only access to follow a route where authorization permits. Following is retention/read access, not custody, points or rewards. After ARRIVED, a participant may be offered `Start your own mission`.
 
 ### Screen 2 — Create Mission
 
-Required fields:
-- `target_label` — 1–60 chars;
-- `target_wallet` — valid Nimiq address; stored private;
-- `mission_note` — 1–180 chars;
-- optional creator display label.
+Required:
+- target label (1–60 chars);
+- valid target wallet, encrypted immediately;
+- `target_consent_confirmed = true` checkbox/attestation;
+- purpose/ask (stored in `mission_note`, 1–180 chars): **Why should this mission reach them?**
 
-Rules:
-- creator authenticates with a Nimiq signature;
-- target cannot equal creator wallet;
-- default visibility is `UNLISTED`;
-- public naming of a target is not enabled in MVP unless target consent is explicitly recorded;
-- after creation, creator is canonical holder at sequence 0.
-
-Primary CTA: `Create mission`.
+Target cannot equal creator. Default visibility is UNLISTED. Creator starts as holder at sequence 0.
 
 ### Screen 3 — Bridge Invitation
 
-Opened from the private invitation link.
+Private invite says `You were chosen as the next bridge`, shows target label, purpose/ask, inviter fingerprint/display label, private `why_you`, finalized bridge count and clearly states that accepting moves no funds.
 
-Shows:
-- `You were chosen as the next bridge`;
-- target label;
-- mission note;
-- inviter display label / wallet fingerprint;
-- private `why_you`;
-- number of finalized bridges so far;
-- clear statement: `Accepting does not move funds. The current holder will send exactly 1 NIM only after you accept.`
+The share action produces a Carry One private HTTPS invite URL and, where supported, a Nimiq Pay mini-app launcher so tap -> Nimiq Pay -> invitation.
 
-Actions:
-- `Accept as bridge` — request/list Nimiq account, sign acceptance challenge, bind wallet, status -> `ACCEPTED`;
-- `Decline` — token-authorized low-risk refusal, status -> `DECLINED`;
-- closing/ignoring leaves `INVITED` until expiry.
-
-Acceptance creates `pass_deadline_at = accepted_at + 60 minutes`. If no canonical broadcast begins before that deadline, invitation -> `EXPIRED`.
+Accept requires wallet signature; decline remains low-risk token-only in MVP. Invitation TTL is 12h. After acceptance, pass window is 60 minutes.
 
 ### Screen 4 — Pass 1 NIM
 
-Accessible only to current holder when invitation = `ACCEPTED`.
+Only current holder + ACCEPTED invitation.
 
-Shows:
-- accepted bridge label;
-- accepted wallet fingerprint (not full address by default);
-- target label;
-- `why_you` previously written;
-- exact transfer: `1 NIM + network fee`;
-- warning: `After broadcast, this pass cannot be cancelled inside Carry One.`
+Before opening Nimiq Pay, Carry One lists available accounts and confirms the canonical holder wallet exists in the session. Because the provider does not let Carry One force the sending account, this is UX preflight only; independent chain verification remains authoritative.
+
+The screen displays accepted bridge fingerprint, target label, private `why_you`, exact recipient value `1 NIM`, requested fee `0 NIM`, and `After broadcast, this pass cannot be cancelled inside Carry One.`
 
 Flow:
-1. server issues a holder-bound pass authorization challenge;
-2. holder signs the action;
-3. server creates a **durable** atomic pass intent bound to mission, invitation, sequence, holder and accepted recipient;
-4. client opens Nimiq Pay native transaction approval for exactly 100000 Luna;
-5. returned tx hash is submitted as a claim and persisted on the active pass;
-6. UI enters `PENDING` / `INCLUDED` until backend independently verifies finality;
-7. `FINAL` advances holder and route and closes the invitation as `COMPLETED`;
-8. if recipient is target wallet, mission -> `ARRIVED`; otherwise return to Mission Home for the new holder.
+1. holder signs AUTHORIZE_PASS;
+2. server creates durable intent bound to mission/invitation/sequence/holder/recipient and opaque commitment;
+3. client sends exactly 100000 Luna with explicit fee 0 and the opaque `co:v1:` data;
+4. returned hash is a claim;
+5. backend reads Nimiq independently, using configured RPC fallback;
+6. PENDING -> INCLUDED -> FINAL;
+7. FINAL advances route/holder and invitation -> COMPLETED;
+8. target match -> ARRIVED.
 
 ### Screen 5 — Route / Arrival
 
-For active missions, shows only finalized path entries plus the current holder.
+Shows FINAL route only. ARRIVED headline: `It made it.` Route followers can see the verified path and arrival timestamp; participant names are opt-in. Raw target wallet, raw participant wallets, failed transaction details, leaderboards and country/map progress remain excluded.
 
-For arrived missions:
-- headline: `It made it.`
-- ordered verified route;
-- number of human bridges;
-- verified arrival timestamp;
-- optional participant display names only where each participant opted in.
+## 5. Reroute, loops and stalls
 
-Never show:
-- raw target wallet;
-- raw participant wallets by default;
-- failed/invalid tx details to unauthenticated viewers;
-- leaderboards, points, XP, country counts or map progress as the core experience.
+- Before tx hash: holder can withdraw/reroute.
+- After tx hash: no user cancel/reroute until deterministic resolution.
+- Declined/expired/withdrawn invites are never reactivated.
+- A finalized route wallet cannot be selected again in that mission.
+- STALLED never mutates custody. A new route means a new mission; the old 1 NIM is not reclaimed.
 
-## 5. Holder and invitation lifecycle
+## 6. Privacy reality
 
-```text
-MISSION CREATED
-  -> holder = creator
-  -> no invitation
+Target metadata is private to Carry One, but Nimiq transfers themselves are public blockchain events. Carry One therefore does not promise transaction anonymity. The opaque on-chain commitment only removes unnecessary clear-text mission/sequence linkage from recipient data; sender, recipient and value remain visible on-chain.
 
-holder invites candidate
-  -> INVITED
-      -> DECLINED -> holder unchanged -> may invite another
-      -> EXPIRED  -> holder unchanged -> may invite another
-      -> WITHDRAWN -> holder unchanged -> may invite another
-      -> ACCEPTED
-          -> pass deadline reached without broadcast -> EXPIRED
-          -> durable pass intent + wallet broadcast
-              -> PENDING -> INCLUDED -> FINAL
-                  -> invitation -> COMPLETED
-                  -> recipient != target -> recipient becomes holder
-                  -> recipient == target -> ARRIVED
-              -> INVALID -> holder unchanged; invitation closes/reroutes under deterministic recovery policy
-```
+## 7. Runtime validations still required
 
-## 6. Reroute rules
+Automated code can enforce the request shape, but these must be proven in real Nimiq Pay before public Early Access:
 
-- Reroute is permitted only while no transaction hash has been recorded for the canonical pass.
-- Before acceptance: holder may withdraw invitation and choose another candidate.
-- After acceptance but before pass intent/broadcast: holder may withdraw; candidate is notified when possible.
-- After transaction hash is recorded: no withdrawal/cancel path exists; reconciliation must finish fail-closed.
-- A declined/expired/withdrawn candidate cannot be silently reactivated; create a new invitation.
-- A `COMPLETED` invitation is historical proof of the finalized route segment and cannot be reopened.
+- multi-account session: holder can identify/use the correct canonical wallet;
+- wallet holding exactly 1 NIM can send exactly 1 NIM with recipient data and explicit fee 0;
+- native Nimiq Pay invite deeplink launches the intended private invite screen on device.
 
-## 7. Mission cancellation
-
-MVP rule: mission cancellation is allowed only while `finalized_hop_count = 0`, there is no open invitation and no transaction hash is in flight. After the first finalized hop, the originator cannot revoke a mission from a later canonical holder.
-
-## 8. Privacy defaults
-
-- mission visibility: `UNLISTED`;
-- target wallet: server-private;
-- target label: visible only to mission participants and invitees;
-- participant display name: opt-in;
-- wallet rendering: shortened fingerprint only;
-- `why_you`: inviter + invitee only by default;
-- public completed-route sharing: explicit creator/target/participant-safe view generated after arrival, never raw internal record exposure.
-
-## 9. Build acceptance criteria
-
-This contract is implementable only if the backend can prove:
-- durable mission, invitation, pass-intent and relay persistence across restart;
-- wallet-signature authorization for state-changing holder actions;
-- opaque invite tokens with one-time/expiry controls;
-- target-wallet privacy at API boundary;
-- one-active-invitation uniqueness;
-- exact 1-NIM + finality verification;
-- global tx-hash replay protection;
-- deterministic decline/expiry/withdraw/reroute behavior;
-- deterministic `COMPLETED` and target-arrival transitions;
-- crash-window reconciliation if relay FINAL persists before mission projection.
-
-No frontend polish work should outrun these invariants.
+These are runtime gates, not currently claimed PASS.
