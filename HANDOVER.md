@@ -99,7 +99,7 @@ Local restart durability remains proven. PostgreSQL schema/migration now encode 
 
 Scope:
 1. production PostgreSQL repository + migration runner;
-2. production auth/mission/invitation/pass HTTP bindings with validation/idempotency/rate limits;
+2. production auth/mission/invitation/pass HTTP bindings with validation/idempotency/rate limits — HTTP surface delivered on `feat/mission-http-bindings` (unmerged); Postgres durability pending merger of `feat/postgres-adapter`;
 3. secure unlisted route-following authorization;
 4. Mini App challenge -> Nimiq Pay sign -> server verification;
 5. accepted pass -> Nimiq Pay 1 NIM/fee 0/opaque data -> tx hash -> independent FINAL;
@@ -107,6 +107,19 @@ Scope:
 7. real 2–3 wallet testnet mission through ARRIVED;
 8. run the three real-runtime validations above;
 9. persist/report genuine usage evidence as unique wallets, never unique humans.
+
+## HTTP bindings — delivered (branch `feat/mission-http-bindings`, unmerged)
+
+Item 2's HTTP surface is implemented and verified on a branch off `main` (not yet merged; `feat/postgres-adapter` is the durability path).
+
+- **Auth**: `POST /auth/challenge` issues a `carry-one:v1` wallet-signed message; signed mutations carry `{challenge_id, public_key, signature}` (5-min TTL, atomic consume). Replays -> `401`.
+- **Validation**: strict hand-rolled request schema — unknown fields rejected (`400 UNKNOWN_FIELD` with `details`), bounded text, UUID/tx-hash/opaque-token formats, NQ addresses normalized.
+- **Idempotency**: `Idempotency-Key` header required on all mutation POSTs (24h replay store; replays return stored status/body + `Idempotency-Replayed: true`). Exception: `/reconcile` is deterministic and always recomputes.
+- **Rate limits**: fixed-window, in-memory, `429` + `Retry-After`; env-tunable.
+- **Privacy**: mission views and invitation reads never echo the plaintext target wallet; `/usage` reports aggregates only.
+- **Endpoints** (detailed in `BACKEND_HANDOVER.md` → "Reach Mission HTTP API"): `/auth/challenge`, `/missions`, `/missions/:missionId` (`GET`/`cancel`/`route`/`reconcile`/`invitations`/`invitations/:invitationId/withdraw`/`pass-intent`/`broadcast`), `/i/:opaqueToken` (`GET`/`accept`/`decline`), `/usage`, `/health`. Server falls back to relay-only if mission env knobs are unset.
+- **Env knobs**: `CARRY_ONE_MISSION_STATE_FILE`, `CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL`, `CARRY_ONE_TARGET_HMAC_KEY_B64URL`, `CARRY_ONE_CANONICAL_ORIGIN`, `CARRY_ONE_INVITATION_SWEEP_INTERVAL_MS`, `CARRY_ONE_RATE_LIMIT_{READS,MUTATIONS,CHALLENGES}_PER_MINUTE`.
+- **Tests**: 73/73 passing (14 files); typecheck and build clean.
 
 ## Still blocked
 

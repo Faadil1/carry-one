@@ -16,9 +16,10 @@ This backend spike includes:
 - Inclusion and Albatross finality checks
 - Pending, invalid, stale, duplicate, cancelled, and recovery handling
 - HTTP REST API
+- Reach Mission HTTP bindings: wallet-challenge auth, invitations, pass authorization, broadcast/reconcile
 - Five-hop W0 -> W1 -> W2 -> W3 -> W4 -> W5 tests
 
-Verified status: **76 tests passing, clean TypeScript typecheck, production build passing.**
+Verified status: **73 tests passing, clean TypeScript typecheck, production build passing.**
 
 ## Architecture
 
@@ -51,6 +52,16 @@ carry-one/
 │   ├── core/
 │   │   ├── types.ts
 │   │   └── relay.ts
+│   ├── mission/
+│   │   ├── types.ts
+│   │   ├── repository.ts
+│   │   ├── mission-coordinator.ts
+│   │   ├── wallet-auth.ts
+│   │   ├── target-wallet-crypto.ts
+│   │   ├── file-repository.ts
+│   │   └── canonical-relay-service.ts
+│   ├── mini-app/
+│   │   └── deeplink.ts
 │   ├── nimiq/
 │   │   ├── policy.ts
 │   │   ├── rpc-client.ts
@@ -58,7 +69,12 @@ carry-one/
 │   │   └── transaction-watcher.ts
 │   ├── service/
 │   │   ├── canonical-relay-service.ts
-│   │   └── http-server.ts
+│   │   ├── http-server.ts
+│   │   ├── mission-http-server.ts
+│   │   ├── mission-view.ts
+│   │   ├── request-schema.ts
+│   │   ├── idempotency.ts
+│   │   └── rate-limiter.ts
 │   └── index.ts
 ├── scripts/
 │   ├── demo-local.ts
@@ -139,6 +155,23 @@ npm run dev
 ```
 
 The normal server listens on port `8787`. The incoming transaction watcher is read-only and logs candidate transactions sent to `NIMIQ_TESTNET_WALLET_ADDRESS`.
+
+### Reach Mission environment knobs
+
+Reach Mission bindings are opt-in: the server runs relay-only unless `CARRY_ONE_MISSION_STATE_FILE` and both target-wallet keys are set.
+
+| Env var | Purpose | Default |
+| --- | --- | --- |
+| `CARRY_ONE_MISSION_STATE_FILE` | Path to the durable mission repository file; enables mission bindings | unset (relay-only) |
+| `CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL` | 32-byte base64url AES-256-GCM key for target-wallet encryption | required to enable |
+| `CARRY_ONE_TARGET_HMAC_KEY_B64URL` | 32-byte base64url HMAC key for target-wallet equality checks | required to enable |
+| `CARRY_ONE_CANONICAL_ORIGIN` | Canonical origin embedded in `carry-one:v1` challenge messages and invite links | `http://localhost:8787` |
+| `CARRY_ONE_INVITATION_SWEEP_INTERVAL_MS` | Invitation/acceptance deadline sweep interval | `60000` |
+| `CARRY_ONE_RATE_LIMIT_READS_PER_MINUTE` | Per-IP read budget | `120` |
+| `CARRY_ONE_RATE_LIMIT_MUTATIONS_PER_MINUTE` | Per-IP mutation budget | `30` |
+| `CARRY_ONE_RATE_LIMIT_CHALLENGES_PER_MINUTE` | Per-wallet challenge budget | `6` |
+
+The target-wallet encryption and HMAC keys must be generated/segregated before enabling mission bindings in any deployment that may hold real value.
 
 ### Local chain-free demo
 
@@ -364,6 +397,70 @@ Call this only when the user cancels the native approval before a transaction ha
 curl.exe -X POST http://localhost:8787/relay/demo/cancel
 ```
 
+## Reach Mission HTTP API
+
+The same server serves the Reach Mission bindings alongside `/relay` routes. Enable them with the mission env knobs above; without them the server runs relay-only.
+
+### Wallet-signature authorization
+
+Sensitive mutations require a short-lived Nimiq wallet signature:
+
+1. `POST /auth/challenge` with `{wallet, action, mission_id?, invitation_id?, sequence?}` returns `{challenge_id, message, expires_at}`. `message` is the canonical `carry-one:v1` text the wallet signs inside Nimiq Pay.
+2. Every signed mutation submits an envelope `{challenge_id, public_key, signature, ...payload}`. The server derives the wallet from the public key and atomically consumes the challenge (5-minute TTL). Replayed or expired challenges return `401` with `CHALLENGE_REPLAY` / `CHALLENGE_EXPIRED`.
+
+Signed actions: `CREATE_MISSION`, `CREATE_INVITATION`, `ACCEPT_INVITATION`, `WITHDRAW_INVITATION`, `AUTHORIZE_PASS`, `CANCEL_MISSION`. Decline and broadcast are deliberately token/claim-only.
+
+### Idempotency contract
+
+- Every mutation POST requires an `Idempotency-Key` header (client-generated, <=64 chars, alphanumeric/`-`/`_`). Exception: `POST /missions/:missionId/reconcile`, which is deterministic and must recompute every call.
+- The server fingerprints `sha256(method + path + key)` and stores the first response for 24 hours. Retries with the same key return the stored response plus header `Idempotency-Replayed: true`, preserving the stored HTTP status and body.
+- Missing key -> `400 MISSING_IDEMPOTENCY_KEY`; malformed -> `400 INVALID_IDEMPOTENCY_KEY`.
+- The store is process-local; multi-instance deployments should back `IdempotencyStore` with the shared Postgres store.
+
+### Rate limiting
+
+- Fixed-window counters keyed by client address (and by wallet for challenges). Exceeded budgets -> `429` with a `Retry-After` header.
+- In-memory only; shared limiting is deferred to the Postgres-backed deployment.
+
+### Endpoint reference
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/auth/challenge` | public | Issue a challenge/wallet message to sign |
+| `POST` | `/missions` | `CREATE_MISSION` | Create a mission (consent-attested target) -> `201` MissionView |
+| `GET` | `/missions/:missionId` | read | Participant-safe MissionView (`X-Wallet` header sets viewer role; display-only hint, not a trust boundary) |
+| `POST` | `/missions/:missionId/cancel` | `CANCEL_MISSION` | Cancel a pristine mission (no tx in flight) |
+| `GET` | `/missions/:missionId/route` | read | Fingerprinted route entries |
+| `POST` | `/missions/:missionId/reconcile` | public | Reconcile relay and project finalized hops into mission state |
+| `POST` | `/missions/:missionId/invitations` | `CREATE_INVITATION` | Create invitation -> `201 {mission_id, invitation, invite_token, web_invite_url, nimiq_pay_custom_scheme}` |
+| `POST` | `/missions/:missionId/invitations/:invitationId/withdraw` | `WITHDRAW_INVITATION` | Withdraw invitation (current holder; blocked while a tx is in flight) |
+| `POST` | `/missions/:missionId/pass-intent` | `AUTHORIZE_PASS` | Authorize the next 1-NIM pass, returning the exact payment payload `{intent_id, sequence, recipient, value_luna, fee_luna, recipient_data (opaque commitment), expected_sender, expires_at}` |
+| `POST` | `/missions/:missionId/broadcast` | claim-only | Submit `{invitation_id, tx_hash}`; independently verified on reconcile |
+| `GET` | `/i/:opaqueToken` | token | Participant-safe invitation read |
+| `POST` | `/i/:opaqueToken/accept` | `ACCEPT_INVITATION` | Accept invitation (wallet must not already be in the FINAL route) |
+| `POST` | `/i/:opaqueToken/decline` | token-only | Decline invitation |
+| `GET` | `/usage` | read | Privacy-safe aggregate usage evidence |
+| `GET` | `/health` | public | Liveness probe |
+
+Invitation reads and mission views never echo the plaintext target wallet; wallets appear only as fingerprints. RPC unavailability yields `503 VERIFICATION_DELAYED` with custody preserved.
+
+### Participation-safe errors
+
+| HTTP | Body `reason` | Meaning |
+| --- | --- | --- |
+| `400` | `UNKNOWN_FIELD`, `INVALID_*`, `MISSING_*`, `TARGET_CONSENT_REQUIRED`, ... | Request validation failed; `details` lists offending fields |
+| `401` | `CHALLENGE_REPLAY`, `CHALLENGE_EXPIRED`, `INVALID_SIGNATURE`, `UNAUTHORIZED` | Authentication failed |
+| `404` | `MISSION_NOT_FOUND`, `INVITATION_NOT_FOUND` | Resource missing |
+| `403` | `WRONG_CURRENT_HOLDER`, `NOT_MISSION_AUTHORITY`, `WRONG_INVITEE_WALLET` | Not permitted |
+| `409` | Relay/mission state conflicts (`WRONG_SENDER`, `WRONG_AMOUNT`, `ROUTE_WALLET_REUSE`, ...) | State conflict |
+| `429` | `RATE_LIMITED` | Budget exhausted; retry after `Retry-After` |
+| `503` | `VERIFICATION_DELAYED` | RPC verification unavailable; custody never moves |
+| `500` | `INTERNAL_ERROR` | Unexpected failure |
+
+### MissionView shape
+
+`GET /missions/:missionId` and mutation responses return: `status`, `activity`, `target_label`, `target_consent_confirmed`, `mission_note`, `sequence`, `finalized_hop_count`, `current_holder {display_label, wallet_fingerprint, is_viewer}`, `invitation`, `route`, `route_following_available`, `stalled_restart_available`, `viewer_role` (`CREATOR` / `TARGET` / `HOLDER` / `INVITEE` / `PARTICIPANT` / `UNLISTED_VIEWER`), `primary_action`. `STALLED` activity is display-only and never moves custody.
+
 ## Frontend Integration Flow
 
 The frontend owns the wallet interaction. The backend owns canonical state and independently verifies the chain.
@@ -458,7 +555,7 @@ Run the complete test suite:
 npm test
 ```
 
-Expected current result: `76` tests passing.
+Expected current result: `73` tests passing.
 
 Run strict TypeScript checking:
 
@@ -483,12 +580,12 @@ Coverage includes five-hop progression, finality, wrong amount, wrong sender/rec
 
 ## Current Limitations Before Production
 
-- `RelayStore` is in-memory; restarts lose relay state.
-- The API needs production authentication and authorization.
-- Multi-instance/database coordination is not implemented.
+- `RelayStore`/mission repository is file-backed; a restart-safe file format exists, but Postgres durability lands via the `feat/postgres-adapter` adapters (unmerged).
+- Relay endpoints remain public/unauthenticated. Reach Mission mutations use `carry-one:v1` wallet-challenge auth; invitation reads and mission views are token/participant-scoped.
+- Multi-instance/database coordination is not implemented; idempotency and rate limiting are in-memory per process.
 - The frontend is outside this repository.
 - The watcher logs candidates but does not automatically attach them to a baton.
 - The public RPC is rate-limited and has no uptime guarantee.
 - A real Nimiq Pay transaction and live five-hop run still require manual testnet wallets.
 
-Before production deployment, add persistent storage, wallet authorization, request validation, rate limiting, RPC retry handling, and HTTPS hosting.
+Before production deployment, add Postgres-backed persistence for missions and idempotency, shared/external rate limiting, wallet-challenge auth for the remaining public surface, RPC retry handling, and HTTPS hosting.
