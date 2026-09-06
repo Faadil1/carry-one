@@ -5,11 +5,12 @@ import type { CanonicalRelayService } from "./canonical-relay-service.js";
 
 export function createHttpServer(service: CanonicalRelayService) {
   return createServer((req, res) => {
-    handle(service, req, res).catch((err) => sendError(res, err));
+    handleRelayRequest(service, req, res).catch((err) => sendError(res, err));
   });
 }
 
-async function handle(service: CanonicalRelayService, req: IncomingMessage, res: ServerResponse) {
+/** Relay route handler, exported so the mission/application server can mount it as its /relay prefix. */
+export async function handleRelayRequest(service: CanonicalRelayService, req: IncomingMessage, res: ServerResponse) {
   const url = new URL(req.url ?? "/", "http://localhost");
   const segments = url.pathname.split("/").filter(Boolean);
   if (segments[0] !== "relay" || !segments[1]) {
