@@ -87,7 +87,7 @@ Target wallet remains encrypted/HMAC'd and redacted from normal APIs. Opaque rec
 
 ## Persistence boundary
 
-Local restart durability remains proven. PostgreSQL schema/migration now encode target-consent enforcement and opaque recipient data on pass intents; participant uniqueness is the intended production DB-level route-loop guard. Production multi-instance PostgreSQL repository/row-lock implementation is still pending.
+Local restart durability remains proven. PostgreSQL schema/migration now encode target-consent enforcement and opaque recipient data on pass intents; participant uniqueness is the intended production DB-level route-loop guard. Production PostgreSQL adapters (`PgMissionRepository`, `PgRelayStore`) are implemented behind the `CARRY_ONE_REPOSITORY=postgres` toggle (`file` remains default), with a hermetic pg-mem test suite; run `npx tsx scripts/migrate.ts` once to apply the schema before first start.
 
 ## Current gate
 

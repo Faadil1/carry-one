@@ -138,6 +138,22 @@ Development mode:
 npm run dev
 ```
 
+### Storage backend (`CARRY_ONE_REPOSITORY`)
+
+The server supports two durable storage backends behind a single env switch:
+
+```env
+# file (default) — no external service required
+CARRY_ONE_REPOSITORY=file
+# postgres — durable relay + mission storage in a real database
+CARRY_ONE_REPOSITORY=postgres
+CARRY_ONE_DATABASE_URL=postgres://user:password@host:5432/carry_one
+```
+
+- **`file` (default)** — exactly the pre-Postgres behavior: an in-memory `RelayStore`, or `FileRelayStore` when `CARRY_ONE_RELAY_STATE_FILE` is set. No database is required or opened.
+- **`postgres`** — boots `PgRelayStore` + `PgMissionRepository` on a shared DB pool, hydrating relay/mission state from Postgres. The connection URL is read from `CARRY_ONE_DATABASE_URL`, falling back to `DATABASE_URL`. If `postgres` is selected without a URL, the server fails fast at startup with a clear error instead of silently degrading.
+- Migrations must be applied before first use: `npx tsx scripts/migrate.ts`.
+
 The normal server listens on port `8787`. The incoming transaction watcher is read-only and logs candidate transactions sent to `NIMIQ_TESTNET_WALLET_ADDRESS`.
 
 ### Local chain-free demo
