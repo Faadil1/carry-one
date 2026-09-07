@@ -52,6 +52,16 @@ function toPublicHop(hop: Hop): PublicHop {
 export class CanonicalRelayService {
   constructor(private store: RelayStore, private rpc: NimiqRpcClient) {}
 
+  /**
+   * Durability barrier used by request/coordinator boundaries. File/in-memory
+   * stores do not expose flush(); PostgreSQL's queued adapter does. A mutation
+   * must not be acknowledged as durable until this promise resolves.
+   */
+  async flushDurability(): Promise<void> {
+    const durable = this.store as RelayStore & { flush?: () => Promise<void> };
+    if (typeof durable.flush === "function") await durable.flush();
+  }
+
   initiatePass(
     batonId: string,
     currentHolder: string,
