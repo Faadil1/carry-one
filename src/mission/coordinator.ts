@@ -69,7 +69,10 @@ export class ReachMissionCoordinator {
         existing.currentHolder === signer &&
         existing.recipient === invitation.candidateWalletNormalized &&
         existing.recipientData !== null
-      ) return existing;
+      ) {
+        await this.relay.flushDurability();
+        return existing;
+      }
       throw new MissionValidationError("RELAY_INTENT_CONFLICT", "A different relay intent is already active for this mission");
     }
 
@@ -77,6 +80,7 @@ export class ReachMissionCoordinator {
     if (!intent.recipientData) {
       throw new MissionValidationError("MISSING_HOP_COMMITMENT", "Reach Mission pass authorization must include an opaque on-chain commitment");
     }
+    await this.relay.flushDurability();
     return intent;
   }
 
@@ -88,11 +92,22 @@ export class ReachMissionCoordinator {
     if (invitation.missionId !== input.missionId || invitation.sequence !== active.sequence || invitation.status !== "ACCEPTED") {
       throw new MissionValidationError("INVITATION_PASS_MISMATCH", "Broadcast does not match the accepted invitation");
     }
-    return this.relay.recordBroadcast(input.missionId, input.txHash);
+    try {
+      return this.relay.recordBroadcast(input.missionId, input.txHash);
+    } finally {
+      await this.relay.flushDurability();
+    }
   }
 
   async reconcile(missionId: string): Promise<{ mission: PublicMission; hop: Hop | PublicHop | null }> {
-    const observed = await this.relay.reconcile(missionId);
+    let observed: Hop | null = null;
+    try {
+      observed = await this.relay.reconcile(missionId);
+    } finally {
+      // Persist PENDING/INCLUDED/FINAL/INVALID relay state before any response
+      // or mission projection can be acknowledged to the caller.
+      await this.relay.flushDurability();
+    }
     const applied = await this.applyNextFinalizedHop(missionId);
     return {
       mission: toPublicMission(await this.missions.getMissionRecord(missionId)),
