@@ -1,6 +1,5 @@
 export interface SignatureEnvelope {
   challenge_id: string;
-  wallet: string;
   public_key: string;
   signature: string;
 }
@@ -19,6 +18,10 @@ export interface CarryOneApiClientOptions {
   fetchImpl?: typeof fetch;
 }
 
+function signedBody(auth: SignatureEnvelope, fields: Record<string, unknown> = {}): Record<string, unknown> {
+  return { ...fields, challenge_id: auth.challenge_id, public_key: auth.public_key, signature: auth.signature };
+}
+
 export class CarryOneApiClient {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
@@ -33,7 +36,8 @@ export class CarryOneApiClient {
   }
 
   createMission(input: Record<string, unknown> & { auth: SignatureEnvelope }): Promise<unknown> {
-    return this.request("/missions", { method: "POST", body: input });
+    const { auth, ...fields } = input;
+    return this.request("/missions", { method: "POST", body: signedBody(auth, fields) });
   }
 
   getMission(missionId: string, viewToken?: string): Promise<unknown> {
@@ -41,7 +45,8 @@ export class CarryOneApiClient {
   }
 
   createInvitation(missionId: string, input: Record<string, unknown> & { auth: SignatureEnvelope }): Promise<unknown> {
-    return this.request(`/missions/${encodeURIComponent(missionId)}/invitations`, { method: "POST", body: input });
+    const { auth, ...fields } = input;
+    return this.request(`/missions/${encodeURIComponent(missionId)}/invitations`, { method: "POST", body: signedBody(auth, fields) });
   }
 
   getInvitation(inviteToken: string): Promise<unknown> {
@@ -49,7 +54,10 @@ export class CarryOneApiClient {
   }
 
   acceptInvitation(inviteToken: string, input: { auth: SignatureEnvelope; candidate_display_label?: string }): Promise<unknown> {
-    return this.request(`/i/${encodeURIComponent(inviteToken)}/accept`, { method: "POST", body: input });
+    return this.request(`/i/${encodeURIComponent(inviteToken)}/accept`, {
+      method: "POST",
+      body: signedBody(input.auth, { candidate_display_label: input.candidate_display_label }),
+    });
   }
 
   declineInvitation(inviteToken: string): Promise<unknown> {
@@ -57,13 +65,17 @@ export class CarryOneApiClient {
   }
 
   authorizePass(missionId: string, input: { invitation_id: string; auth: SignatureEnvelope }): Promise<unknown> {
-    return this.request(`/missions/${encodeURIComponent(missionId)}/pass-intent`, { method: "POST", body: input });
+    return this.request(`/missions/${encodeURIComponent(missionId)}/pass-intent`, {
+      method: "POST",
+      body: signedBody(input.auth, { invitation_id: input.invitation_id }),
+    });
   }
 
-  recordBroadcast(missionId: string, intentId: string, txHash: string): Promise<unknown> {
-    return this.request(`/missions/${encodeURIComponent(missionId)}/pass-intent/${encodeURIComponent(intentId)}/broadcast`, {
+  /** Active Mission HTTP branch records the broadcast at /missions/:id/broadcast. */
+  recordBroadcast(missionId: string, invitationId: string, txHash: string): Promise<unknown> {
+    return this.request(`/missions/${encodeURIComponent(missionId)}/broadcast`, {
       method: "POST",
-      body: { tx_hash: txHash },
+      body: { invitation_id: invitationId, tx_hash: txHash },
     });
   }
 
@@ -74,6 +86,9 @@ export class CarryOneApiClient {
   private async request(path: string, options: { method?: string; body?: unknown; viewToken?: string } = {}): Promise<any> {
     const headers: Record<string, string> = { Accept: "application/json" };
     if (options.body !== undefined) headers["Content-Type"] = "application/json";
+    // Kept as a client boundary for the secure route-follow capability. The
+    // active backend branch must enforce this token before this feature can be
+    // called production-ready; the client never falls back to spoofable X-Wallet.
     if (options.viewToken) headers.Authorization = `Bearer ${options.viewToken}`;
     const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method: options.method ?? "GET",
