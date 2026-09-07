@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#f3ecdf" />
+  <title>Carry One — Reach Mission</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="route-ribbon route-ribbon-a" aria-hidden="true"></div><div class="route-ribbon route-ribbon-b" aria-hidden="true"></div>
+  <div id="app-shell" class="app-shell">
+    <header class="brandbar"><button id="brand-home" class="brand" type="button" aria-label="Carry One home"><span class="brand-mark">1</span><span><strong>Carry One</strong><small>Reach Mission</small></span></button><div class="network-chip"><span class="pulse"></span><span id="network-label">TESTNET READY</span></div></header>
+    <div id="demo-banner" class="demo-banner" hidden>DEMO MODE — no wallet or network writes</div><div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <main id="screen" class="screen" tabindex="-1"></main>
+    <footer class="footer"><span>1 NIM = verified handoff</span><span>Only FINAL changes custody</span></footer>
+  </div>
+  <dialog id="wallet-dialog" class="wallet-dialog"><form method="dialog" id="wallet-form"><div class="dialog-kicker">Nimiq Pay</div><h2>Choose the account you expect to use</h2><p>Carry One cannot force the sender account. The server still verifies the actual sender on-chain.</p><div id="wallet-options" class="wallet-options"></div><div class="dialog-actions"><button value="cancel" class="button ghost">Cancel</button><button id="wallet-confirm" value="default" class="button primary">Continue</button></div></form></dialog>
+  <dialog id="invite-dialog" class="invite-dialog"><form method="dialog" id="invite-form"><div class="dialog-kicker">Next bridge</div><h2>Who can move this closer?</h2><label>Bridge label<input id="candidate-label" maxlength="60" placeholder="Opeyemi" /></label><label>Why them?<textarea id="why-you" maxlength="120" placeholder="You know more people in this community than I do."></textarea></label><label>Known wallet (optional)<input id="candidate-wallet" autocomplete="off" placeholder="NQ…" /></label><div class="dialog-actions"><button value="cancel" class="button ghost">Cancel</button><button id="invite-confirm" value="default" class="button primary">Create private invite</button></div></form></dialog>
+  <script src="/app.js" defer></script>
+</body>
+</html>
