@@ -1,17 +1,25 @@
 project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
-visibility: private
-state_version: 0.6.1
-date: 2026-09-05
+visibility: public
+state_version: 0.7.0
+date: 2026-09-07
 
-phase: MVP_VERTICAL_SLICE_1_BLINDSPOT_HARDENING_MERGED
+phase: MVP_VERTICAL_SLICE_1_IN_PROGRESS_FRONTEND_MERGED_BACKEND_PARALLEL
 problem_locked: true
 foundation_slice_1_complete: true
 blindspot_hardening_complete: true
+frontend_vertical_slice_skeleton_complete: true
+backend_vertical_slice_in_progress: true
 full_production_build_authorized: false
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
+
+continuity_protocol:
+  update_canonical_state_after_every_meaningful_milestone: true
+  update_handover_after_every_meaningful_milestone: true
+  source_of_truth: CANONICAL-STATE.yaml
+  next_conversation_must_be_able_to_take_lead_without_chat_history: true
 
 team:
   faadil:
@@ -73,190 +81,171 @@ mvp_contract:
     - Route_Arrival
 
 blindspot_hardening:
-  branch: mvp/blindspot-hardening
+  status: PASS
   pull_request: 7
   merge_sha: c35389047639b7ba8b7a1ebad240ec30fcce07cc
+  destination_paradox: known_consenting_target_beachhead
+  stalled_holder: display_only_STALLED_no_reassignment
+  multi_account_sender: listAccounts_expected_holder_preflight_actual_sender_onchain_authoritative
+  onchain_metadata: mandatory_opaque_co_v1_commitment
+  route_loop: finalized_wallet_reentry_forbidden
+  exact_one_nim: explicit_fee_zero_request
+  rpc_failure: VERIFICATION_DELAYED_not_false_INVALID
+  unique_human_claims: forbidden
+
+frontend_vertical_slice:
   status: MERGED_TO_MAIN
-  p0:
-    destination_paradox:
-      resolution: known_consenting_target_beachhead
-      implemented: true
-    stalled_holder:
-      resolution: display_only_STALLED_plus_new_mission_no_reassignment
-      implemented: true
-    nimiq_multi_account_sender:
-      resolution: listAccounts_expected_holder_preflight_plus_backend_actual_sender_verification
-      automated_boundary: PASS
-      real_device_validation: PENDING
-    onchain_metadata_privacy:
-      resolution: mandatory_opaque_co_v1_hop_commitment
-      clear_mission_sequence_tag_in_reach_mission: forbidden
-      implemented: true
-  p1:
-    target_receive_reason:
-      resolution: mission_note_is_human_purpose_or_ask
-      implemented_contract: true
-    repeat_value:
-      resolution: follow_route_then_start_own_mission
-      domain_dto_support: true
-      secure_view_token_http_binding: PENDING_VERTICAL_SLICE
-    nimiq_pay_invite_deeplink:
-      custom_scheme_builder: implemented
-      real_device_validation: PENDING
-    route_loops:
-      finalized_wallet_reentry: forbidden
-      implemented: true
-    exact_one_nim_forwardability:
-      explicit_fee_zero_request: implemented
-      exact_balance_real_testnet_validation: PENDING
-    rpc_single_point_failure:
-      resilient_read_client: implemented
-      all_rpc_down_behavior: VERIFICATION_DELAYED
-    usage_evidence:
-      aggregate_metrics: implemented
-      unique_wallet_not_unique_human: true
-  p2:
-    target_consent_anti_spam:
-      creator_attestation: implemented
-      target_signed_consent_or_opt_out_for_public_scale: PENDING_PRE_PUBLIC
-    evidence_dashboard_data_boundary:
-      privacy_safe_aggregator: implemented
+  branch: frontend/mvp-vertical-slice-skeleton
+  pull_request: 9
+  pr_head_sha: 749c7479631158b21adee0b93c78b1fb33e5952e
+  merge_sha: 5d7cd7caaa574a3518f8c37ef42472c04e5cd105
+  implemented:
+    - exact_five_screen_mini_app_skeleton
+    - mission_home_create_invitation_pass_route_arrival_state_rendering
+    - Nimiq_Pay_listAccounts_expected_holder_selection_ui
+    - challenge_sign_flow
+    - exact_100000_luna_sendBasicTransactionWithData_fee_zero_request
+    - opaque_co_v1_recipient_data_guard
+    - tx_hash_claim_then_backend_reconcile_before_custody_advance
+    - native_invite_deeplink_client_boundary
+    - explicit_demo_mode_no_wallet_or_network_writes
+    - mobile_first_layout
+    - reduced_motion_boundary
+    - route_follow_capability_client_storage_and_bearer_transport
+    - compatibility_with_current_opeyemi_http_branch_shapes
+  integration_rule:
+    do_not_wait_for_backend_to_finish_before_contract_integration: true
+    backend_contract_divergence_must_be_reconciled_early: true
+
+public_repository_security:
+  repository_is_public: true
+  public_since_before_this_state_closure: true
+  ci_secret_scan_added: true
+  scan_scope:
+    - tracked_working_tree_files
+    - reachable_git_history_high_confidence_patterns
+  final_pr9_scan_status: PASS
+  guarantee_level: high_confidence_static_scan_not_absolute_proof
+  secrets_must_never_be_committed: true
+  local_env_only_for_wallet_private_material: true
+
+verification:
+  pre_frontend_authoritative_tests: 66
+  frontend_final_ci:
+    run_id: 34120121265
+    head_sha: 749c7479631158b21adee0b93c78b1fb33e5952e
+    conclusion: success
+    node: 22
+    npm_ci: pass
+    secret_scan: pass
+    typecheck: pass
+    test_files: 15
+    authoritative_vitest_tests: 80
+    build: pass
+  authoritative_automated_test_count: 80
+  runtime_validations_not_claimed:
+    - real_nimiq_pay_multi_account_sender_behavior
+    - exact_balance_one_nim_wallet_send_one_nim_with_data_fee_zero
+    - native_nimiq_pay_invite_deeplink_device_launch
+    - full_2_to_3_real_wallet_testnet_CREATE_to_ARRIVED
+
+backend_parallel_work:
+  owner: opeyemi
+  postgres:
+    branch: feat/postgres-adapter
+    observed_head_sha: 211f091cd27b5cc94f6a9a9c6790dff7863a2917
+    merged_to_main: false
+    scope:
+      - postgres_repository_adapter
+      - migration_runner
+      - file_postgres_storage_toggle
+  http:
+    branch: feat/mission-http-bindings
+    observed_head_sha: ed6109992adbdd7818f34b6aa4d037e94b7c91c8
+    merged_to_main: false
+    scope:
+      - production_mission_http_bindings
+      - validation
+      - idempotency
+      - rate_limits
+      - mission_view_dto
+  branch_safety:
+    preserve_collaborator_work: true
+    do_not_force_update_opeyemi_branches: true
+    merge_only_after_review_ci_and_contract_reconciliation: true
+
+secure_route_following:
+  frontend_capability_handling:
+    status: IMPLEMENTED
+    behavior: URL_view_token_to_sessionStorage_then_removed_from_URL_then_Bearer_header
+  backend_capability_verification:
+    status: BLOCKED_NOT_IMPLEMENTED_ON_OBSERVED_HTTP_BRANCH
+    observed_behavior: read_viewer_identity_derived_from_X-Wallet_header_without_Bearer_capability_verification
+    risk: untrusted_header_cannot_be_treated_as_secure_participant_authorization
+    required_fix:
+      - server_minted_unlisted_route_view_capability_or_signed_wallet_read_auth
+      - capability_hash_or_equivalent_server_side_verification
+      - expiry_and_revocation_or_rotation_policy
+      - participant_role_derived_only_from_verified_identity_or_capability
+      - why_you_and_other_private_invitation_context_redacted_from_unauthorized_reads
+    effect: PUBLIC_EARLY_ACCESS_BLOCKED
 
 onchain_commitment:
   required_for_reach_mission: true
   format: co:v1:<opaque-sha256-base64url>
   max_bytes: 64
-  binds:
-    - mission_id
-    - sequence
-    - current_holder
-    - accepted_recipient
-    - random_pass_nonce
   cleartext_mission_id: false
   transaction_anonymity_claim: false
   public_chain_sender_recipient_value_acknowledged: true
 
-nimiq_pay:
-  expected_holder_account_preflight: listAccounts
-  sender_force_supported_by_client: false
-  actual_sender_backend_verification: authoritative
-  send_method: sendBasicTransactionWithData
-  recipient_value_luna: 100000
-  fee_luna: 0
-  data_required: true
-
-rpc_resilience:
-  multiple_read_endpoints_supported: true
-  env: NIMIQ_RPC_URLS
-  primary_failure_fallback: true
-  all_endpoints_unavailable_error: VERIFICATION_DELAYED
-  infrastructure_failure_marks_tx_invalid: false
-
-persistence:
-  contract: docs/REACH-MISSION-PERSISTENCE.sql
-  migration: migrations/001_reach_mission_foundation.sql
-  production_target: PostgreSQL_or_compatible
-  production_multi_instance_adapter_complete: false
-  new_invariants:
-    - target_consent_confirmed_true_at_creation
-    - opaque_recipient_data_durable_with_pass_intent
-    - one_finalized_participation_per_wallet_per_mission
-    - mission_updated_at_drives_display_only_stalled_activity
-
-security:
-  auth_domain: carry-one:v1
+privacy:
   target_wallet_encryption: AES_256_GCM
   target_wallet_equality: keyed_HMAC_SHA256
-  invite_token_bits: 256
-  unique_human_claims: forbidden
-  blockchain_privacy_claim: no_transaction_anonymity
-
-verification:
-  pre_hardening_authoritative_tests: 56
-  code_bearing_ci:
-    run_id: 33950354706
-    head_sha: e94e2ca9348be10e738ec27ab510bc8eb9642ec5
-    conclusion: success
-    node: 22
-    npm_ci: pass
-    typecheck: pass
-    tests: pass
-    build: pass
-    test_files: 13
-    authoritative_vitest_tests: 66
-  final_pr_head_ci:
-    run_id: 33950458528
-    head_sha: e3b5d56d29e9cf4ee8d79a578a4dbdbd70e1295e
-    conclusion: success
-    npm_ci: pass
-    typecheck: pass
-    tests: pass
-    build: pass
-  new_hardening_tests: 10
-  automated_proofs:
-    target_consent_required: PASS
-    stalled_display_no_custody_mutation: PASS
-    opaque_commitment_required_exact_and_under_64_bytes: PASS
-    cleartext_legacy_tag_rejected_by_reach_mission_client: PASS
-    route_loop_reentry_rejected: PASS
-    expected_holder_wallet_preflight: PASS
-    explicit_zero_fee_request: PASS
-    rpc_fallback: PASS
-    all_rpc_down_verification_delayed: PASS
-    invite_deeplink_builder: PASS
-    privacy_safe_usage_aggregation: PASS
-  runtime_validations_not_claimed:
-    - real_nimiq_pay_multi_account_sender_selection
-    - exact_balance_one_nim_wallet_send_one_nim_with_data_fee_zero
-    - native_nimiq_pay_invite_deeplink_device_launch
-  note: 66 is the authoritative independently verified automated test count after blind-spot hardening.
+  target_wallet_must_never_be_in_participant_safe_DTO: true
+  blockchain_transaction_anonymity_claim: false
 
 history:
   pr_1: CLOSED_SUPERSEDED
-  pr_3_reconciliation: MERGED
+  pr_2_product_law: MERGED
+  pr_3_backend_reconciliation: MERGED
   pr_4_ux_state_contract: MERGED
   pr_5_foundation_slice_1: MERGED
-  pr_5_merge_sha: 7cb5dba72fa6b4c5d186d637cb0b5f92cd5ab31d
   pr_6_foundation_state_closure: MERGED
-  pr_6_merge_sha: 4e77242bcbe30ec379e9c06d487c74300a6ca2a5
   pr_7_blindspot_hardening: MERGED
-  pr_7_merge_sha: c35389047639b7ba8b7a1ebad240ec30fcce07cc
+  pr_8_blindspot_state_closure: MERGED
+  pr_9_frontend_vertical_slice: MERGED
+  pr_9_merge_sha: 5d7cd7caaa574a3518f8c37ef42472c04e5cd105
 
 current_gate:
-  name: CARRY_ONE_BLINDSPOT_HARDENING
-  status: PASS
-
-next_gate:
   name: CARRY_ONE_MVP_VERTICAL_SLICE_1
-  status: READY
-  authorized_scope:
-    - production_postgres_repository_adapter_and_migration_runner
-    - mission_auth_invitation_pass_http_api_bindings
-    - secure_unlisted_route_following_view_authorization
-    - Nimiq_Pay_client_challenge_sign_and_send_flow
-    - functional_five_screen_mini_app_skeleton_without_visual_polish
-    - end_to_end_testnet_mission_across_2_to_3_real_wallets
-    - real_usage_instrumentation_without_unique_human_claims
-    - real_multi_account_sender_validation
-    - exact_balance_fee_zero_forwardability_validation
-    - native_deeplink_device_validation
-  exit_criteria:
-    - create_invite_accept_authorize_pass_broadcast_final_arrival_e2e_on_testnet
-    - production_database_restart_recovery_proven
-    - no_unsigned_sensitive_mutation_path
-    - target_wallet_never_exposed
-    - no_finalized_route_wallet_loop
-    - opaque_commitment_verified_on_real_testnet_tx
-    - multi_account_holder_flow_proven
-    - exact_1_nim_balance_forwarding_proven
-    - native_invite_deeplink_proven_on_device
-    - five_screen_state_mapping_functional
-    - all_existing_plus_new_tests_green
-    - ci_typecheck_test_build_green
+  status: IN_PROGRESS
+  completed:
+    - blindspot_hardening
+    - five_screen_frontend_skeleton
+    - frontend_Nimiq_Pay_boundary
+    - frontend_backend_contract_compatibility_layer
+    - public_repo_high_confidence_secret_scan
+  pending:
+    - merge_and_validate_postgres_adapter
+    - merge_and_validate_production_HTTP_bindings
+    - implement_secure_route_follow_backend_authorization
+    - production_database_restart_recovery_proof
+    - real_Nimiq_Pay_multi_account_device_validation
+    - exact_balance_fee_zero_real_testnet_validation
+    - native_deeplink_real_device_validation
+    - full_2_to_3_wallet_testnet_CREATE_INVITE_ACCEPT_AUTHORIZE_PASS_FINAL_ARRIVED
+
+next_exact_actions:
+  - review_opeyemi_postgres_branch_against_canonical_persistence_contract
+  - review_opeyemi_http_branch_against_canonical_API_auth_privacy_contract
+  - require_secure_route_follow_backend_fix_before_public_Early_Access
+  - integrate_green_backend_branches_with_frontend_main
+  - run_full_local_or_test_harness_vertical_flow
+  - then_run_real_testnet_device_proofs
+  - update_CANONICAL_STATE_and_HANDOVER_after_each_of_these_milestones
 
 still_blocked:
   - public_early_access
-  - public_repository_before_secret_scan
   - mainnet_cutover_and_funds
   - marketing_launch
   - full_visual_polish_before_vertical_flow_proof
@@ -268,11 +257,11 @@ still_blocked:
   - marketplace_expansion
   - unique_human_claims
 
-pre_public_followups:
-  - production PostgreSQL transaction/row-lock adapter
-  - production HTTP schema validation rate limits and idempotency
-  - target-signed consent_or_opt_out_controls_for_public_scale
-  - secret scan before publication
-  - confirm package-lock MIT metadata consistency
-  - privacy review with real-user flows
-  - Early Access deployment hardening
+pre_public_early_access_followups:
+  - secure_route_follow_backend_authorization
+  - production_PostgreSQL_transaction_and_row_lock_adapter_merged
+  - production_HTTP_validation_idempotency_rate_limits_merged
+  - privacy_review_with_real_user_flows
+  - target_signed_consent_or_opt_out_controls_before_broader_public_scale
+  - verify_package_lock_license_metadata_is_MIT_after_backend_dependency_merge
+  - Early_Access_deployment_hardening
