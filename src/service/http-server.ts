@@ -25,20 +25,44 @@ export async function handleRelayRequest(service: CanonicalRelayService, req: In
     const body = await readJsonBody(req);
     const { currentHolder, recipient } = body as { currentHolder?: string; recipient?: string };
     if (!currentHolder || !recipient) return send(res, 400, { error: "BAD_REQUEST", message: "currentHolder and recipient are required" });
-    return send(res, 201, service.initiatePass(batonId, currentHolder, recipient));
+    const intent = service.initiatePass(batonId, currentHolder, recipient);
+    await service.flushDurability();
+    return send(res, 201, intent);
   }
   if (req.method === "POST" && tail === "broadcast") {
     const body = await readJsonBody(req);
     const { txHash } = body as { txHash?: string };
     if (!txHash) return send(res, 400, { error: "BAD_REQUEST", message: "txHash is required" });
-    return send(res, 201, service.recordBroadcast(batonId, txHash));
+    try {
+      const hop = service.recordBroadcast(batonId, txHash);
+      await service.flushDurability();
+      return send(res, 201, hop);
+    } catch (error) {
+      // A stale-intent rejection can itself mutate relay state; persist that
+      // cancellation before surfacing the error.
+      await service.flushDurability();
+      throw error;
+    }
   }
   if (req.method === "POST" && tail === "cancel") {
-    service.cancelPass(batonId);
+    try {
+      service.cancelPass(batonId);
+    } finally {
+      await service.flushDurability();
+    }
     res.writeHead(204).end();
     return;
   }
-  if (req.method === "POST" && tail === "reconcile") return send(res, 200, await service.reconcile(batonId));
+  if (req.method === "POST" && tail === "reconcile") {
+    try {
+      const reconciled = await service.reconcile(batonId);
+      await service.flushDurability();
+      return send(res, 200, reconciled);
+    } catch (error) {
+      await service.flushDurability();
+      throw error;
+    }
+  }
   return send(res, 404, { error: "NOT_FOUND", message: `No route for ${req.method} ${url.pathname}` });
 }
 
