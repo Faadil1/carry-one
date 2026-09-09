@@ -1,13 +1,13 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-09  
-State: `MVP_VERTICAL_SLICE_1_WITH_HIDDEN_SPOTS_PRODUCT_LAYER_MERGED`
+State: `MVP_VERTICAL_SLICE_1_WITH_HIDDEN_SPOTS_MERGED_AND_FAADIL_HTTP_SECURITY_PR_GREEN`
 
 ## Source of truth / continuity
 
 Read `CANONICAL-STATE.yaml` first; it overrides chat memory. After every meaningful milestone update **both** `CANONICAL-STATE.yaml` and `HANDOVER.md` so a new conversation can immediately take lead.
 
-Current canonical version: **0.8.15**.
+Current canonical version: **0.8.16**.
 
 ## Product law — FROZEN
 
@@ -93,28 +93,52 @@ Once secure E2E is green:
 
 No bots, artificial wallets or gaming. The same first testers should improve Reliability/Usefulness + UX while legitimately moving the usage bucket.
 
+## Faadil HTTP security delta — PR #20 GREEN, NOT MERGED
+
+Branch: `feat/faadil-http-security`  
+Base: Opeyemi's `feat/mission-http-bindings` at `4f219cbd153484e560c4079ffd8c549ec52e483f`  
+PR: **#20** — `Secure broadcast claims and add client idempotency`  
+Head: `2588021ea45c806ec9588c24b00ce209f67ddbfe`  
+CI run `34416146070`: **PASS** — secret scan, typecheck, tests, build all green.  
+Reviewer requested: **Opeyemi (`opeblow`)**.
+
+Implemented and tested on PR #20:
+- signed `AUTHORIZE_PASS` issues a cryptographically random short-lived broadcast capability;
+- capability is bound to mission + invitation + sequence + pass-intent nonce + canonical holder wallet;
+- capability is one-time and cannot be replayed with a new idempotency key;
+- exact same broadcast retry with same idempotency key replays cached success safely;
+- process restart invalidates bearer capability fail-closed while preserving durable pass intent;
+- TypeScript Mini App API client automatically creates `Idempotency-Key` for canonical mutations;
+- API client transports the broadcast capability and supports an explicit stable retry key;
+- tests cover capability binding, expiration, replay, missing token and client transport.
+
+Important precision: **do not mark HTTP blockers #3/#4 fully closed yet.** PR #20 has not been merged into Opeyemi's branch or `main`, and the current standalone browser `web/app.js` must still be reconciled with the new API contract during the shared vertical integration. In particular it still uses the pre-HTTP broadcast route and must inherit the capability + idempotency behavior during integration.
+
+Implementation record on PR branch:
+`docs/FAADIL-HTTP-SECURITY-DELTA-2026-09-09.md`
+
 ## Opeyemi HTTP work — CURRENT GATE
 
 Branch: `feat/mission-http-bindings`  
-Re-fetched 2026-09-09; still at:
+Re-fetched 2026-09-09; observed head at start of PR #20:
 `4f219cbd153484e560c4079ffd8c549ec52e483f`
 
 Do **not** force-update or rewrite Opeyemi's branch.
 
 Agreed split:
 - **Opeyemi:** verified route-view capability replacing spoofable `X-Wallet`; invitation privacy/redaction; production dev-gate for legacy `/relay` mutations.
-- **Faadil side:** scoped short-lived broadcast capability + frontend `Idempotency-Key` generation.
-- **Shared:** frontend + HTTP + PostgreSQL integration, NimCarry runtime branding, real 3-wallet testnet E2E.
+- **Faadil side:** scoped short-lived broadcast capability + client mutation `Idempotency-Key` generation — implemented on green PR #20, pending integration.
+- **Shared:** browser frontend + HTTP + PostgreSQL integration, NimCarry runtime branding, real 3-wallet testnet E2E.
 
-Remaining blockers:
-1. spoofable `X-Wallet` → verified route-view capability;
-2. role-scope/redact private invitation context;
-3. secure tx-hash broadcast claim with scoped capability;
-4. frontend mutation idempotency keys;
-5. disable/dev-gate legacy relay mutations;
-6. combined frontend + HTTP + PostgreSQL harness.
+Blocker status:
+1. spoofable `X-Wallet` → verified route-view capability: **PENDING OPEYEMI**;
+2. role-scope/redact private invitation context: **PENDING OPEYEMI**;
+3. secure tx-hash broadcast claim with scoped capability: **PR #20 GREEN / PENDING MERGE**;
+4. frontend mutation idempotency keys: **TS API CLIENT GREEN ON PR #20 / BROWSER WIRING PENDING SHARED INTEGRATION**;
+5. disable/dev-gate legacy relay mutations: **PENDING OPEYEMI**;
+6. combined frontend + HTTP + PostgreSQL harness: **PENDING SHARED INTEGRATION**.
 
-Current gate: **`NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION`**. Resume it now.
+Current gate: **`NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION`**. Do not move to real testnet proof until the integrated secure runtime is green.
 
 ## First real testnet proof after secure merge
 
@@ -129,10 +153,10 @@ Also prove: multi-account behavior, exact-balance forwarding with requested fee 
 
 ## Execution order — CURRENT
 
-1. Re-fetch Opeyemi branch again immediately before touching HTTP integration if time has passed.
-2. Close the HTTP security split blockers.
-3. Integrate frontend + HTTP + PostgreSQL + NimCarry runtime branding.
-4. Full CI green; merge; update canon + handover immediately.
+1. Wait for / inspect Opeyemi's review or new commits on `feat/mission-http-bindings`; re-fetch before reconciliation.
+2. Reconcile PR #20 with Opeyemi's route-view/privacy/legacy-relay changes without force-updating his branch.
+3. Integrate browser frontend + HTTP + PostgreSQL + NimCarry runtime branding, including broadcast capability + browser mutation idempotency.
+4. Full CI green; merge the combined vertical runtime to `main`; update canon + handover immediately.
 5. Run real A→B→C testnet route through `ARRIVED`.
 6. Verify the already-merged Route Receipt against real route data; capture screenshots/timestamps/tx hashes.
 7. Run 5 observed cold-start <60-second tests.
