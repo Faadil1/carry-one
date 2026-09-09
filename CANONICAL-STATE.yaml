@@ -2,16 +2,18 @@ project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.1
+state_version: 0.8.2
 date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_SIP_SHOW_DEMO_DEPLOYED_HTTP_SECURITY_NEXT
+phase: MVP_VERTICAL_SLICE_1_SIP_SHOW_DEMO_USABLE_HTTP_SECURITY_NEXT
 problem_locked: true
 foundation_slice_1_complete: true
 blindspot_hardening_complete: true
 frontend_vertical_slice_skeleton_complete: true
 postgres_vertical_slice_complete: true
 sip_show_clickable_demo_deployed: true
+sip_show_demo_public_access_verified: true
+sip_show_demo_usability_fix_merged: true
 http_vertical_slice_in_progress: true
 full_production_build_authorized: false
 public_early_access_authorized: false
@@ -72,8 +74,6 @@ frontend_vertical_slice:
   status: MERGED_TO_MAIN
   pull_request: 9
   merge_sha: 5d7cd7caaa574a3518f8c37ef42472c04e5cd105
-  final_ci_run: 34120121265
-  verified_tests_at_merge: 80
   capabilities:
     - five_screen_functional_skeleton
     - Nimiq_Pay_challenge_sign_send_reconcile_boundary
@@ -87,15 +87,19 @@ frontend_vertical_slice:
 
 sip_show_demo:
   purpose: rough_clickable_product_for_Nimiq_Sip_and_Show
-  deployment_created: true
-  deployment_target: production
-  deployment_name: carry-one-sip-show
-  deployment_id: dpl_C2Je2UT7YBf85YzxU9wxJNXQr6p1
-  deployment_url: https://carry-one-sip-show-mi6uo1a99-faadil-s-projects.vercel.app
-  alias: https://carry-one-sip-show-faadil-s-projects.vercel.app
+  stable_public_url: https://carry-one-sip-show.vercel.app/?demo=1
+  public_access:
+    status: USER_VERIFIED_NO_LOGIN
+    verified_on: 2026-09-09
+    vercel_connector_can_verify: false
+    connector_limitation: 403_on_faadil-s-projects_scope
+  original_deployment:
+    deployment_name: carry-one-sip-show
+    deployment_id: dpl_C2Je2UT7YBf85YzxU9wxJNXQr6p1
+    deployment_url: https://carry-one-sip-show-mi6uo1a99-faadil-s-projects.vercel.app
+    original_alias: https://carry-one-sip-show-faadil-s-projects.vercel.app
   mode: explicit_demo_only
   behavior:
-    - defaults_to_demo_mode
     - no_wallet_writes
     - no_network_mutations
     - five_screen_clickable_flow
@@ -104,11 +108,33 @@ sip_show_demo:
     can_be_shown_as_clickable_product_skeleton: true
     can_be_claimed_as_real_testnet_E2E: false
     can_be_claimed_as_runtime_wallet_proof: false
-  deployment_runtime_verification:
-    connector_status_check: BLOCKED_BY_VERCEL_SCOPE_AUTHORIZATION
-    deployment_creation_result: SUCCESS_INITIALIZING
-    public_http_ready_verification: PENDING
-    user_or_opeyemi_should_open_alias_before_live_demo: true
+  usability_fix:
+    report_source: opeyemi
+    reported_issues:
+      - Accept_as_bridge_saved_state_but_did_not_navigate
+      - browser_tab_missing_favicon
+    root_cause: demo_accept_branch_set_ACCEPTED_and_returned_without_visible_navigation
+    pull_request: 16
+    branch: fix/sip-show-demo-navigation-branding
+    merge_sha: 37e518d0661baadb72e2c0283fccef31246dd7f6
+    fixes:
+      - demo_only_ACCEPTED_transition_returns_to_Mission_Home
+      - Pass_1_NIM_becomes_visible_after_acceptance
+      - Carry_One_SVG_favicon_added
+      - real_wallet_and_backend_paths_unchanged
+    verification:
+      ci_run: 34360347801
+      conclusion: success
+      npm_ci: pass
+      public_repo_secret_scan: pass
+      typecheck: pass
+      test_files: 20
+      authoritative_vitest_tests: 124
+      build: pass
+  deployed_bytes_after_pr16:
+    status: REDEPLOY_VERIFICATION_PENDING
+    rationale: source_fix_is_merged_to_main_but_Vercel_connector_cannot_access_project_scope_to_prove_the_public_alias_has_redeployed_that_commit
+    action: Faadil_or_Opeyemi_should_refresh_public_demo_and_confirm_accept_navigation_and_favicon_before_live_show
   sip_show_representation:
     preferred_presenter_if_available: opeyemi
     demo_claim_rule: show_only_genuinely_working_surfaces_and_label_demo_mode
@@ -144,21 +170,13 @@ postgres_vertical_slice:
     multi_instance_adapter_complete: false
     rationale: relay_state_machine_remains_in_memory_authoritative_with_durable_Postgres_snapshot_adapter
     contract: docs/POSTGRES-RUNTIME-BOUNDARY.md
-  verification:
-    ci_run: 34129860675
-    conclusion: success
-    npm_ci: pass
-    public_repo_secret_scan: pass
-    typecheck: pass
-    test_files: 20
-    authoritative_vitest_tests: 122
-    build: pass
-  pr11_note: GitHub_marks_PR11_merged_by_ancestry_after_PR12_preserved_source_head_as_merge_parent; authoritative_tree_is_PR12_not_raw_PR11_tree
 
 http_parallel_work:
   owner: opeyemi
   branch: feat/mission-http-bindings
-  observed_head_sha: ed6109992adbdd7818f34b6aa4d037e94b7c91c8
+  observed_head_sha: 4f219cbd153484e560c4079ffd8c549ec52e483f
+  observed_on: 2026-09-09
+  branch_note: collaborator_merged_old_HTTP_work_with_main_line_containing_Postgres_state; branch_is_not_merged_to_current_main_and_must_be_reconciled_from_live_head
   merged_to_main: false
   observed_strengths:
     - mission_HTTP_bindings
@@ -193,7 +211,7 @@ public_repository_security:
   repository_is_public: true
   secret_scan_in_CI: true
   scan_scope: [tracked_files, reachable_git_history_high_confidence_patterns]
-  latest_postgres_ci_secret_scan: PASS
+  latest_ci_secret_scan: PASS_PR16
   guarantee: high_confidence_static_scan_not_absolute_proof
 
 privacy:
@@ -209,7 +227,7 @@ runtime_validations_not_claimed:
   - native_nimiq_pay_invite_deeplink_device_launch
   - full_2_to_3_real_wallet_testnet_CREATE_to_ARRIVED
   - real_managed_or_service_PostgreSQL_failover_or_multi_writer_behavior
-  - sip_show_Vercel_alias_public_HTTP_readiness_until_opened_and_verified
+  - pr16_fixed_source_confirmed_live_on_public_demo_alias
 
 history:
   pr_1: CLOSED_SUPERSEDED
@@ -225,6 +243,8 @@ history:
   pr_11_raw_postgres: MERGED_BY_ANCESTRY_VIA_PR12_NOT_AUTHORITATIVE_TREE
   pr_12_postgres_hardened: MERGED
   pr_13_postgres_state_closure: MERGED
+  pr_15_sip_show_deployment_state: MERGED
+  pr_16_sip_show_demo_navigation_branding: MERGED
 
 current_gate:
   name: CARRY_ONE_MVP_VERTICAL_SLICE_1
@@ -239,8 +259,11 @@ current_gate:
     - postgres_DB_concurrency_and_route_guards
     - public_repo_secret_scan
     - Sip_and_Show_clickable_demo_deployment_created
+    - Sip_and_Show_public_no_login_access_user_verified
+    - Sip_and_Show_demo_accept_navigation_source_fixed
+    - Sip_and_Show_favicon_source_added
   pending:
-    - verify_Sip_and_Show_alias_public_HTTP_readiness
+    - confirm_PR16_fixed_source_is_live_on_public_demo_alias
     - integrate_and_harden_production_HTTP_bindings
     - secure_route_follow_server_capability
     - invitation_privacy_redaction
@@ -254,6 +277,7 @@ next_exact_action:
   name: CARRY_ONE_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
   status: READY
   required:
+    - re_fetch_opeyemi_live_HTTP_head_before_reconciliation
     - preserve_opeyemi_HTTP_work_without_force_update
     - build_clean_current_main_integration_branch
     - implement_route_view_capability_and_remove_X_Wallet_trust
