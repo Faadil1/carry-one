@@ -2,7 +2,7 @@ project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.3
+state_version: 0.8.4
 date: 2026-09-09
 
 phase: MVP_VERTICAL_SLICE_1_WEEKEND_FINALIZATION_PREP
@@ -61,6 +61,7 @@ completed_milestones:
   sip_show_public_no_login_access_user_verified: true
   sip_show_accept_navigation_source_fix: true
   sip_show_favicon_source_fix: true
+  repository_presentation_and_governance_pack: true
 
 verified_baseline:
   latest_source_fix_pr: 16
@@ -72,6 +73,25 @@ verified_baseline:
   test_files: 20
   authoritative_vitest_tests: 124
   build: pass
+
+repository_presentation:
+  completed_on: 2026-09-09
+  reason: Sip_and_Show_and_public_judge_readiness
+  readme:
+    logo_at_top: web/favicon.svg
+    live_demo_prominent: https://carry-one-sip-show.vercel.app/?demo=1
+    demo_video_section_present: true
+    demo_video_status: intentionally_pending_real_testnet_recording
+    current_gate_and_runtime_claim_boundaries_documented: true
+    source_of_truth_links_present: true
+  community_files:
+    contributing: CONTRIBUTING.md
+    security: SECURITY.md
+    code_of_conduct: CODE_OF_CONDUCT.md
+  claim_boundary:
+    clickable_demo_may_be_shown: true
+    clickable_demo_may_be_claimed_as_real_testnet_e2e: false
+    demo_video_must_not_fake_runtime_proof: true
 
 sip_show_demo:
   stable_public_url: https://carry-one-sip-show.vercel.app/?demo=1
@@ -98,6 +118,10 @@ http_parallel_work:
   merged_to_main: false
   before_reconcile: RE_FETCH_LIVE_HEAD
   preserve_branch_without_force_update: true
+  task_split:
+    opeyemi: [route_view_capability, invitation_privacy_redaction, legacy_relay_dev_gate]
+    faadil_side: [secure_tx_hash_broadcast_capability, frontend_Idempotency_Key]
+    shared: [combined_frontend_HTTP_Postgres_integration, real_testnet_E2E]
   remaining_security_blockers:
     - replace_spoofable_X_Wallet_with_verified_route_view_capability
     - role_scope_and_redact_why_you_private_invitation_context
@@ -140,7 +164,7 @@ weekend_finalization:
 
 current_gate:
   name: CARRY_ONE_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
-  status: READY_WAITING_FOR_OPEYEMI_LIVE_HEAD_RECONCILIATION
+  status: READY_WAITING_FOR_PARALLEL_SECURITY_WORK
   exit_criteria:
     - all_five_HTTP_security_integration_blockers_closed
     - frontend_HTTP_Postgres_combined_harness_green
