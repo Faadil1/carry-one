@@ -23,25 +23,46 @@ Exactly `100000` Luna is the baton. A bridge consents before payment. Only indep
 - Sip & Show clickable demo: public at `https://carry-one-sip-show.vercel.app/?demo=1`.
 - Demo only: no wallet writes, no backend mutations, no real testnet proof.
 - PR #16 fixed demo `Accept as bridge` navigation and added Carry One favicon.
-- PR #16 CI: secret scan ✅, typecheck ✅, **124/124 tests across 20 files ✅**, build ✅.
-- Manually confirm the public alias serves the PR #16 bytes: favicon visible, Accept returns to Mission Home, `Pass 1 NIM` visible.
+- Latest verified code baseline: secret scan ✅, typecheck ✅, **124/124 tests across 20 files ✅**, build ✅.
 
-## Opeyemi HTTP work — next integration source
+## Repository presentation / public judge readiness — DONE
 
-Branch: `feat/mission-http-bindings`
-Latest observed head: `4f219cbd153484e560c4079ffd8c549ec52e483f`
+Immediately before Sip & Show, the public repo presentation was upgraded on `main`:
 
-**Re-fetch the live head before integration** because Opeyemi may push again. Preserve his branch; do not force-update it.
+- README now shows the Carry One logo at the top;
+- live clickable demo is the first prominent link;
+- demo/evidence section is present;
+- video is intentionally marked pending until the **real** testnet recording exists, rather than linking a fake simulated proof;
+- README now explains the problem, 5-screen flow, product laws, security/Nimiq integration, current build state and remaining runtime proof;
+- `CONTRIBUTING.md` added;
+- `SECURITY.md` added;
+- `CODE_OF_CONDUCT.md` added;
+- security/privacy/reporting boundaries are explicit for the now-public repository.
 
-Known work present: mission HTTP bindings, signed mutation auth, request validation, `Idempotency-Key`, rate limits and mission DTOs.
+Stable demo URL to give Opeyemi/Nimiq:
 
-Still required before merge/Public Early Access:
-1. replace spoofable `X-Wallet` route identity with verified route-view Bearer/server capability;
-2. redact `why_you` and private invitation context by verified role;
-3. protect tx-hash broadcast claim with short-lived mission+invitation+sequence capability;
-4. generate `Idempotency-Key` automatically from frontend mutation requests;
-5. disable/dev-gate legacy `/relay` mutation paths;
-6. combine frontend + HTTP + PostgreSQL into one tested vertical flow.
+`https://carry-one-sip-show.vercel.app/?demo=1`
+
+If the live Vercel alias is serving PR #16+, expected presenter flow is:
+
+`Create -> Choose bridge -> Accept -> Mission Home -> Pass 1 NIM -> verified route (simulated in demo mode)`
+
+Never represent the demo as the real testnet E2E.
+
+## Opeyemi HTTP work / task split
+
+Branch: `feat/mission-http-bindings`  
+Latest observed head before his current work: `4f219cbd153484e560c4079ffd8c549ec52e483f`.
+
+**Re-fetch the live head before integration** because Opeyemi is actively pushing. Preserve his branch; do not force-update it.
+
+Current agreed split:
+
+- **Opeyemi:** #1 route-view capability, #2 invitation privacy/redaction, #5 legacy `/relay` dev-gating.
+- **Faadil side:** #3 secure tx-hash broadcast capability, #4 frontend `Idempotency-Key` generation.
+- **Together:** #6 frontend + HTTP + PostgreSQL integration, #7 real Nimiq Pay 3-wallet testnet proof.
+
+Do not redo PostgreSQL.
 
 ## Decision locked — we can run the real testnet ourselves
 
@@ -59,18 +80,18 @@ Target proof:
 
 The real Nimiq Pay confirmations remain manual human approvals. Never claim PASS until actual testnet transactions and finality are observed.
 
-## What Faadil can complete before Opeyemi returns
+## What Faadil can complete while Opeyemi works
 
 Use `docs/WEEKEND-FINALIZATION-PLAN.md` as the operational checklist.
 
 Priority preparation:
-- manually verify the PR #16 Sip & Show demo bytes are live;
+- manually verify the latest Sip & Show demo bytes are live;
 - prepare 3 testnet accounts A/B/C;
 - arrange a second physical device if possible;
 - reserve one bridge wallet for the critical exactly-1-NIM forwarding test;
 - define one simple known/consenting destination mission scenario;
 - prepare evidence capture: screen recording, screenshots, timestamps and tx hashes;
-- capture any Sip & Show/Nimiq feedback and classify it as blocker / improvement / judging insight.
+- capture Sip & Show/Nimiq feedback and classify it as blocker / improvement / judging insight.
 
 Do **not** execute the exact-1-NIM proof or claim real E2E PASS before secure HTTP integration is merged.
 
@@ -79,15 +100,16 @@ Do **not** execute the exact-1-NIM proof or claim real E2E PASS before secure HT
 Goal: **close the secure vertical slice + obtain real testnet proof by end of this week.**
 
 Execution sequence:
-1. wait for / re-fetch Opeyemi live HTTP head;
-2. clean-main integration and close the five security/integration blockers;
-3. combined frontend + HTTP + PostgreSQL harness;
-4. full CI green;
-5. merge to `main`;
-6. immediately update canonical + handover;
-7. run our own real A -> B -> C Nimiq testnet proof;
-8. record real-device/testnet evidence;
-9. only then move to small real-user testing, TRACE/full visual polish, promotion and submission packaging.
+1. Opeyemi completes #1/#2/#5 on `feat/mission-http-bindings`;
+2. Faadil-side #3/#4 run in parallel without editing his working branch;
+3. re-fetch Opeyemi live head;
+4. clean-main integration of frontend + HTTP + PostgreSQL;
+5. full CI green;
+6. merge to `main`;
+7. immediately update canonical + handover;
+8. run our own real A -> B -> C Nimiq testnet proof;
+9. record real-device/testnet evidence;
+10. only then move to small real-user testing, TRACE/full visual polish, promotion and submission packaging.
 
 ## Runtime proofs still pending — never fake PASS
 
