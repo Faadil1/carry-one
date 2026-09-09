@@ -1,6 +1,6 @@
 # Security Policy
 
-Carry One moves testnet/mainnet transaction intents and stores privacy-sensitive mission metadata, so security issues should be treated as high priority.
+NimCarry moves testnet/mainnet transaction intents and stores privacy-sensitive mission metadata, so security issues should be treated as high priority.
 
 ## Supported surface
 
@@ -50,4 +50,4 @@ The public repository CI includes a high-confidence scan of tracked files and re
 
 ## Current release boundary
 
-Public Early Access and mainnet funds remain blocked until the secure HTTP vertical slice and real Nimiq Pay/testnet E2E proof are complete. The public Sip & Show URL is an explicit demo-only surface and must not be treated as wallet/runtime proof.
+Public Early Access and mainnet funds remain blocked until the secure HTTP vertical slice and real Nimiq Pay/testnet E2E proof are complete. Any public clickable demo remains an explicit demo-only surface and must not be treated as wallet/runtime proof.
