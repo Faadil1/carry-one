@@ -1,13 +1,13 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-09  
-State: `MVP_VERTICAL_SLICE_1_WITH_FULL_NIMCARRY_BRAND_MIGRATION_AND_COMPLETE_SEVEN_CALL_OTTER_CORPUS`
+State: `MVP_VERTICAL_SLICE_1_WITH_COMPLETE_SEVEN_CALL_CORPUS_AND_OTTER_DIRECT_CONNECTOR_PENDING`
 
 ## Source of truth / continuity
 
 Read `CANONICAL-STATE.yaml` first; it overrides chat memory. After every meaningful milestone, update **both** `CANONICAL-STATE.yaml` and `HANDOVER.md`. Faadil explicitly reconfirmed this protocol on 2026-09-09 because long conversations must be able to hand off cleanly to a new conversation.
 
-Current canonical version: **0.8.11**.
+Current canonical version: **0.8.12**.
 
 ## Naming — LOCKED
 
@@ -52,21 +52,26 @@ The full currently available Cycle I + Cycle II corpus through Sep 9 is assemble
 ### Cycle II
 - Call #1 — Aug 26 — Otter export supplied
 - Call #2 — Sep 2 — Otter export supplied
-- Call #3 — Sep 9 — **Otter export supplied in the active conversation**
+- Call #3 — Sep 9 — Otter export supplied
 
 The Sep 9 video is also available in Google Drive:
 - folder: `03 - Sip & Ship Call #3 (Sep 9)`
 - file: `01 - Sip & Ship Call #3 (Sep 9).mp4`
 - Drive id: `1cyeBj2KFbriRSSoADZPLByf9Rz3JaYES`
 
-New completion checkpoint:
-`docs/SIP-SHIP-CORPUS-COMPLETE-7-CALLS-2026-09-09.md`
+Corpus checkpoints:
+- `docs/SIP-SHIP-CORPUS-COMPLETE-7-CALLS-2026-09-09.md`
+- `docs/SIP-SHIP-OTTER-DIRECT-CONNECTOR-CHECKPOINT-2026-09-09.md`
 
-The earlier six-call/Whisper limitation state is superseded. Otter is the preferred source for full long-form coding. Google Drive videos are secondary visual evidence for screen-share/UI/demo behavior, visible bugs, interruptions and other non-verbal context.
+## Direct Otter.ai connector — preferred extraction path
 
-### Current extraction status
+The local execution sandbox repeatedly timed out while trying to unzip the supplied Otter packages. This is a tooling/runtime issue, not a corpus gap.
 
-The seven ZIP packages are supplied. During the latest attempt, the local execution sandbox returned repeated transport timeouts while trying to extract the current Sep 9 ZIP. This is a tooling/runtime issue, **not a corpus gap**. Do not ask Faadil to retranscribe or recreate anything. Retry ZIP extraction on the next available execution attempt. If persistence becomes a concern, the only fallback request should be to mirror the already-created Otter ZIPs into the shared Drive folder.
+A better path has now been discovered: ChatGPT exposes an **Otter.ai** plugin capable of searching meetings and fetching full transcripts with speaker attribution. The plugin has been surfaced to Faadil in the active conversation and is the preferred path for the seven-call transcript pass.
+
+Current connection status: **PENDING_USER_CONNECTION**.
+
+Once connected, do **not** ask Faadil to recreate, re-export or re-upload the seven transcripts. Search/fetch them directly from Otter.ai. Manual ZIP extraction becomes fallback only.
 
 ### Evidence discipline
 
@@ -80,31 +85,33 @@ Do not overclaim unparsed transcript segments. Continue separating:
 
 ### Already-supported judging signals
 
-Pending recurrence quantification from the seven full Otter transcripts, current evidence already supports:
-- Nimiq explicitly values idea validation, useful apps, community and collaboration.
+Before the seven-call recurrence pass is complete, current evidence already supports:
+- Nimiq values idea validation, useful apps, community and collaboration.
 - Iterative/early submission is normal.
 - Live praise strongly rewards real-world problems, problem-first storytelling, existing-market awareness, functionality, simplicity/elegance and strong use cases.
-- Cycle II changes are explicitly feedback-driven.
-- Returning builders are expected to apply prior-cycle learning.
-- Exactly 1 NIM should be positioned as a **semantic custody baton**, not an economic incentive.
-- NimCarry can own **NIM as a coordination primitive**.
+- Cycle II scoring shifts heavily toward functionality/reliability/usefulness and first-time comprehension.
+- Publicly shared Cycle I judge feedback cites onboarding, error handling, over-broad scope and limited ecosystem reach as meaningful weaknesses.
+- Exactly 1 NIM should be positioned as a semantic custody baton, not an economic incentive.
+- NimCarry can own NIM as a coordination primitive.
 - `ARRIVED / Route Receipt` should become the demo climax rather than `transaction sent`.
+- Post-deadline production reliability matters because judging can occur after submission at an unknown time.
 
 ### Full coding pass — next intelligence milestone
 
-Retry extraction and code all seven calls with a common schema:
+After Otter.ai is connected, fetch and code all seven calls with a common schema:
 - timestamp + tight Nimiq-team wording;
+- speaker attribution;
 - app/demo subject;
 - PRODUCT / JUDGING / DISTRIBUTION / PLATFORM / COMPETITOR;
 - PRAISE / CONCERN / QUESTION / FAILURE / ADVICE;
 - recurrence across calls;
 - explicit in rubric vs implicit only;
 - confidence;
-- relationship to eventual Cycle I winners where applicable;
+- relationship to eventual Cycle I winners/non-winners where applicable;
 - NimCarry action: DO / DO_NOT_DO / WATCH / ALREADY_COVERED;
 - priority P0/P1/P2/POST_CYCLE_II.
 
-Then use the Drive videos for targeted visual checks around the highest-signal transcript moments.
+Then use Drive videos for targeted visual checks around the highest-signal timestamps.
 
 Questions to answer:
 - What does Nimiq praise spontaneously?
@@ -137,19 +144,20 @@ Never claim PASS until actual Nimiq Pay confirmations and testnet finality are o
 
 ## Execution order
 
-1. Retry extraction and evidence-code all seven Otter transcript packages.
-2. Use Google Drive videos for targeted visual/demo-reference checks around high-signal moments.
-3. Synthesize the seven-call hidden-spot matrix, compare Cycle I feedback with eventual winners, and update NimCarry P0/P1/P2 + submission story; immediately update canon + handover.
-4. Re-fetch Opeyemi live branch and preserve it.
-5. Finish HTTP security split work.
-6. Integrate frontend + HTTP + PostgreSQL + NimCarry brand; full CI green; merge; update canon/handover.
-7. Run A → B → C real Nimiq testnet proof including iOS lifecycle/deeplink checks.
-8. Capture screenshots, timestamps, tx hashes, FINAL and ARRIVED evidence.
-9. Add judge-visible Route Receipt and make it the demo climax.
-10. Submit to Cycle II showcase as soon as genuinely usable.
-11. Run first 5 observed first-time 60-second tests, then expand toward 25+ legitimate wallet opens.
-12. If runtime proof is green, use Sep 16 Sip & Show as a real-product proof event; attend regardless for Q&A/community scoring.
-13. Add judge-window reliability monitoring/safe-deploy/rollback before Sep 18.
+1. Connect the surfaced Otter.ai plugin.
+2. Fetch/evidence-code all seven Otter transcripts directly with speaker attribution.
+3. Use Google Drive videos for targeted visual/demo-reference checks around high-signal moments.
+4. Synthesize the seven-call hidden-spot matrix, compare Cycle I feedback with eventual winners/non-winners, and update NimCarry P0/P1/P2 + submission story; immediately update canon + handover.
+5. Re-fetch Opeyemi live branch and preserve it.
+6. Finish HTTP security split work.
+7. Integrate frontend + HTTP + PostgreSQL + NimCarry brand; full CI green; merge; update canon/handover.
+8. Run A → B → C real Nimiq testnet proof including iOS lifecycle/deeplink checks.
+9. Capture screenshots, timestamps, tx hashes, FINAL and ARRIVED evidence.
+10. Add judge-visible Route Receipt and make it the demo climax.
+11. Submit to Cycle II showcase as soon as genuinely usable.
+12. Run first 5 observed first-time 60-second tests, then expand toward 25+ legitimate wallet opens.
+13. If runtime proof is green, use Sep 16 Sip & Show as a real-product proof event; attend regardless for Q&A/community scoring.
+14. Add judge-window reliability monitoring/safe-deploy/rollback before Sep 18.
 
 ## Still blocked
 
