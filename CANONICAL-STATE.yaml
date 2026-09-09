@@ -3,10 +3,10 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.15
+state_version: 0.8.16
 date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_WITH_HIDDEN_SPOTS_PRODUCT_LAYER_MERGED
+phase: MVP_VERTICAL_SLICE_1_WITH_HIDDEN_SPOTS_MERGED_AND_FAADIL_HTTP_SECURITY_PR_GREEN
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -132,6 +132,11 @@ completed_milestones:
   judge_window_smoke_tooling_implemented: true
   first_five_60_second_test_protocol_armed: true
   score_floor_promotion_and_usage_ladder_armed: true
+  faadil_http_security_pr20_opened: true
+  faadil_http_security_pr20_ci_green: true
+  broadcast_capability_implemented_on_pr20: true
+  api_client_idempotency_implemented_on_pr20: true
+  opeyemi_review_requested_on_pr20: true
 
 verified_code_baseline_before_brand_migration:
   latest_source_fix_pr: 16
@@ -170,13 +175,51 @@ http_parallel_work:
     opeyemi: [route_view_capability, invitation_privacy_redaction, legacy_relay_dev_gate]
     faadil_side: [secure_tx_hash_broadcast_capability, frontend_Idempotency_Key]
     shared: [combined_frontend_HTTP_Postgres_integration, real_testnet_E2E]
+  blocker_status:
+    route_view_capability: PENDING_OPEYEMI
+    invitation_privacy_redaction: PENDING_OPEYEMI
+    secure_tx_hash_broadcast_capability: PR20_CI_GREEN_PENDING_MERGE
+    frontend_Idempotency_Key: TS_API_CLIENT_GREEN_ON_PR20_BROWSER_WIRING_PENDING_SHARED_INTEGRATION
+    legacy_relay_dev_gate: PENDING_OPEYEMI
+    combined_frontend_HTTP_Postgres_vertical_flow: PENDING_SHARED_INTEGRATION
   remaining_security_blockers:
     - replace_spoofable_X_Wallet_with_verified_route_view_capability
     - role_scope_and_redact_why_you_private_invitation_context
-    - secure_tx_hash_broadcast_claim_with_short_lived_scoped_capability
-    - generate_frontend_Idempotency_Key_on_mutations
+    - merge_and_reconcile_secure_tx_hash_broadcast_capability
+    - wire_browser_frontend_Idempotency_Key_and_new_broadcast_contract
     - disable_or_dev_gate_legacy_relay_mutations
     - combine_frontend_HTTP_Postgres_vertical_flow
+
+faadil_http_security_work:
+  branch: feat/faadil-http-security
+  base_branch: feat/mission-http-bindings
+  base_sha: 4f219cbd153484e560c4079ffd8c549ec52e483f
+  pull_request: 20
+  pull_request_url: https://github.com/Faadil1/carry-one/pull/20
+  head_sha: 2588021ea45c806ec9588c24b00ce209f67ddbfe
+  status: CI_GREEN_REVIEW_REQUESTED_NOT_MERGED
+  reviewer_requested: opeblow
+  ci_run: 34416146070
+  public_repo_secret_scan: pass
+  typecheck: pass
+  tests: pass
+  build: pass
+  implementation_doc: docs/FAADIL-HTTP-SECURITY-DELTA-2026-09-09.md
+  broadcast_capability:
+    issued_after_signed_AUTHORIZE_PASS_only: true
+    binding: [mission_id, invitation_id, sequence, intent_nonce, canonical_holder_wallet]
+    short_lived: true
+    one_time: true
+    process_restart_invalidates_token_fail_closed: true
+    same_idempotency_key_retry_replays_cached_success: true
+    new_key_replay_after_consumption_rejected: true
+  client_idempotency:
+    typescript_api_client_automatic_mutation_keys: true
+    stable_broadcast_retry_key_supported: true
+    auth_challenge_uses_replay_cache: false
+    reconcile_uses_replay_cache: false
+    standalone_web_app_wiring_complete: false
+  merge_rule: do_not_mark_blockers_closed_until_reconciled_with_opeyemi_work_and_final_browser_runtime
 
 self_run_testnet_decision:
   locked: true
@@ -350,7 +393,7 @@ sip_ship_corpus_intelligence:
 
 current_gate:
   name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
-  status: READY_RESUME_AFTER_HIDDEN_SPOT_PRODUCT_LAYER_MERGE
+  status: PARTIAL_BLOCKERS_3_4_GREEN_ON_PR20_WAITING_OPEYEMI_1_2_5_AND_SHARED_INTEGRATION
   exit_criteria:
     - all_five_HTTP_security_integration_blockers_closed
     - frontend_HTTP_Postgres_combined_harness_green
