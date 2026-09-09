@@ -3,10 +3,10 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.11
+state_version: 0.8.12
 date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_WITH_FULL_NIMCARRY_BRAND_MIGRATION_AND_COMPLETE_SEVEN_CALL_OTTER_CORPUS
+phase: MVP_VERTICAL_SLICE_1_WITH_COMPLETE_SEVEN_CALL_CORPUS_AND_OTTER_DIRECT_CONNECTOR_PENDING
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -99,6 +99,8 @@ completed_milestones:
   otter_sep9_transcript_package_uploaded: true
   complete_seven_call_otter_corpus_assembled: true
   complete_seven_call_checkpoint_recorded: true
+  otter_direct_connector_path_discovered: true
+  otter_direct_connector_checkpoint_recorded: true
 
 verified_code_baseline_before_brand_migration:
   latest_source_fix_pr: 16
@@ -150,11 +152,12 @@ cycle2_hidden_spot_audit:
   differentiation: destination_bound_verified_route
 
 sip_ship_corpus_intelligence:
-  status: COMPLETE_SEVEN_CALL_OTTER_CORPUS_ASSEMBLED_FULL_CODING_PENDING_LOCAL_EXTRACTION
+  status: COMPLETE_SEVEN_CALL_CORPUS_ASSEMBLED_DIRECT_OTTER_CONNECTOR_PENDING_USER_CONNECTION
   corpus_doc: docs/SIP-SHIP-CORPUS-HIDDEN-SPOT-INTELLIGENCE-2026-09-09.md
   prior_ingestion_doc: docs/SIP-SHIP-TRANSCRIPT-INGESTION-CHECKPOINT-2026-09-09.md
   otter_ingestion_doc: docs/SIP-SHIP-OTTER-INGESTION-AND-SEP9-CORPUS-EXPANSION-2026-09-09.md
   complete_corpus_checkpoint_doc: docs/SIP-SHIP-CORPUS-COMPLETE-7-CALLS-2026-09-09.md
+  direct_otter_connector_checkpoint_doc: docs/SIP-SHIP-OTTER-DIRECT-CONNECTOR-CHECKPOINT-2026-09-09.md
   total_recording_corpus_available: 7
   total_otter_transcript_packages_uploaded: 7
   corpus_complete_through: 2026-09-09
@@ -173,15 +176,20 @@ sip_ship_corpus_intelligence:
     drive_file_id: 1cyeBj2KFbriRSSoADZPLByf9Rz3JaYES
     size_bytes: 167824742
     use: visual_demo_reference_and_full_transcript_coding
-  transcript_source_preference: OTTER_FOR_LONG_FORM_FULL_PASS
+  transcript_source_preference: OTTER_DIRECT_CONNECTOR_THEN_OTTER_EXPORT_PACKAGES
   visual_source_preference: GOOGLE_DRIVE_VIDEO_FOR_SCREEN_SHARE_AND_DEMO_BEHAVIOR
   whisper_role: opening_segment_cross_check_only
   do_not_overclaim_unparsed_segments: true
+  direct_otter_connector:
+    plugin: Otter.ai
+    capability: search_and_fetch_full_transcripts_with_speaker_attribution
+    surfaced_to_user: true
+    connection_status: PENDING_USER_CONNECTION
+    preferred_over_manual_zip_extraction: true
   current_local_extraction:
-    status: RETRY_REQUIRED
-    reason: transient_chat_execution_sandbox_transport_timeout
+    status: FALLBACK_ONLY_RETRY_IF_NEEDED
+    reason: repeated_chat_execution_sandbox_transport_timeout
     corpus_gap: false
-    user_action_required: false
   evidence_classes:
     - VERIFIED_OFFICIAL_PUBLIC
     - USER_SUPPLIED_LIVE_FEEDBACK
@@ -198,6 +206,8 @@ sip_ship_corpus_intelligence:
     - exactly_1_NIM_should_be_semantic_baton_not_economic_incentive
     - NimCarry_should_own_NIM_as_coordination_primitive
     - Route_Receipt_should_be_demo_climax
+    - onboarding_error_handling_scope_focus_and_ecosystem_reach_are_material_judging_risks
+    - production_must_remain_judge_ready_after_submission_deadline
   full_transcript_coding_schema:
     - exact_or_tight_Nimiq_team_wording
     - timestamp
@@ -211,7 +221,8 @@ sip_ship_corpus_intelligence:
     - NimCarry_action_DO_DO_NOT_DO_WATCH_ALREADY_COVERED
     - priority_P0_P1_P2_POST_CYCLE_II
   next_evidence_steps:
-    - retry_extract_all_seven_Otter_packages
+    - user_connect_Otter_ai_plugin
+    - fetch_all_seven_full_transcripts_directly_from_Otter
     - code_all_seven_calls
     - use_Google_Drive_videos_for_targeted_visual_reference_checks
     - synthesize_cross_call_hidden_spots
