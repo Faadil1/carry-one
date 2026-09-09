@@ -3,10 +3,10 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.12
+state_version: 0.8.13
 date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_WITH_COMPLETE_SEVEN_CALL_CORPUS_AND_OTTER_DIRECT_CONNECTOR_PENDING
+phase: MVP_VERTICAL_SLICE_1_WITH_COMPLETE_SEVEN_CALL_WINNING_INTELLIGENCE
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -57,6 +57,9 @@ product_positioning:
   native_nimiq_thesis: NIM_AS_COORDINATION_PRIMITIVE_NOT_JUST_PAYMENT
   one_nim_semantics: SEMANTIC_STATE_BEARING_BATON_NOT_ECONOMIC_INCENTIVE
   simple_judge_flow: [Create, Invite, Accept, Pass_1_NIM, Arrive]
+  front_door_language: HUMAN_ROUTING_NOT_CRYPTO_PAYMENT_APP
+  primary_judge_line: NimCarry uses 1 NIM to make warm introductions verifiable.
+  baton_disambiguation: The 1 NIM is the baton, not the reward.
   cycle_ii_target_policy:
     known_target_wallet_required: true
     creator_attested_target_consent_required: true
@@ -77,6 +80,24 @@ mvp_contract:
   arrival_condition: finalized_recipient_hmac_equals_private_target_wallet_hmac
   five_screens: [Mission_Home, Create_Mission, Bridge_Invitation, Pass_1_NIM, Route_Arrival]
   gamification: forbidden
+
+judge_demo_law:
+  problem_first: true
+  architecture_first: false
+  target_first_problem_line: Warm introductions disappear after the first handoff.
+  target_core_flow: Create -> Invite -> Accept -> Pass_1_NIM -> Arrive
+  judge_cooperation_required_for_core_proof: false
+  visible_nimiq_states:
+    - Accepted_with_Nimiq_Pay
+    - 1_NIM_handoff_authorized
+    - Waiting_for_independent_finality
+    - FINAL_custody_moved
+    - ARRIVED
+    - Verified_Route_Receipt
+  route_receipt_is_demo_climax: true
+  route_receipt_is_persistent_proof_artifact: true
+  target_first_time_understanding_seconds: 10
+  target_core_point_seconds: 60
 
 completed_milestones:
   product_law: true
@@ -101,6 +122,9 @@ completed_milestones:
   complete_seven_call_checkpoint_recorded: true
   otter_direct_connector_path_discovered: true
   otter_direct_connector_checkpoint_recorded: true
+  otter_direct_connector_connected: true
+  sip_ship_full_seven_call_otter_transcript_pass: true
+  sip_ship_seven_call_winning_intelligence_audit: true
 
 verified_code_baseline_before_brand_migration:
   latest_source_fix_pr: 16
@@ -152,14 +176,14 @@ cycle2_hidden_spot_audit:
   differentiation: destination_bound_verified_route
 
 sip_ship_corpus_intelligence:
-  status: COMPLETE_SEVEN_CALL_CORPUS_ASSEMBLED_DIRECT_OTTER_CONNECTOR_PENDING_USER_CONNECTION
+  status: COMPLETE_FULL_SEVEN_CALL_OTTER_PASS_AND_CROSS_CALL_SYNTHESIS
+  definitive_audit_doc: docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md
   corpus_doc: docs/SIP-SHIP-CORPUS-HIDDEN-SPOT-INTELLIGENCE-2026-09-09.md
   prior_ingestion_doc: docs/SIP-SHIP-TRANSCRIPT-INGESTION-CHECKPOINT-2026-09-09.md
-  otter_ingestion_doc: docs/SIP-SHIP-OTTER-INGESTION-AND-SEP9-CORPUS-EXPANSION-2026-09-09.md
   complete_corpus_checkpoint_doc: docs/SIP-SHIP-CORPUS-COMPLETE-7-CALLS-2026-09-09.md
   direct_otter_connector_checkpoint_doc: docs/SIP-SHIP-OTTER-DIRECT-CONNECTOR-CHECKPOINT-2026-09-09.md
   total_recording_corpus_available: 7
-  total_otter_transcript_packages_uploaded: 7
+  total_full_otter_transcripts_fetched: 7
   corpus_complete_through: 2026-09-09
   calls:
     - Cycle_I_Call_1_July_8
@@ -170,64 +194,79 @@ sip_ship_corpus_intelligence:
     - Cycle_II_Call_2_Sep_2
     - Cycle_II_Call_3_Sep_9
   sep9_recording:
-    status: VIDEO_AND_OTTER_TRANSCRIPT_PACKAGE_AVAILABLE
+    status: VIDEO_AND_FULL_OTTER_TRANSCRIPT_AVAILABLE
     drive_folder: 03 - Sip & Ship Call #3 (Sep 9)
     drive_file: 01 - Sip & Ship Call #3 (Sep 9).mp4
     drive_file_id: 1cyeBj2KFbriRSSoADZPLByf9Rz3JaYES
     size_bytes: 167824742
-    use: visual_demo_reference_and_full_transcript_coding
-  transcript_source_preference: OTTER_DIRECT_CONNECTOR_THEN_OTTER_EXPORT_PACKAGES
-  visual_source_preference: GOOGLE_DRIVE_VIDEO_FOR_SCREEN_SHARE_AND_DEMO_BEHAVIOR
+    use: targeted_visual_demo_reference_if_needed
+  transcript_source_preference: OTTER_DIRECT_CONNECTOR
+  visual_source_preference: GOOGLE_DRIVE_VIDEO_FOR_TARGETED_HIGH_SIGNAL_CHECKS
   whisper_role: opening_segment_cross_check_only
-  do_not_overclaim_unparsed_segments: true
   direct_otter_connector:
     plugin: Otter.ai
-    capability: search_and_fetch_full_transcripts_with_speaker_attribution
-    surfaced_to_user: true
-    connection_status: PENDING_USER_CONNECTION
-    preferred_over_manual_zip_extraction: true
-  current_local_extraction:
-    status: FALLBACK_ONLY_RETRY_IF_NEEDED
-    reason: repeated_chat_execution_sandbox_transport_timeout
-    corpus_gap: false
+    connection_status: CONNECTED
+    full_transcript_fetch_status: COMPLETE_7_OF_7
+    speaker_attribution_available: true
   evidence_classes:
     - VERIFIED_OFFICIAL_PUBLIC
     - USER_SUPPLIED_LIVE_FEEDBACK
-    - TRANSCRIPT_VERIFIED_OPENING_SEGMENT
-    - OTTER_FULL_TRANSCRIPT_PACKAGE_UPLOADED_PENDING_PARSE
-    - VIDEO_REFERENCE_AVAILABLE_PENDING_VISUAL_PASS
-    - TRANSCRIPT_FULL_PASS_VERIFIED
-  already_supported_signals:
-    - competition_values_idea_validation_useful_apps_community_and_collaboration
-    - iterative_submission_is_normal
-    - live_praise_centers_real_world_problem_problem_first_story_existing_competitors_functionality_simplicity_elegance_and_strong_use_case
-    - cycle2_changes_are_feedback_driven
-    - returning_builders_expected_to_apply_previous_learning
-    - exactly_1_NIM_should_be_semantic_baton_not_economic_incentive
-    - NimCarry_should_own_NIM_as_coordination_primitive
-    - Route_Receipt_should_be_demo_climax
-    - onboarding_error_handling_scope_focus_and_ecosystem_reach_are_material_judging_risks
-    - production_must_remain_judge_ready_after_submission_deadline
-  full_transcript_coding_schema:
-    - exact_or_tight_Nimiq_team_wording
-    - timestamp
-    - app_or_demo_subject
-    - category_PRODUCT_JUDGING_DISTRIBUTION_PLATFORM_COMPETITOR
-    - signal_PRAISE_CONCERN_QUESTION_FAILURE_ADVICE
-    - recurrence_across_calls
-    - rubric_explicit_or_implicit
-    - confidence
-    - eventual_Cycle_I_winner_relationship_where_applicable
-    - NimCarry_action_DO_DO_NOT_DO_WATCH_ALREADY_COVERED
-    - priority_P0_P1_P2_POST_CYCLE_II
-  next_evidence_steps:
-    - user_connect_Otter_ai_plugin
-    - fetch_all_seven_full_transcripts_directly_from_Otter
-    - code_all_seven_calls
-    - use_Google_Drive_videos_for_targeted_visual_reference_checks
-    - synthesize_cross_call_hidden_spots
-    - compare_Cycle_I_feedback_to_eventual_winners
-    - update_NimCarry_P0_P1_P2_and_submission_story
+    - OTTER_FULL_TRANSCRIPT_VERIFIED
+    - VIDEO_REFERENCE_AVAILABLE_FOR_TARGETED_VISUAL_PASS
+  high_confidence_cross_call_patterns:
+    - problem_first_storytelling_repeatedly_drives_strong_positive_reaction
+    - live_proof_beats_architecture_explanation
+    - simplicity_intuitiveness_and_fast_legibility_behave_like_implicit_meta_rubric
+    - persistent_visible_proof_artifact_is_winner_pattern
+    - emergent_real_user_behavior_is_treated_as_PMF_signal
+    - natural_invite_or_share_loop_is_repeatedly_praised
+    - first_users_by_hand_is_repeatedly_taught_as_expected_starting_method
+    - deep_Nimiq_protocol_utility_was_underweighted_in_cycle1_and_materially_reweighted_in_cycle2
+    - Nimiq_native_does_not_require_payments_first_positioning
+    - avoid_crypto_as_front_door_but_make_Nimiq_visible_at_proof_moments
+    - freeze_known_good_build_before_live_demo_and_random_judge_window
+    - judge_can_only_reward_visible_legible_evidence
+    - mechanics_resembling_stake_reward_pool_or_gambling_require_immediate_disambiguation
+    - judge_or_host_should_not_be_required_to_cooperate_for_core_demo_proof
+    - ecosystem_reusable_infrastructure_generates_deep_team_interest
+    - lifecycle_completion_and_reengagement_gaps_get_noticed_immediately
+    - after_core_understanding_distribution_and_abuse_vectors_become_next_questions
+    - memorable_receipt_or_result_artifact_improves_demo_recall
+    - best_demos_let_observer_map_product_to_their_own_life
+    - real_distribution_should_be_inherent_in_product_not_bolted_on
+  eventual_winner_transfer:
+    Nimiq_Space: real_users_plus_emergent_user_created_behavior_plus_persistent_world
+    NimJump: structural_problem_plus_server_verified_fix_plus_replay_artifact_plus_share_loop
+    NimQuest: server_graded_completion_plus_persistent_wallet_signed_proof
+    NimCarry_equivalent: consented_finality_verified_route_plus_ARRIVED_plus_Route_Receipt
+  cycle1_to_cycle2_expectation_shift:
+    observed_cycle1_problem: pretty_apps_often_broken_or_low_utility_and_protocol_utility_underweighted
+    observed_cycle2_response:
+      functionality_reliability_usefulness_points: 45
+      Nimiq_integration_points: 25
+      real_usage_points: 15
+      design_UX_points: 10
+      builder_promotion_points: 5
+      random_post_deadline_judging: true
+      continued_maintenance_after_submission: encouraged
+  p0_nimcarry_decisions:
+    - secure_HTTP_and_combined_runtime_before_public_Early_Access
+    - real_A_B_C_testnet_to_ARRIVED_before_claiming_proof
+    - deterministic_demo_not_dependent_on_judge_cooperation
+    - explicit_baton_not_reward_stake_wager_pool_language
+    - visible_wallet_authorization_and_FINAL_states
+    - Route_Receipt_as_demo_climax_and_persistent_proof_artifact
+    - known_good_build_smoke_test_and_rollback_during_judge_window
+    - five_observed_first_time_tests_before_broad_push
+    - problem_first_submission_story_and_destination_bound_differentiation
+  p1_nimcarry_decisions:
+    - My_Routes_or_follow_after_handoff_if_safe_after_E2E
+    - privacy_safe_shareable_handoff_or_arrival_card
+    - legitimate_testing_toward_25_plus_wallet_opens
+    - first_screen_receipt_and_arrival_visual_polish
+    - error_cancel_retry_recovery_assurance
+    - iOS_lifecycle_deeplink_assurance
+    - Sep_16_Sip_Show_only_as_real_product_proof_if_runtime_green
 
 current_gate:
   name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
@@ -252,13 +291,13 @@ next_gate_after_HTTP_merge:
 
 post_E2E_priority_order:
   - judge_visible_Route_Receipt
-  - submit_to_Cycle_II_showcase_as_soon_as_product_is_genuinely_usable
   - first_5_observed_60_second_user_tests
+  - submit_to_Cycle_II_showcase_as_soon_as_product_is_genuinely_usable
   - legitimate_community_testing_until_25_plus_unique_wallet_opens
   - Sep_16_Sip_Show_real_product_proof_if_green
-  - judge_window_reliability_monitoring_and_safe_deploy_layer
+  - judge_window_reliability_monitoring_smoke_test_and_safe_rollback
   - small_real_user_feedback_iteration
-  - TRACE_visual_polish
+  - TRACE_visual_polish_focused_on_first_screen_arrival_and_receipt
   - Skool_and_public_social_promotion_links
   - real_testnet_demo_video_and_submission_story
 
