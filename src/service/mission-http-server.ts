@@ -10,6 +10,12 @@ import { buildUsageEvidence } from "../mission/usage.js";
 import { NimiqWalletAuthorizer } from "../mission/wallet-auth.js";
 import { buildCarryOneInviteLinks } from "../mini-app/deeplink.js";
 import { RpcVerificationDelayedError } from "../nimiq/resilient-rpc-client.js";
+import {
+  BROADCAST_CAPABILITY_TTL_MS,
+  BroadcastCapabilityError,
+  MemoryBroadcastCapabilityStore,
+  type BroadcastCapabilityStore,
+} from "./broadcast-capability.js";
 import type { CanonicalRelayService } from "./canonical-relay-service.js";
 import { handleRelayRequest } from "./http-server.js";
 import {
@@ -59,6 +65,20 @@ export interface MissionHttpDeps {
   idempotency: IdempotencyStore;
   limiter: RateLimiter;
   limits?: HttpLimits;
+  /** Optional injection point for tests. Defaults to a process-local, one-time store. */
+  broadcastCapabilities?: BroadcastCapabilityStore;
+}
+
+const defaultCapabilityStores = new WeakMap<MissionHttpDeps, BroadcastCapabilityStore>();
+
+function capabilityStore(deps: MissionHttpDeps): BroadcastCapabilityStore {
+  if (deps.broadcastCapabilities) return deps.broadcastCapabilities;
+  let store = defaultCapabilityStores.get(deps);
+  if (!store) {
+    store = new MemoryBroadcastCapabilityStore();
+    defaultCapabilityStores.set(deps, store);
+  }
+  return store;
 }
 
 function envInt(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -80,6 +100,9 @@ function resolveLimits(deps: MissionHttpDeps): HttpLimits {
 }
 
 export function createMissionHttpServer(deps: MissionHttpDeps) {
+  // Materialize the per-server capability store once. Keeping it process-local
+  // means a restart invalidates bearer tokens without losing the durable pass intent.
+  capabilityStore(deps);
   return createServer((req, res) => {
     handleRequest(deps, req, res).catch((err) => sendError(res, err));
   });
@@ -251,14 +274,43 @@ async function authorizePass(deps: MissionHttpDeps, req: IncomingMessage, missio
 
   const auth = await verifyEnvelope(deps, envelope);
   const intent = await deps.coordinator.authorizePass({ missionId, invitationId, auth });
-  return { status: 200, body: toPassIntentPayload(intent) };
+  const now = Date.now();
+  const intentExpiresAt = intent.createdAt + INTENT_VALIDITY_WINDOW_MS;
+  const ttlMs = Math.min(BROADCAST_CAPABILITY_TTL_MS, intentExpiresAt - now);
+  if (ttlMs <= 0) {
+    throw new MissionValidationError("PASS_INTENT_EXPIRED", "Authorized pass intent has expired; authorize the pass again");
+  }
+  const issued = capabilityStore(deps).issue(
+    {
+      missionId,
+      invitationId,
+      sequence: intent.sequence,
+      intentNonce: intent.nonce,
+      holderWallet: normalizeNimiqAddress(auth.wallet),
+    },
+    { now, ttlMs }
+  );
+  return { status: 200, body: toPassIntentPayload(intent, issued) };
 }
 
 async function broadcast(deps: MissionHttpDeps, req: IncomingMessage, missionId: string) {
   const obj = await jsonBody(req);
   const invitationId = asUuid(obj.invitation_id, "invitation_id");
   const txHash = asTxHash(obj.tx_hash, "tx_hash");
-  rejectUnknownKeys(obj, ["invitation_id", "tx_hash"]);
+  const capability = asOpaqueToken(obj.broadcast_capability, "broadcast_capability");
+  rejectUnknownKeys(obj, ["invitation_id", "tx_hash", "broadcast_capability"]);
+
+  const active = deps.relay.getActiveIntent(missionId);
+  if (!active) throw new MissionValidationError("NO_ACTIVE_PASS", "No authorized pass exists for this mission");
+
+  capabilityStore(deps).consume(capability, {
+    missionId,
+    invitationId,
+    sequence: active.sequence,
+    intentNonce: active.nonce,
+    holderWallet: normalizeNimiqAddress(active.currentHolder),
+  });
+
   const hop = await deps.coordinator.recordBroadcast({ missionId, invitationId, txHash });
   return { status: 201, body: toHopResponse(hop) };
 }
@@ -457,7 +509,7 @@ function viewerWalletFromHeaders(req: IncomingMessage): string | null {
   }
 }
 
-function toPassIntentPayload(intent: PassIntent) {
+function toPassIntentPayload(intent: PassIntent, capability: { token: string; expiresAt: number }) {
   return {
     intent_id: intent.batonId,
     sequence: intent.sequence,
@@ -467,6 +519,8 @@ function toPassIntentPayload(intent: PassIntent) {
     recipient_data: intent.recipientData,
     expected_sender: intent.currentHolder,
     expires_at: new Date(intent.createdAt + INTENT_VALIDITY_WINDOW_MS).toISOString(),
+    broadcast_capability: capability.token,
+    broadcast_capability_expires_at: new Date(capability.expiresAt).toISOString(),
   };
 }
 
@@ -551,6 +605,10 @@ const BAD_REQUEST_REASONS = new Set([
 function sendError(res: ServerResponse, err: unknown) {
   if (err instanceof RequestValidationError) {
     return send(res, 400, { error: err.reason, message: err.message, details: err.details });
+  }
+  if (err instanceof BroadcastCapabilityError) {
+    const status = err.reason === "BROADCAST_CAPABILITY_BINDING_MISMATCH" ? 403 : 401;
+    return send(res, status, { error: err.reason, message: err.message });
   }
   if (err instanceof MissionValidationError) {
     let status = 409;
