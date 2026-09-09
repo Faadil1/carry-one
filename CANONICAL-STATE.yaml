@@ -3,10 +3,10 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.8
+state_version: 0.8.9
 date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_WITH_FULL_NIMCARRY_BRAND_MIGRATION_AND_SIP_SHIP_CORPUS_INTELLIGENCE
+phase: MVP_VERTICAL_SLICE_1_WITH_FULL_NIMCARRY_BRAND_MIGRATION_AND_SIP_SHIP_TRANSCRIPT_INGESTION
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -101,6 +101,8 @@ completed_milestones:
   nimcarry_full_migration_authorized: true
   sip_ship_historical_corpus_registered: true
   sip_ship_public_recap_hidden_spot_pass: true
+  sip_ship_six_historical_transcriptions_completed: true
+  sip_ship_transcript_ingestion_checkpoint_recorded: true
 
 verified_code_baseline_before_brand_migration:
   latest_source_fix_pr: 16
@@ -152,24 +154,37 @@ cycle2_hidden_spot_audit:
   differentiation: destination_bound_verified_route
 
 sip_ship_corpus_intelligence:
-  status: HISTORICAL_CORPUS_REGISTERED_PUBLIC_RECAP_PASS_COMPLETE_DIRECT_RECORDING_TRANSCRIPTS_PENDING
-  doc: docs/SIP-SHIP-CORPUS-HIDDEN-SPOT-INTELLIGENCE-2026-09-09.md
-  historical_links_supplied: 6
+  status: SIX_HISTORICAL_TRANSCRIPTIONS_COMPLETE_FULL_TEXT_CODING_PENDING_EXPORT_OR_FULL_RESULT_ACCESS
+  corpus_doc: docs/SIP-SHIP-CORPUS-HIDDEN-SPOT-INTELLIGENCE-2026-09-09.md
+  ingestion_checkpoint_doc: docs/SIP-SHIP-TRANSCRIPT-INGESTION-CHECKPOINT-2026-09-09.md
+  historical_recordings_transcribed: 6
   todays_2026_09_09_recording: PENDING_PUBLICATION
-  evidence_classes: [VERIFIED_OFFICIAL_PUBLIC, USER_SUPPLIED_LIVE_FEEDBACK, TRANSCRIPT_PENDING]
-  direct_classroom_video_fetch_available_in_current_automation: false
+  transcript_provider: WhisperTranscribe
+  transcript_jobs_status: completed
+  current_connector_exposure: OPENING_MINUTE_ONLY_FOR_LONG_FILES
+  public_share_page_automated_fetch: CACHE_MISS
+  do_not_overclaim_unobserved_transcript_segments: true
+  evidence_classes: [VERIFIED_OFFICIAL_PUBLIC, USER_SUPPLIED_LIVE_FEEDBACK, TRANSCRIPT_VERIFIED_OPENING_SEGMENT, TRANSCRIPT_FULL_PASS_PENDING]
+  opening_segment_signals:
+    - Cycle_I_Call_1_competition_explicitly_supports_idea_validation_useful_apps_community_and_collaboration
+    - Cycle_I_Call_3_submissions_open_during_cycle_and_Sip_and_Submit_reinforces_iterative_submission
+    - Cycle_I_Call_4_live_praise_centers_real_world_problem_problem_first_story_existing_competitors_functionality_and_simple_elegant_strong_use_case
+    - Cycle_II_Call_1_adjustments_explicitly_based_on_builder_feedback_and_transparency_value
+    - Cycle_II_Call_2_returning_builders_encouraged_to_apply_Cycle_I_learning_and_new_builder_inflow_is_high
   p0_new_findings:
     - exactly_1_NIM_should_be_positioned_as_semantic_state_bearing_baton_not_economic_incentive
     - NimCarry_should_own_NIM_as_coordination_primitive_not_generic_payment
     - product_must_look_simpler_than_implementation
     - final_Sep_16_Sip_Show_should_be_treated_as_real_product_proof_event_if_E2E_is_green
     - reciprocal_builder_testing_can_improve_functionality_usage_and_UX_scores_simultaneously
+    - judge_story_should_open_with_real_world_problem_and_keep_solution_simple_elegant_and_functional
   p1_new_findings:
     - Route_Receipt_should_be_demo_climax
     - judge_window_reliability_layer_needed_because_evaluation_time_is_unknown_after_deadline
     - private_bridge_invite_is_a_natural_real_usage_acquisition_loop_after_secure_E2E
     - Nim_prefix_branding_is_now_locked_as_ecosystem_legibility_signal
   transcript_level_next_pass:
+    - obtain_full_TXT_SRT_or_VTT_exports_for_all_six_jobs
     - exact_Nimiq_team_wording
     - every_demoed_product_and_reaction
     - repeated_objections_and_questions
