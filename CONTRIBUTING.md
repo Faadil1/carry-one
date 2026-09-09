@@ -1,8 +1,8 @@
-# Contributing to Carry One
+# Contributing to NimCarry
 
-Thanks for helping improve Carry One.
+Thanks for helping improve NimCarry.
 
-Carry One is being built for the Nimiq Mini Apps Competition — Cycle II. The current product laws and state machine are intentionally narrow so the team can prove one reliable vertical flow before expanding scope.
+NimCarry is being built for the Nimiq Mini Apps Competition — Cycle II. The current product laws and state machine are intentionally narrow so the team can prove one reliable vertical flow before expanding scope.
 
 ## Before you change code
 
