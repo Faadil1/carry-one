@@ -14,7 +14,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "smoke:judge": "node scripts/judge-smoke.mjs"
   },
   "keywords": [],
   "author": "Opeyemi",
