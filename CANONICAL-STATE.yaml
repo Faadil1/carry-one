@@ -3,10 +3,10 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.6
+state_version: 0.8.7
 date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_WEEKEND_FINALIZATION_PREP_WITH_NIMCARRY_BRAND_LOCK
+phase: MVP_VERTICAL_SLICE_1_WITH_FULL_NIMCARRY_BRAND_MIGRATION
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -23,14 +23,21 @@ brand_identity:
   locked_on: 2026-09-09
   tagline: One NIM. One bridge at a time.
   promise: Get this to someone you cannot reach directly — one human bridge at a time.
+  judge_facing_thesis: NimCarry turns an invisible chain of human introductions into a consented verifiable human route using exactly 1 NIM as the baton.
   decision_doc: docs/NIMCARRY-NAMING-DECISION-2026-09-09.md
-  migration_policy:
-    public_facing_identity_changes_immediately: true
-    repository_slug_temporarily_stable: Faadil1/carry-one
-    demo_url_temporarily_stable: https://carry-one-sip-show.vercel.app/?demo=1
-    carryone_browser_storage_keys_temporarily_stable: true
-    historical_evidence_names_preserved: true
-    reason: avoid_breaking_active_Cycle_II_demo_Opeyemi_branch_and_runtime_continuity
+  full_migration_authorized: true
+  full_migration_authorized_on: 2026-09-09
+  public_facing_identity_must_use_nimcarry: true
+  new_docs_and_new_code_must_use_nimcarry: true
+  historical_evidence_may_preserve_former_name_when_rewriting_would_damage_traceability: true
+  legacy_protocol_fixtures_may_remain_only_when_required_for_backward_compatibility_or_negative_tests: true
+  external_identifier_migration:
+    desired_repository_slug: Faadil1/nimcarry
+    current_repository_slug: Faadil1/carry-one
+    desired_demo_alias: https://nimcarry.vercel.app
+    current_demo_alias: https://carry-one-sip-show.vercel.app
+    status: AUTHORIZED_PENDING_EXTERNAL_RENAME
+    note: current_connected_GitHub_and_Vercel_actions_do_not_expose_repository_or_project_alias_rename
 
 team:
   faadil: { role: repo_owner_product_lead }
@@ -48,7 +55,6 @@ core_product_laws:
 
 product_positioning:
   category: destination_bound_human_routing
-  judge_facing_thesis: NimCarry turns an invisible chain of human introductions into a consented verifiable human route using exactly 1 NIM as the baton.
   holder_question: Who can move this one person closer?
   cycle_ii_target_policy:
     known_target_wallet_required: true
@@ -80,9 +86,6 @@ completed_milestones:
   postgres_vertical_slice: true
   public_repo_secret_scan: true
   sip_show_clickable_demo: true
-  sip_show_public_no_login_access_user_verified: true
-  sip_show_accept_navigation_source_fix: true
-  sip_show_favicon_source_fix: true
   repository_presentation_and_governance_pack: true
   cycle2_hidden_spot_audit: true
   sip_show_live_talk_track: true
@@ -90,33 +93,20 @@ completed_milestones:
   nimcarry_public_readme_update: true
   nimcarry_public_ui_shell_update: true
   nimcarry_sip_show_deck: true
+  nimcarry_security_policy_update: true
+  nimcarry_contributor_guide_update: true
+  nimcarry_full_migration_authorized: true
 
-verified_code_baseline_before_brand_only_changes:
+verified_code_baseline_before_brand_migration:
   latest_source_fix_pr: 16
   latest_source_fix_merge_sha: 37e518d0661baadb72e2c0283fccef31246dd7f6
-  latest_source_fix_ci_run: 34360347801
   npm_ci: pass
   public_repo_secret_scan: pass
   typecheck: pass
   test_files: 20
   authoritative_vitest_tests: 124
   build: pass
-
-sip_show_demo:
-  stable_public_url: https://carry-one-sip-show.vercel.app/?demo=1
-  public_brand: NimCarry
-  mode: explicit_demo_only
-  no_wallet_writes: true
-  no_network_mutations: true
-  can_claim_real_testnet_e2e: false
-  can_claim_runtime_wallet_proof: false
-
-postgres_vertical_slice:
-  authoritative_pr: 12
-  merge_sha: 2b9193cd4fc51ba8d140bbd7078a34793b1b9c8a
-  writer_replicas: 1
-  active_active_multi_writer_claim: false
-  do_not_redo: true
+  note: re_run_full_CI_after_next_code_bearing_brand_migration_or_HTTP_merge
 
 http_parallel_work:
   owner: opeyemi
@@ -125,6 +115,7 @@ http_parallel_work:
   merged_to_main: false
   before_reconcile: RE_FETCH_LIVE_HEAD
   preserve_branch_without_force_update: true
+  brand_reconcile_required_at_integration: true
   task_split:
     opeyemi: [route_view_capability, invitation_privacy_redaction, legacy_relay_dev_gate]
     faadil_side: [secure_tx_hash_broadcast_capability, frontend_Idempotency_Key]
@@ -141,12 +132,7 @@ self_run_testnet_decision:
   locked: true
   external_users_required_for_first_e2e: false
   team_can_run_first_proof_itself: true
-  preferred_topology:
-    wallets: 3
-    physical_devices: 2_preferred
-    A: creator_initial_holder
-    B: bridge
-    C: destination
+  preferred_topology: { wallets: 3, physical_devices: 2_preferred, A: creator_initial_holder, B: bridge, C: destination }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED
   real_human_confirmation_in_Nimiq_Pay_required: true
   do_not_claim_pass_before_real_testnet_finality: true
@@ -156,20 +142,9 @@ cycle2_hidden_spot_audit:
   doc: docs/CYCLE2-HIDDEN-SPOT-AUDIT-2026-09-09.md
   winner_pattern: persistent_visible_proof_artifact
   nimcarry_equivalent: privacy_safe_Route_Receipt_or_Handoff_Receipt
-  p0_findings:
-    - submit_early_after_secure_vertical_flow_instead_of_waiting_until_deadline
-    - full_real_usage_score_requires_25_plus_legitimate_unique_Nimiq_wallet_opens
-    - Pay_It_Sideways_collides_with_exact_NIM_relay_story_so_NimCarry_must_lead_with_destination_bound_verified_route
-    - retain_known_consenting_target_wallet_beachhead_for_Cycle_II
-    - test_reported_iOS_Nimiq_Pay_background_deeplink_lifecycle_issue
-  scoring_execution:
-    functionality_reliability_usefulness_points: 45
-    nimiq_integration_points: 25
-    real_usage_points: 15
-    design_ux_points: 10
-    builder_promotion_points: 5
-    legitimate_wallet_open_threshold_for_full_usage_score: 25
-    judge_evaluates_inside_Nimiq_Pay_not_repo: true
+  full_real_usage_score_requires: 25_plus_legitimate_unique_Nimiq_wallet_opens
+  direct_collision: Pay_It_Sideways_exact_NIM_relay_story
+  differentiation: destination_bound_verified_route
 
 current_gate:
   name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
@@ -177,6 +152,7 @@ current_gate:
   exit_criteria:
     - all_five_HTTP_security_integration_blockers_closed
     - frontend_HTTP_Postgres_combined_harness_green
+    - NimCarry_brand_reconciled_in_integrated_runtime
     - full_CI_green
     - merged_to_main
     - canonical_and_handover_updated_immediately
@@ -205,7 +181,6 @@ still_blocked:
   - public_early_access_before_secure_vertical_flow
   - mainnet_cutover_and_funds
   - broad_marketing_launch_before_real_E2E
-  - full_visual_polish_before_vertical_flow_proof
   - target_claiming_or_public_target_discovery
   - prizes_or_wagering_or_pooled_funds
   - forwarding_rewards
