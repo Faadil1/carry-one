@@ -1,15 +1,25 @@
-# HANDOVER — Carry One
+# HANDOVER — NimCarry
 
 Date: 2026-09-09  
 State: `MVP_VERTICAL_SLICE_1_WEEKEND_FINALIZATION_PREP_WITH_CYCLE2_HIDDEN_SPOT_AUDIT`
 
+## Naming — LOCKED
+
+The product previously presented as **Carry One** is now **NimCarry**.
+
+Tagline: **One NIM. One bridge at a time.**
+
+The rename is public-facing and does not change product law or runtime semantics. Full decision: `docs/NIMCARRY-NAMING-DECISION-2026-09-09.md`.
+
+Compatibility boundary for the active Cycle II build: keep `Faadil1/carry-one`, the current `carry-one-sip-show.vercel.app` deployment URL, `carryone.*` storage keys, historical evidence names, and collision-prone internal identifiers stable until a controlled migration after the current secure integration work. New judge-facing copy, UI, decks, promotion and submission material must use **NimCarry**.
+
 ## Source of truth / continuity
 
-Read `CANONICAL-STATE.yaml` first; it overrides chat memory. After every meaningful milestone, update **both** `CANONICAL-STATE.yaml` and `HANDOVER.md` so a new conversation can take the lead without prior chat history.
+Read `CANONICAL-STATE.yaml` first; it overrides chat memory. After every meaningful milestone, update both `CANONICAL-STATE.yaml` and `HANDOVER.md` so a new conversation can take the lead without prior chat history.
 
 ## Frozen product law
 
-Carry One = destination-bound human routing:
+NimCarry = destination-bound human routing:
 
 > **Get this to someone you cannot reach directly — one human bridge at a time.**
 
@@ -17,12 +27,14 @@ Exactly `100000` Luna is the baton. A bridge consents before payment. Only indep
 
 ## Current implementation state
 
-- Repo: `Faadil1/carry-one`, public, MIT.
+- Repo: `Faadil1/carry-one`, public, MIT; repo slug intentionally stable during rename migration.
 - Frontend five-screen skeleton: merged.
 - PostgreSQL persistence/hardening: merged via authoritative PR #12.
 - Sip & Show clickable demo: public at `https://carry-one-sip-show.vercel.app/?demo=1`.
-- PR #16 fixed demo `Accept as bridge` navigation and added Carry One favicon.
-- Latest verified code baseline: secret scan ✅, typecheck ✅, **124/124 tests across 20 files ✅**, build ✅.
+- PR #16 fixed demo `Accept as bridge` navigation and favicon.
+- NimCarry public brand applied to README and `web/index.html` on 2026-09-09.
+- Updated NimCarry Sip & Show deck generated for the live presentation.
+- Latest verified code baseline before naming-only changes: secret scan PASS, typecheck PASS, 124/124 tests across 20 files PASS, build PASS.
 - README/public repo presentation pack is done; video remains intentionally pending the real testnet proof.
 
 ## Opeyemi HTTP work / task split
@@ -33,49 +45,21 @@ Latest observed head before current active work: `4f219cbd153484e560c4079ffd8c54
 **Re-fetch the live head before integration.** Preserve his branch; do not force-update it.
 
 Current agreed split:
-- **Opeyemi:** #1 route-view capability, #2 invitation privacy/redaction, #5 legacy `/relay` dev-gating.
-- **Faadil side:** #3 secure tx-hash broadcast capability, #4 frontend `Idempotency-Key` generation.
-- **Together:** #6 frontend + HTTP + PostgreSQL integration, #7 real Nimiq Pay 3-wallet testnet proof.
+- **Opeyemi:** route-view capability, invitation privacy/redaction, legacy `/relay` dev-gating.
+- **Faadil side:** secure tx-hash broadcast capability, frontend `Idempotency-Key` generation.
+- **Together:** frontend + HTTP + PostgreSQL integration, real Nimiq Pay 3-wallet testnet proof.
 
 Do not redo PostgreSQL.
 
-## Cycle II hidden-spot audit — NEW
+## Cycle II hidden-spot audit
 
 Full audit: `docs/CYCLE2-HIDDEN-SPOT-AUDIT-2026-09-09.md`.
 
-Fresh research covered the Cycle I top 3, full Cycle I showcase, current Cycle II showcase, current 100-point scoring, rules/FAQ and Skool discussions.
-
-### Critical findings
-
-1. **Winner pattern = persistent proof artifact, not mechanic alone.**
-   - Nimiq Space: persistent shared world.
-   - NimJump: server-replayable evidence behind scores + published usage.
-   - NimQuest: server-graded + wallet-signed stored completion receipt.
-   - Carry One equivalent should be a privacy-safe **Route Receipt / Handoff Receipt** after the real E2E is proven.
-
-2. **Carry One was not seen in the checked live Cycle II showcase.**
-   - FAQ says merged submissions appear in the showcase and Week 3 is Early Access.
-   - Do not wait until Sep 18 if secure vertical flow is green earlier; submit as soon as genuinely usable to gain testing/usage runway.
-
-3. **Full real-usage score is a concrete target:** 25+ legitimate unique Nimiq wallets opening the app = 15/15 usage points. 11–24 = 10, 4–10 = 6, 0–3 = 0. Bot-like/gamed traffic is excluded and risky.
-
-4. **New direct collision: Pay It Sideways.** It already supports an exact-NIM private relay/gift pattern. Therefore Carry One must never pitch itself as merely "relay the same NIM." Differentiator is **precommitted destination + consented human routing + verified chain of custody + FINAL-only path + ARRIVED terminal state**.
-
-5. **Target-wallet paradox is more visible.** Pay It Sideways shows addressless bearer UX is possible. For Cycle II, keep the frozen known/consenting target-wallet beachhead and explain it as socially unreachable but wallet-known/public/consenting. Do not build a large destination-claim identity system before the deadline.
-
-6. **Current iOS/Nimiq Pay lifecycle risk:** Skool has a report of a reproducible stuck overlay after backgrounding a Mini App and then opening another Mini App link, including iOS 26.6.1 / Nimiq Pay 2.19.1. Add cold/warm/background/resume/deeplink lifecycle testing to the real-device gate. Do not make the judge path depend on a fragile background -> deeplink transition.
-
-7. **Judges evaluate the live Mini App inside Nimiq Pay, not our code.** Backend sophistication must be visible in UX: `Accepted with Nimiq Pay`, `Waiting for finality`, `FINAL — custody moved`, `Verified route receipt`.
-
-8. **60-second judge path is a hard UX target.** First-time user should understand and reach the main point without instructions. Treat this as its own assurance gate after the real vertical proof.
-
-9. **Repeat value should be history/following, not gamification.** `My routes`, follow after handoff, see arrival, start another mission. Optional shareable handoff/arrival card can become a distribution loop only after privacy review.
-
-10. **Storytelling should be structural, not architectural.** Submission story should lead with: warm introductions disappear into private messages; Carry One makes every bridge a consented, verified 1-NIM custody handoff until a defined destination is actually reached.
+Critical conclusions remain: build a privacy-safe Route Receipt after real E2E; submit to the Cycle II showcase as soon as the secure product is genuinely usable; target 25+ legitimate unique Nimiq wallet opens; differentiate from Pay It Sideways through predefined destination + consented routing + verified chain of custody + FINAL-only advancement + ARRIVED; retain the known/consenting target-wallet beachhead for Cycle II; test the reported iOS/Nimiq Pay background/deeplink lifecycle risk; make Nimiq verification visible in the UI; assure the 60-second judge path; and use history/following rather than gamification for repeat value.
 
 ## Decision locked — first real testnet can be self-run
 
-External users are **not required** for the first E2E proof.
+External users are not required for the first E2E proof.
 
 Preferred topology:
 - Wallet A = creator / initial holder
@@ -89,28 +73,22 @@ Target proof:
 
 Never claim PASS until actual Nimiq Pay confirmations and testnet finality are observed.
 
-## Weekend execution order
+## Execution order
 
-1. Opeyemi completes #1/#2/#5.
-2. Faadil-side completes #3/#4 in parallel without editing his working branch.
-3. Re-fetch Opeyemi live head and integrate frontend + HTTP + PostgreSQL on clean current `main`.
-4. Full CI green; merge; immediately update canonical + handover.
-5. Run real A -> B -> C Nimiq testnet proof including iOS lifecycle/deeplink checks.
-6. Record screenshots, timestamps, tx hashes, FINAL and ARRIVED evidence.
-7. Add judge-visible Route Receipt / verification language if vertical proof is green.
-8. Submit to Cycle II showcase as soon as the real product is genuinely usable; do not wait unnecessarily for Sep 18.
-9. Run legitimate community testing toward **25+ unique wallet opens** and collect feedback.
-10. Run strict 60-second judge-path/error/cancellation assurance.
-11. Then TRACE/full visual polish, Skool + public social promotion, real testnet demo video and final submission story.
+1. Finish the current Sip & Show and capture every Nimiq/community feedback item as blocker / improvement / judging insight / platform issue.
+2. Opeyemi completes route-view capability, invitation privacy/redaction and legacy relay dev-gating.
+3. Faadil-side completes secure tx-hash broadcast capability + frontend Idempotency-Key in parallel without editing Opeyemi's working branch.
+4. Re-fetch Opeyemi live head and integrate frontend + HTTP + PostgreSQL on clean current `main`.
+5. Full CI green; merge; immediately update canonical + handover.
+6. Run real A -> B -> C Nimiq testnet proof including iOS lifecycle/deeplink checks.
+7. Record screenshots, timestamps, tx hashes, FINAL and ARRIVED evidence.
+8. Add judge-visible Route Receipt / verification language if vertical proof is green.
+9. Submit to Cycle II showcase as soon as the real product is genuinely usable.
+10. Run legitimate community testing toward 25+ unique wallet opens, 60-second judge-path assurance, TRACE polish, promotion and final submission package.
 
 ## What not to build before E2E
 
-- addressless destination-claim system;
-- social feed;
-- XP/streaks/leaderboards;
-- forwarding rewards;
-- rich notification system;
-- broad marketplace/AI routing expansion.
+No addressless destination-claim system, social feed, XP/streaks/leaderboards, forwarding rewards, rich notification system, broad marketplace or AI routing expansion.
 
 ## Runtime proofs still pending — never fake PASS
 
