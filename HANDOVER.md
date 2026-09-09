@@ -1,13 +1,13 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-09  
-State: `MVP_VERTICAL_SLICE_1_WITH_COMPLETE_SEVEN_CALL_WINNING_INTELLIGENCE`
+State: `MVP_VERTICAL_SLICE_1_WITH_COMPLETE_SEVEN_CALL_WINNING_INTELLIGENCE_AND_SCORE_CAPTURE`
 
 ## Source of truth / continuity
 
 Read `CANONICAL-STATE.yaml` first; it overrides chat memory. After every meaningful milestone, update **both** `CANONICAL-STATE.yaml` and `HANDOVER.md`. Faadil explicitly reconfirmed this protocol on 2026-09-09 so a long-conversation handoff can take lead immediately.
 
-Current canonical version: **0.8.13**.
+Current canonical version: **0.8.14**.
 
 ## Naming — LOCKED
 
@@ -70,6 +70,9 @@ Direct Otter.ai connection is **CONNECTED**. The full transcripts with timestamp
 Definitive audit:
 `docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md`
 
+Transcript-only delta + scoring checkpoint:
+`docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md`
+
 The prior state saying “Otter connector pending” or “full transcript coding pending” is **superseded**.
 
 The Sep 9 video is available in Google Drive for targeted visual verification:
@@ -78,6 +81,54 @@ The Sep 9 video is available in Google Drive for targeted visual verification:
 - Drive id: `1cyeBj2KFbriRSSoADZPLByf9Rz3JaYES`
 
 Visual review is optional/selective and must not block the current product gates.
+
+## Hidden spots that were genuinely new after the full transcript pass
+
+The earlier pre-transcript pass had already identified: 1 NIM as semantic baton, NIM as coordination primitive, product simplicity, Sep 16 proof gate, reciprocal testing, Route Receipt, judge-window reliability, bridge invite as acquisition loop, naming, and destination-bound white space.
+
+The full transcripts added or materially strengthened these separate findings:
+
+1. **Problem-first storytelling behaves like an implicit scoring multiplier.** Start from the human failure, not architecture.
+2. **Live proof beats architecture explanation.** NimJump is the clearest evidence: the host asks to see the game rather than more technical detail.
+3. **“Simple / intuitive / crystal clear” behaves like an implicit meta-rubric.** Complexity can directly make evaluation harder.
+4. **Emergent real-user behavior is treated as PMF evidence.** Nimiq Space users doing unexpected things is explicitly called a small PMF signal.
+5. **Cycle I utility-vs-hype criticism directly anticipated Cycle II reweighting.** Deep protocol utility is now much more rewardable if visible.
+6. **Do not lead with “crypto.”** Human utility first; Nimiq becomes explicit at authorization/finality/proof moments.
+7. **Judges can only reward visible/legible evidence.** Never make them infer target audience, differentiation or why 1 NIM matters.
+8. **Financial-looking mechanics get scrutinized immediately.** Explicit baton-not-reward/stake/wager/pool language is mandatory.
+9. **Never require judge/host cooperation for core demo proof.** Controlled deterministic demo state is required.
+10. **Lifecycle/re-engagement gaps are noticed immediately.** `My Routes` can be justified after E2E if safe.
+11. **After the core is understood, distribution + abuse are the next questions.** Be ready with bridge invite + consent/sender/finality/loop protections.
+12. **Best demos let the observer map the product to their own life.** Use one instantly relatable warm-introduction mission example.
+13. **Reusable ecosystem primitives attract deep technical interest.** Preserve future route/receipt verification seams, but do not expand before Cycle II proof.
+
+## Cycle II easy-point capture — LOCKED
+
+Martin explicitly describes the Builder Promotion Checklist as the easiest five points and says everyone should get them:
+
+- **2 points** — one Mini Apps Competition Skool post about NimCarry.
+- **3 points** — one real public social-media post about NimCarry.
+- **5/5 total** — should be treated as a must-capture score floor once the secure E2E is green.
+
+Real-usage buckets are discrete:
+
+- `0–3` genuine unique wallet opens = **0/15**
+- `4–10` = **6/15**
+- `11–24` = **10/15**
+- `25+` = **15/15**
+
+No bots or manufactured wallets. Manipulation can lead to zero/disqualification.
+
+### Score-floor engineering
+
+Once the secure vertical flow is real:
+
+- Skool post + public post = **5 points**.
+- Add 4+ genuine wallet opens = **11 points total outside core** (`5 promotion + 6 usage`).
+- Reach 11+ genuine opens = **15 points outside core**.
+- Reach 25+ genuine opens = full **20/20 promotion + usage**.
+
+This is not “do more marketing.” It is a deterministic scoring strategy: capture low-friction points first, then use the same testers to improve the 45-point reliability category and 10-point UX category.
 
 ## High-confidence seven-call patterns
 
@@ -101,6 +152,7 @@ Visual review is optional/selective and must not block the current product gates
 18. **The best demos let the observer map the product to their own life.** Rally/Blacktop generated strong reactions when the host could immediately imagine a use case.
 19. **Reusable ecosystem infrastructure gets deep technical interest.** Keep a future seam for reusable route/receipt verification, but do not expand before E2E.
 20. **Distribution should be inherent in the product.** NimCarry's bridge invitation is the acquisition loop; no generic referral/gamification system is needed.
+21. **Easy builder-promotion points are a guaranteed score floor if captured correctly.** Never leave the 2-point Skool post or 3-point public post on the table.
 
 ## Winner-pattern transfer
 
@@ -165,13 +217,14 @@ Do not lead with HMAC, Postgres, RPC, tx-hash plumbing, test counts or backend a
 7. Build privacy-safe `Route Receipt` and make it the demo climax.
 8. Freeze/retain known-good runtime with smoke test + rollback discipline for random judge window.
 9. Run five observed first-time tests; remove dead ends and comprehension failures.
-10. Submission/video begin with human problem and destination-bound differentiation.
+10. Capture the easy **5/5 builder-promotion points** as soon as secure E2E is green.
+11. Submission/video begin with human problem and destination-bound differentiation.
 
 ## P1 immediately after E2E
 
 - `My Routes` / follow-after-handoff if it does not destabilize core.
 - privacy-safe finalized handoff / ARRIVED share card.
-- legitimate community testing toward 25+ unique wallet opens.
+- legitimate community testing: 4+ first, then 11+, then 25+ unique wallet opens.
 - focused TRACE polish on first screen, ARRIVED and Route Receipt.
 - error/cancel/retry/recovery assurance including slow finality.
 - iOS cold/warm/background/resume/deeplink checks.
@@ -214,11 +267,12 @@ Never claim PASS until actual Nimiq Pay confirmations and testnet finality are o
 6. Capture screenshots, timestamps, tx hashes, `FINAL` and `ARRIVED` evidence.
 7. Add/verify judge-visible Route Receipt and visible Nimiq proof states.
 8. Run five observed first-time <60-second tests.
-9. Submit to Cycle II showcase as soon as genuinely usable.
-10. Push legitimate community testing toward 25+ wallet opens.
-11. If runtime is green, use Sep 16 Sip & Show as a real-product proof event; otherwise attend without risking the build.
-12. Maintain judge-window smoke test / monitoring / safe deploy / rollback discipline after Sep 18.
-13. Apply focused TRACE polish and final demo/submission packaging only after proof-critical work is green.
+9. Secure the 2-point Skool post + 3-point public social post.
+10. Reach 4+ genuine wallet opens for the initial 11-point outside-core floor, then 11+, then 25+.
+11. Submit to Cycle II showcase as soon as genuinely usable.
+12. If runtime is green, use Sep 16 Sip & Show as a real-product proof event; otherwise attend without risking the build.
+13. Maintain judge-window smoke test / monitoring / safe deploy / rollback discipline after Sep 18.
+14. Apply focused TRACE polish and final demo/submission packaging only after proof-critical work is green.
 
 ## What not to build before E2E
 
