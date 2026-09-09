@@ -2,15 +2,16 @@ project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.0
-date: 2026-09-07
+state_version: 0.8.1
+date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_POSTGRES_MERGED_HTTP_SECURITY_NEXT
+phase: MVP_VERTICAL_SLICE_1_SIP_SHOW_DEMO_DEPLOYED_HTTP_SECURITY_NEXT
 problem_locked: true
 foundation_slice_1_complete: true
 blindspot_hardening_complete: true
 frontend_vertical_slice_skeleton_complete: true
 postgres_vertical_slice_complete: true
+sip_show_clickable_demo_deployed: true
 http_vertical_slice_in_progress: true
 full_production_build_authorized: false
 public_early_access_authorized: false
@@ -84,6 +85,34 @@ frontend_vertical_slice:
     - route_follow_Bearer_client_boundary
     - compatibility_layer_for_observed_HTTP_branch
 
+sip_show_demo:
+  purpose: rough_clickable_product_for_Nimiq_Sip_and_Show
+  deployment_created: true
+  deployment_target: production
+  deployment_name: carry-one-sip-show
+  deployment_id: dpl_C2Je2UT7YBf85YzxU9wxJNXQr6p1
+  deployment_url: https://carry-one-sip-show-mi6uo1a99-faadil-s-projects.vercel.app
+  alias: https://carry-one-sip-show-faadil-s-projects.vercel.app
+  mode: explicit_demo_only
+  behavior:
+    - defaults_to_demo_mode
+    - no_wallet_writes
+    - no_network_mutations
+    - five_screen_clickable_flow
+    - localStorage_demo_state_only
+  evidence_boundary:
+    can_be_shown_as_clickable_product_skeleton: true
+    can_be_claimed_as_real_testnet_E2E: false
+    can_be_claimed_as_runtime_wallet_proof: false
+  deployment_runtime_verification:
+    connector_status_check: BLOCKED_BY_VERCEL_SCOPE_AUTHORIZATION
+    deployment_creation_result: SUCCESS_INITIALIZING
+    public_http_ready_verification: PENDING
+    user_or_opeyemi_should_open_alias_before_live_demo: true
+  sip_show_representation:
+    preferred_presenter_if_available: opeyemi
+    demo_claim_rule: show_only_genuinely_working_surfaces_and_label_demo_mode
+
 postgres_vertical_slice:
   status: MERGED_TO_MAIN
   source_collaborator_branch: feat/postgres-adapter
@@ -149,7 +178,7 @@ http_parallel_work:
       required: role_scoped_redaction
     broadcast_claim_auth:
       severity: P0
-      observed: POST missions/:id/broadcast currently accepts invitation_id_and_tx_hash without wallet signature_or_scoped_capability
+      observed: POST missions/:id/broadcast currently accepts invitation_id_and_tx_hash without wallet_signature_or_scoped_capability
       required: server_minted_short_lived_broadcast_capability_bound_to_mission_invitation_sequence
     frontend_idempotency:
       severity: P0_integration
@@ -180,6 +209,7 @@ runtime_validations_not_claimed:
   - native_nimiq_pay_invite_deeplink_device_launch
   - full_2_to_3_real_wallet_testnet_CREATE_to_ARRIVED
   - real_managed_or_service_PostgreSQL_failover_or_multi_writer_behavior
+  - sip_show_Vercel_alias_public_HTTP_readiness_until_opened_and_verified
 
 history:
   pr_1: CLOSED_SUPERSEDED
@@ -194,6 +224,7 @@ history:
   pr_10_frontend_state_closure: MERGED
   pr_11_raw_postgres: MERGED_BY_ANCESTRY_VIA_PR12_NOT_AUTHORITATIVE_TREE
   pr_12_postgres_hardened: MERGED
+  pr_13_postgres_state_closure: MERGED
 
 current_gate:
   name: CARRY_ONE_MVP_VERTICAL_SLICE_1
@@ -207,7 +238,9 @@ current_gate:
     - durability_before_ack
     - postgres_DB_concurrency_and_route_guards
     - public_repo_secret_scan
+    - Sip_and_Show_clickable_demo_deployment_created
   pending:
+    - verify_Sip_and_Show_alias_public_HTTP_readiness
     - integrate_and_harden_production_HTTP_bindings
     - secure_route_follow_server_capability
     - invitation_privacy_redaction
