@@ -2,10 +2,10 @@ project: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.4
+state_version: 0.8.5
 date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_WEEKEND_FINALIZATION_PREP
+phase: MVP_VERTICAL_SLICE_1_WEEKEND_FINALIZATION_PREP_WITH_CYCLE2_HIDDEN_SPOT_AUDIT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -37,6 +37,12 @@ product_positioning:
   cycle_ii_target_policy:
     known_target_wallet_required: true
     creator_attested_target_consent_required: true
+  competitor_differentiation:
+    generic_relay_or_gift_chain: false
+    destination_bound_route: true
+    consented_human_bridges: true
+    finality_verified_chain_of_custody: true
+    distinct_terminal_arrival: true
 
 mvp_contract:
   recipient_value_luna: 100000
@@ -62,6 +68,7 @@ completed_milestones:
   sip_show_accept_navigation_source_fix: true
   sip_show_favicon_source_fix: true
   repository_presentation_and_governance_pack: true
+  cycle2_hidden_spot_audit: true
 
 verified_baseline:
   latest_source_fix_pr: 16
@@ -88,10 +95,6 @@ repository_presentation:
     contributing: CONTRIBUTING.md
     security: SECURITY.md
     code_of_conduct: CODE_OF_CONDUCT.md
-  claim_boundary:
-    clickable_demo_may_be_shown: true
-    clickable_demo_may_be_claimed_as_real_testnet_e2e: false
-    demo_video_must_not_fake_runtime_proof: true
 
 sip_show_demo:
   stable_public_url: https://carry-one-sip-show.vercel.app/?demo=1
@@ -144,6 +147,48 @@ self_run_testnet_decision:
   real_human_confirmation_in_Nimiq_Pay_required: true
   do_not_claim_pass_before_real_testnet_finality: true
 
+cycle2_hidden_spot_audit:
+  status: COMPLETE_RESEARCH_NOT_PRODUCT_LAW_REWRITE
+  doc: docs/CYCLE2-HIDDEN-SPOT-AUDIT-2026-09-09.md
+  sources_reviewed:
+    - Cycle_I_top_3_and_full_gallery
+    - current_Cycle_II_gallery
+    - current_100_point_scoring
+    - rules_and_FAQ
+    - current_Skool_discussion_and_iOS_bug_report
+  winner_pattern:
+    thesis: top_entries_have_visible_persistent_proof_artifact_not_only_core_mechanic
+    Carry_One_equivalent: privacy_safe_Route_Receipt_or_Handoff_Receipt
+  p0_findings:
+    - Carry_One_not_seen_in_current_Cycle_II_showcase; submit_early_after_secure_vertical_flow_instead_of_waiting_until_deadline
+    - real_usage_15_points_requires_25_plus_legitimate_unique_Nimiq_wallet_opens
+    - Pay_It_Sideways_directly_collides_with_exact_NIM_relay_story; differentiation_must_be_destination_bound_verified_route
+    - target_wallet_paradox_is_more_visible_because_addressless_bearer_gift_competitor_exists; retain_known_consenting_wallet_beachhead_for_Cycle_II
+    - current_iOS_Nimiq_Pay_background_deeplink_stuck_overlay_report_requires_lifecycle_test_before_judging
+  p1_opportunities:
+    - make_wallet_acceptance_finality_and_route_verification_visible_in_UI_not_only_backend
+    - add_privacy_safe_route_receipt_after_real_E2E
+    - personal_history_and_follow_route_as_repeat_value_without_gamification
+    - optional_shareable_handoff_or_arrival_card_after_privacy_checks
+    - strict_60_second_judge_path_assurance
+    - submission_story_should_lead_with_structural_problem_and_solution_not_architecture
+  not_authorized_yet:
+    - addressless_target_claim_system
+    - rich_social_feed
+    - XP_streaks_leaderboards
+    - notifications_until_framework_reliability_proven
+  scoring_execution:
+    functionality_reliability_usefulness_points: 45
+    nimiq_integration_points: 25
+    real_usage_points: 15
+    design_ux_points: 10
+    builder_promotion_points: 5
+    legitimate_wallet_open_threshold_for_full_usage_score: 25
+    skool_post_required_for_promotion_points: true
+    public_social_post_required_for_promotion_points: true
+    live_app_random_post_deadline_evaluation: true
+    judge_evaluates_inside_Nimiq_Pay_not_repo: true
+
 weekend_finalization:
   target: close_secure_vertical_slice_and_real_testnet_proof_by_end_of_week
   plan_doc: docs/WEEKEND-FINALIZATION-PLAN.md
@@ -180,11 +225,22 @@ next_gate_after_HTTP_merge:
     - exact_balance_one_nim_wallet_forwards_exactly_one_nim_with_data_and_requested_fee_zero
     - native_invite_deeplink_on_real_device
     - full_3_wallet_CREATE_to_ARRIVED
+    - iOS_cold_warm_background_resume_and_deeplink_lifecycle
+
+post_E2E_priority_order:
+  - judge_visible_Route_Receipt
+  - submit_to_Cycle_II_showcase_as_soon_as_product_is_genuinely_usable
+  - legitimate_community_testing_until_25_plus_unique_wallet_opens
+  - 60_second_judge_path_and_error_cancel_assurance
+  - small_real_user_feedback_iteration
+  - TRACE_visual_polish
+  - Skool_and_public_social_promotion_links
+  - real_testnet_demo_video_and_submission_story
 
 still_blocked:
-  - public_early_access
+  - public_early_access_before_secure_vertical_flow
   - mainnet_cutover_and_funds
-  - broad_marketing_launch
+  - broad_marketing_launch_before_real_E2E
   - full_visual_polish_before_vertical_flow_proof
   - target_claiming_or_public_target_discovery
   - prizes_or_wagering_or_pooled_funds
