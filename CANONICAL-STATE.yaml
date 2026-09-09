@@ -3,10 +3,10 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.10
+state_version: 0.8.11
 date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_WITH_FULL_NIMCARRY_BRAND_MIGRATION_AND_SEVEN_CALL_SIP_SHIP_CORPUS
+phase: MVP_VERTICAL_SLICE_1_WITH_FULL_NIMCARRY_BRAND_MIGRATION_AND_COMPLETE_SEVEN_CALL_OTTER_CORPUS
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -96,7 +96,9 @@ completed_milestones:
   whisper_six_historical_transcriptions_completed: true
   otter_six_historical_transcript_packages_uploaded: true
   sep9_cycle2_call3_video_available_in_drive: true
-  otter_sep9_corpus_expansion_checkpoint_recorded: true
+  otter_sep9_transcript_package_uploaded: true
+  complete_seven_call_otter_corpus_assembled: true
+  complete_seven_call_checkpoint_recorded: true
 
 verified_code_baseline_before_brand_migration:
   latest_source_fix_pr: 16
@@ -148,30 +150,38 @@ cycle2_hidden_spot_audit:
   differentiation: destination_bound_verified_route
 
 sip_ship_corpus_intelligence:
-  status: OTTER_SIX_FULL_TRANSCRIPT_PACKAGES_UPLOADED_SEP9_VIDEO_ADDED_FULL_CODING_IN_PROGRESS
+  status: COMPLETE_SEVEN_CALL_OTTER_CORPUS_ASSEMBLED_FULL_CODING_PENDING_LOCAL_EXTRACTION
   corpus_doc: docs/SIP-SHIP-CORPUS-HIDDEN-SPOT-INTELLIGENCE-2026-09-09.md
   prior_ingestion_doc: docs/SIP-SHIP-TRANSCRIPT-INGESTION-CHECKPOINT-2026-09-09.md
-  current_ingestion_doc: docs/SIP-SHIP-OTTER-INGESTION-AND-SEP9-CORPUS-EXPANSION-2026-09-09.md
-  historical_calls_with_otter_packages: 6
-  current_cycle2_calls_with_video_reference: 3
+  otter_ingestion_doc: docs/SIP-SHIP-OTTER-INGESTION-AND-SEP9-CORPUS-EXPANSION-2026-09-09.md
+  complete_corpus_checkpoint_doc: docs/SIP-SHIP-CORPUS-COMPLETE-7-CALLS-2026-09-09.md
   total_recording_corpus_available: 7
-  otter_packages_current_chat:
+  total_otter_transcript_packages_uploaded: 7
+  corpus_complete_through: 2026-09-09
+  calls:
     - Cycle_I_Call_1_July_8
     - Cycle_I_Call_2_July_15
     - Cycle_I_Call_3_July_22
     - Cycle_I_Call_4_July_29
     - Cycle_II_Call_1_Aug_26
     - Cycle_II_Call_2_Sep_2
+    - Cycle_II_Call_3_Sep_9
   sep9_recording:
-    status: VIDEO_AVAILABLE_TRANSCRIPT_NOT_YET_REGISTERED
+    status: VIDEO_AND_OTTER_TRANSCRIPT_PACKAGE_AVAILABLE
     drive_folder: 03 - Sip & Ship Call #3 (Sep 9)
     drive_file: 01 - Sip & Ship Call #3 (Sep 9).mp4
     drive_file_id: 1cyeBj2KFbriRSSoADZPLByf9Rz3JaYES
     size_bytes: 167824742
-    use: visual_demo_reference_and_future_full_transcript_coding
+    use: visual_demo_reference_and_full_transcript_coding
   transcript_source_preference: OTTER_FOR_LONG_FORM_FULL_PASS
+  visual_source_preference: GOOGLE_DRIVE_VIDEO_FOR_SCREEN_SHARE_AND_DEMO_BEHAVIOR
   whisper_role: opening_segment_cross_check_only
-  do_not_overclaim_unparsed_or_untranscribed_segments: true
+  do_not_overclaim_unparsed_segments: true
+  current_local_extraction:
+    status: RETRY_REQUIRED
+    reason: transient_chat_execution_sandbox_transport_timeout
+    corpus_gap: false
+    user_action_required: false
   evidence_classes:
     - VERIFIED_OFFICIAL_PUBLIC
     - USER_SUPPLIED_LIVE_FEEDBACK
@@ -197,15 +207,16 @@ sip_ship_corpus_intelligence:
     - recurrence_across_calls
     - rubric_explicit_or_implicit
     - confidence
+    - eventual_Cycle_I_winner_relationship_where_applicable
     - NimCarry_action_DO_DO_NOT_DO_WATCH_ALREADY_COVERED
     - priority_P0_P1_P2_POST_CYCLE_II
   next_evidence_steps:
-    - parse_all_six_Otter_packages
-    - code_all_six_historical_calls
-    - use_Sep9_video_for_visual_demo_reference_checks
-    - obtain_or_create_Sep9_full_transcript
-    - code_Sep9_call_and_expand_to_seven_call_matrix
-    - synthesize_cross_call_hidden_spots_and_update_NimCarry_priorities
+    - retry_extract_all_seven_Otter_packages
+    - code_all_seven_calls
+    - use_Google_Drive_videos_for_targeted_visual_reference_checks
+    - synthesize_cross_call_hidden_spots
+    - compare_Cycle_I_feedback_to_eventual_winners
+    - update_NimCarry_P0_P1_P2_and_submission_story
 
 current_gate:
   name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
