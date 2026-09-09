@@ -23,11 +23,25 @@ NimCarry is a **destination-bound human routing Mini App** for the Nimiq Mini Ap
 
 ## Why NimCarry
 
-Warm introductions and community routing become opaque after the first handoff: you rarely know whether something was forwarded, where it stalled, or whether it actually reached the destination.
+**Warm introductions disappear after the first handoff.** You rarely know whether something was forwarded, where it stalled, or whether it actually reached the intended person.
 
-NimCarry turns that invisible chain into a verifiable path while keeping the core mechanic simple:
+NimCarry turns that invisible chain into a consented, verifiable path while keeping the core mechanic simple:
 
-**1 NIM → verified handoff → next holder → FINAL route → destination**
+**Create → Invite → Accept → Pass 1 NIM → Arrive**
+
+The differentiator is not “sending crypto.” **The 1 NIM is the baton, not the reward.** It is a state-bearing coordination primitive: the route advances only after the wallet-approved handoff is independently FINAL.
+
+Without Nimiq, a bridge can only say “I forwarded it.” With NimCarry, the custody handoff has wallet approval and independent finality behind it.
+
+## What the judge should understand in 60 seconds
+
+1. **Destination:** the mission has one known, consenting destination.
+2. **Human bridge:** the current holder chooses only the next person who can move it closer.
+3. **Consent:** nobody becomes a bridge by surprise.
+4. **1 NIM baton:** exactly 1 NIM marks the custody handoff; it is not a reward, stake, wager, prize or pooled fund.
+5. **FINAL:** pending transactions never move custody.
+6. **ARRIVED:** when the destination becomes the finalized recipient, the mission terminates.
+7. **Route Receipt:** the completed route leaves a privacy-safe proof artifact rather than ending at “transaction sent.”
 
 ## Five-screen MVP
 
@@ -35,7 +49,7 @@ NimCarry turns that invisible chain into a verifiable path while keeping the cor
 2. **Create Mission** — known/consenting destination + purpose.
 3. **Bridge Invitation** — explicit consent before any payment.
 4. **Pass 1 NIM** — wallet-approved exact-value handoff.
-5. **Route / Arrival** — only independently verified FINAL hops appear.
+5. **Route / Arrival** — only independently verified FINAL hops appear; ARRIVED exposes the privacy-safe Route Receipt.
 
 ## Product laws
 
@@ -73,13 +87,29 @@ Public Early Access and mainnet remain blocked until those security/runtime gate
 
 **Live clickable demo:** https://carry-one-sip-show.vercel.app/?demo=1
 
+The local demo may preview the ARRIVED / Route Receipt presentation, but it remains visibly labelled **DEMO MODE**. It is never represented as testnet evidence.
+
 **Demo video:** to be added after the secure real-wallet/testnet vertical proof is recorded. We intentionally do not publish a simulated walkthrough as if it were runtime evidence.
 
 The planned proof topology is three testnet wallets:
 
-`A creator → B bridge → C destination → ARRIVED`
+`A creator → B bridge → C destination → ARRIVED → Verified Route Receipt`
 
 with screen recording, timestamps, transaction hashes, FINAL state and ARRIVED evidence captured during the run.
+
+## Judge-window reliability
+
+Cycle II apps can be evaluated after the submission deadline at an unknown time. NimCarry therefore treats runtime availability as part of the score-critical product surface.
+
+```bash
+npm run smoke:judge -- https://your-production-url.example
+```
+
+The smoke check verifies the served NimCarry shell, FINAL-only custody copy, and `/health.json`. A manual GitHub Action is included; scheduled production monitoring is intentionally gated until the secure real E2E runtime is green.
+
+## Cycle II execution intelligence
+
+The full seven-call Sip & Ship transcript pass has been converted into concrete controls in [`docs/CYCLE2-HIDDEN-SPOT-IMPLEMENTATION-PACK-2026-09-09.md`](docs/CYCLE2-HIDDEN-SPOT-IMPLEMENTATION-PACK-2026-09-09.md). It covers the first-five 60-second test gate, legitimate 4/11/25-user usage ladder, the two required promotion posts, deterministic demo law, Route Receipt contract and judge-window reliability.
 
 ## Development
 
@@ -109,6 +139,7 @@ Current collaboration alignment: joint Cycle II concept and team submission; pri
 - [`docs/REACH-MISSION-SECURITY-AUTH.md`](docs/REACH-MISSION-SECURITY-AUTH.md)
 - [`docs/REACH-MISSION-API-CONTRACT.md`](docs/REACH-MISSION-API-CONTRACT.md)
 - [`docs/REACH-MISSION-TEST-MATRIX.md`](docs/REACH-MISSION-TEST-MATRIX.md)
+- [`docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md`](docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md)
 
 ## License
 

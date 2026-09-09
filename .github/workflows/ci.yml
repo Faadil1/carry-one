@@ -27,6 +27,9 @@ jobs:
       - name: Public-repo secret scan
         run: node scripts/secret-scan.mjs
 
+      - name: Browser JavaScript syntax
+        run: node --check web/app.js && node --check web/http-compat.js && node --check web/winning-intelligence.js && node --check web/demo-ux.js
+
       - name: Typecheck
         run: npm run typecheck
 

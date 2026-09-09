@@ -1,0 +1,6 @@
+{
+  "service": "nimcarry-web",
+  "status": "ok",
+  "proof_model": "FINAL_ONLY_CUSTODY",
+  "public_name": "NimCarry"
+}
