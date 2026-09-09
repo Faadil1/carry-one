@@ -1,7 +1,7 @@
 # HANDOVER — Carry One
 
-Date: 2026-09-07  
-State: `MVP_VERTICAL_SLICE_1_POSTGRES_MERGED_HTTP_SECURITY_NEXT`
+Date: 2026-09-09  
+State: `MVP_VERTICAL_SLICE_1_SIP_SHOW_DEMO_DEPLOYED_HTTP_SECURITY_NEXT`
 
 ## Source of truth / continuity
 
@@ -36,6 +36,32 @@ Public Early Access is still **NOT authorized**.
 PR #9 merged at `5d7cd7caaa574a3518f8c37ef42472c04e5cd105`.
 
 Frozen five screens exist: Mission Home, Create Mission, Bridge Invitation, Pass 1 NIM, Route/Arrival. Nimiq Pay boundary is wired for challenge/sign, expected-holder account preflight, exactly 1 NIM + requested fee 0 + opaque data, tx-hash claim and backend reconciliation. Route-follow Bearer handling exists client-side. Final PR #9 CI had **80/80 tests**.
+
+## Sip & Show clickable demo — DEPLOYMENT CREATED
+
+A dedicated rough clickable demo was deployed for the Nimiq Sip & Show so Opeyemi can point to a product surface even if the full secure HTTP/testnet E2E is not closed yet.
+
+- deployment name: `carry-one-sip-show`
+- deployment id: `dpl_C2Je2UT7YBf85YzxU9wxJNXQr6p1`
+- deployment URL: `https://carry-one-sip-show-mi6uo1a99-faadil-s-projects.vercel.app`
+- production alias: `https://carry-one-sip-show-faadil-s-projects.vercel.app`
+- target: production
+
+The deployed surface intentionally defaults to **DEMO MODE**. It reuses the merged five-screen frontend visual/product flow, but all state is local/demo-only:
+
+- no Nimiq wallet writes;
+- no backend/network mutations;
+- no testnet transaction claim;
+- no real `FINAL` proof;
+- localStorage only for the simulated path.
+
+This deployment **may be shown as a clickable product skeleton**, but must **never** be presented as the real 2–3-wallet testnet E2E or as wallet/runtime evidence.
+
+### Runtime verification caveat
+
+The Vercel deployment action returned success and created the production deployment, but follow-up status checks through the connector are currently blocked by Vercel scope authorization (`faadil-s-projects`). Therefore public HTTP readiness of the alias is still **PENDING VERIFICATION**.
+
+Before the live Sip & Show, Faadil or Opeyemi should open the production alias in a normal browser. If it loads, use it. If it does not, re-authenticate the Vercel connector/scope or use another static-host deployment path.
 
 ## PostgreSQL — MERGED AND HARDENED
 
@@ -110,7 +136,8 @@ Execute as one clean-main integration block without force-updating Opeyemi:
 - real Nimiq Pay multi-account behavior;
 - wallet with exactly 1 NIM forwarding exactly 1 NIM with data + fee 0;
 - native Nimiq Pay deeplink on a real device;
-- full 2–3 wallet testnet `CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> PASS -> FINAL -> ARRIVED`.
+- full 2–3 wallet testnet `CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> PASS -> FINAL -> ARRIVED`;
+- Sip & Show production alias HTTP readiness until opened in a normal browser.
 
 ## Still blocked
 
