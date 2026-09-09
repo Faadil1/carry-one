@@ -1,7 +1,7 @@
 # HANDOVER — Carry One
 
 Date: 2026-09-09  
-State: `MVP_VERTICAL_SLICE_1_SIP_SHOW_DEMO_DEPLOYED_HTTP_SECURITY_NEXT`
+State: `MVP_VERTICAL_SLICE_1_SIP_SHOW_DEMO_USABLE_HTTP_SECURITY_NEXT`
 
 ## Source of truth / continuity
 
@@ -27,118 +27,113 @@ Carry One is a destination-bound human routing Nimiq Pay Mini App:
 
 ## Repository / security
 
-Repo `Faadil1/carry-one` is **public**. CI contains a high-confidence scanner over tracked files + reachable Git history. Secrets/private wallet material remain env/local only.
+Repo `Faadil1/carry-one` is **public**, MIT. CI scans tracked files + reachable Git history for high-confidence credential material. Public Early Access is still **NOT authorized**.
 
-Public Early Access is still **NOT authorized**.
+## Frontend + Sip & Show demo — CURRENT
 
-## Frontend — merged
+The five-screen frontend is merged. The public Sip & Show demo URL confirmed by Faadil to open without a Vercel login is:
 
-PR #9 merged at `5d7cd7caaa574a3518f8c37ef42472c04e5cd105`.
+`https://carry-one-sip-show.vercel.app/?demo=1`
 
-Frozen five screens exist: Mission Home, Create Mission, Bridge Invitation, Pass 1 NIM, Route/Arrival. Nimiq Pay boundary is wired for challenge/sign, expected-holder account preflight, exactly 1 NIM + requested fee 0 + opaque data, tx-hash claim and backend reconciliation. Route-follow Bearer handling exists client-side. Final PR #9 CI had **80/80 tests**.
-
-## Sip & Show clickable demo — DEPLOYMENT CREATED
-
-A dedicated rough clickable demo was deployed for the Nimiq Sip & Show so Opeyemi can point to a product surface even if the full secure HTTP/testnet E2E is not closed yet.
-
-- deployment name: `carry-one-sip-show`
-- deployment id: `dpl_C2Je2UT7YBf85YzxU9wxJNXQr6p1`
-- deployment URL: `https://carry-one-sip-show-mi6uo1a99-faadil-s-projects.vercel.app`
-- production alias: `https://carry-one-sip-show-faadil-s-projects.vercel.app`
-- target: production
-
-The deployed surface intentionally defaults to **DEMO MODE**. It reuses the merged five-screen frontend visual/product flow, but all state is local/demo-only:
-
-- no Nimiq wallet writes;
+The demo is intentionally **demo-only**:
+- no wallet writes;
 - no backend/network mutations;
-- no testnet transaction claim;
-- no real `FINAL` proof;
-- localStorage only for the simulated path.
+- no testnet transaction proof;
+- localStorage simulated state only.
 
-This deployment **may be shown as a clickable product skeleton**, but must **never** be presented as the real 2–3-wallet testnet E2E or as wallet/runtime evidence.
+It may be shown as a clickable product skeleton, never as the real testnet E2E.
 
-### Runtime verification caveat
+### Opeyemi usability report — FIXED IN SOURCE
 
-The Vercel deployment action returned success and created the production deployment, but follow-up status checks through the connector are currently blocked by Vercel scope authorization (`faadil-s-projects`). Therefore public HTTP readiness of the alias is still **PENDING VERIFICATION**.
+Opeyemi reported on 2026-09-09 that `Accept as bridge` appeared to do nothing and the tab had no favicon.
 
-Before the live Sip & Show, Faadil or Opeyemi should open the production alias in a normal browser. If it loads, use it. If it does not, re-authenticate the Vercel connector/scope or use another static-host deployment path.
+Root cause: the demo path correctly saved `ACCEPTED` and set `PASS_1_NIM`, but intentionally remained on the invitation screen, so the successful transition was invisible.
+
+PR **#16 — Fix Sip & Show demo navigation and branding** is merged to `main` at:
+
+`37e518d0661baadb72e2c0283fccef31246dd7f6`
+
+Changes:
+- successful `?demo=1` acceptance now returns visibly to Mission Home;
+- `Pass 1 NIM` is then exposed to the presenter;
+- branded Carry One SVG favicon added;
+- behavior is isolated to demo mode; real wallet/backend authority paths were not changed;
+- regression tests added.
+
+CI run `34360347801` is green:
+- `npm ci` ✅
+- public-repo secret scan ✅
+- typecheck ✅
+- **124/124 tests across 20 files ✅**
+- build ✅
+
+### Deployment caveat after PR #16
+
+Faadil has confirmed the public URL no longer asks for Vercel login. However, the Vercel connector still gets `403` on the `faadil-s-projects` scope, so it cannot prove that the production alias has already redeployed the new PR #16 bytes.
+
+Before Sip & Show, manually refresh `https://carry-one-sip-show.vercel.app/?demo=1` and confirm:
+1. browser tab shows the Carry One favicon;
+2. after accepting as bridge, the UI returns to Mission Home;
+3. `Pass 1 NIM` is visible.
+
+If those three are visible, the source fix is live. If not, redeploy the current `main` to the `carry-one-sip-show` project. Do not treat this as a product/testnet blocker; it is a demo deployment synchronization check.
 
 ## PostgreSQL — MERGED AND HARDENED
 
-Opeyemi source branch remains `feat/postgres-adapter` at observed head `211f091cd27b5cc94f6a9a9c6790dff7863a2917`; it was **not force-updated**.
+Authoritative PostgreSQL integration is PR #12, merge SHA:
 
-Raw PR #11 diverged from current main. A clean integration branch `integration/postgres-hardened` was reconstructed on current main while preserving Opeyemi's source head as merge ancestry.
+`2b9193cd4fc51ba8d140bbd7078a34793b1b9c8a`
 
-Authoritative integration:
-- PR **#12 — Integrate and harden PostgreSQL persistence**
-- merged to `main`
-- merge SHA `2b9193cd4fc51ba8d140bbd7078a34793b1b9c8a`
-- CI run `34129860675`
-- secret scan ✅
-- typecheck ✅
-- **122/122 tests across 20 files ✅**
-- build ✅
+It includes `PgMissionRepository`, `PgRelayStore`, migration runner, restart recovery, DB route/reentry guards and durability-before-ack. Cycle-II PostgreSQL mode remains **single application writer (`replicas=1`)**; active-active/multi-writer safety is not claimed.
 
-GitHub later marks #11 merged because its head became reachable through #12 ancestry. Do **not** interpret that as a separate raw-tree merge; PR #12 is the authoritative resulting tree.
+Do not redo PostgreSQL work.
 
-### PostgreSQL changes now on main
+## Opeyemi HTTP branch — LIVE HEAD MOVED
 
-- `PgMissionRepository` + `PgRelayStore`;
-- migration runner and storage bootstrap;
-- pg/pg-mem test coverage;
-- `migrations/002_postgres_concurrency_guards.sql`;
-- invitation insert locks/revalidates canonical mission holder+sequence at DB boundary;
-- invite acceptance and finalized participant route-reentry DB guards;
-- `CanonicalRelayService.flushDurability()`;
-- Reach Mission authorize/broadcast/reconcile waits for durable relay flush before acknowledgement/projection;
-- legacy relay HTTP mutations also wait for durability.
+Branch: `feat/mission-http-bindings`
 
-### Important deployment boundary
+Latest observed head on 2026-09-09:
 
-Cycle-II PostgreSQL mode is **single application writer only (`replicas=1`)**. PostgreSQL itself may be HA, but the current relay state machine remains in-memory authoritative with durable Postgres snapshots; active-active/multi-writer safety is **not claimed**. See `docs/POSTGRES-RUNTIME-BOUNDARY.md`.
+`4f219cbd153484e560c4079ffd8c549ec52e483f`
 
-## HTTP branch — NEXT
+This is newer than the previously audited `ed610999...`. Opeyemi merged his prior HTTP work with the repository line containing the PostgreSQL work. It is **not merged to current main** and must be reconciled from this live head (or a newer live head if it moves again), without force-updating his branch.
 
-Opeyemi branch:
-- `feat/mission-http-bindings`
-- observed head `ed6109992adbdd7818f34b6aa4d037e94b7c91c8`
-- not merged to main yet.
+Known strengths: signed mutation auth, request validation, `Idempotency-Key`, rate limits, mission DTOs.
 
-Strengths already present: signed mutation auth, validation, `Idempotency-Key`, rate limits, mission DTOs.
+### Security/integration blockers that remain before merge/Public Early Access
 
-### P0 issues found in audit — must fix before merge/Public Early Access
-
-1. **Route-follow auth:** mission reads currently derive role from spoofable `X-Wallet`; client Bearer token is not verified.
-2. **Invitation privacy:** generic mission view can expose open-invite context/`why_you` beyond current holder/intended invitee.
-3. **Broadcast hash claim:** `/missions/:id/broadcast` currently accepts invitation id + tx hash without signed/scoped authorization; this can be used to attach an arbitrary hash to an active intent.
-4. **Frontend idempotency mismatch:** backend requires `Idempotency-Key`, merged frontend does not yet generate it automatically.
-5. **Legacy `/relay` mutations:** product mission server currently delegates legacy relay mutation routes; they must be disabled or explicitly dev-gated in production mode.
+1. Replace spoofable `X-Wallet` route-view identity with a verified server-signed/Bearer route-view capability.
+2. Redact `why_you` and private invitation context for unauthorized mission readers.
+3. Protect transaction-hash broadcast claim with a short-lived scoped capability bound to mission + invitation + sequence.
+4. Generate `Idempotency-Key` automatically for frontend mutations.
+5. Disable or explicit-dev-gate legacy `/relay` mutation routes in the product server.
+6. Reconcile the frontend + HTTP + PostgreSQL runtime into one combined vertical flow.
 
 ## NEXT EXACT GATE
 
 `CARRY_ONE_HTTP_SECURITY_AND_VERTICAL_INTEGRATION = READY`
 
-Execute as one clean-main integration block without force-updating Opeyemi:
+Execution order:
+1. re-fetch Opeyemi's live HTTP branch head;
+2. create a clean integration branch from current `main`;
+3. preserve/reconcile his HTTP work without force-updating it;
+4. close the five security/integration blockers above;
+5. run combined frontend/backend harness tests;
+6. run full CI and merge only if green;
+7. immediately update `CANONICAL-STATE.yaml` + `HANDOVER.md` again.
 
-1. re-fetch `feat/mission-http-bindings` live head;
-2. reconstruct/preserve his HTTP work on current `main`;
-3. replace `X-Wallet` trust with a server-signed short-lived route-view capability;
-4. redact `why_you`/private invitation context by verified role;
-5. mint a short-lived broadcast capability from signed `AUTHORIZE_PASS`, bind it to mission+invitation+sequence, and require it for tx-hash claim;
-6. generate `Idempotency-Key` in frontend mutation requests;
-7. disable/dev-gate legacy relay mutations in the product server;
-8. integrate PostgreSQL bootstrap + HTTP server + frontend contract;
-9. run full CI; merge only if green;
-10. immediately update canonical state + handover again.
-
-## Runtime proofs still pending — do not fake PASS
+## Runtime proofs still pending — never fake PASS
 
 - real Nimiq Pay multi-account behavior;
-- wallet with exactly 1 NIM forwarding exactly 1 NIM with data + fee 0;
-- native Nimiq Pay deeplink on a real device;
+- wallet funded with exactly 1 NIM forwarding exactly 1 NIM with data and requested fee 0;
+- native Nimiq Pay invite deeplink on a real device;
 - full 2–3 wallet testnet `CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> PASS -> FINAL -> ARRIVED`;
-- Sip & Show production alias HTTP readiness until opened in a normal browser.
+- source PR #16 visibly confirmed on the public Sip & Show alias after redeploy/sync.
+
+## What remains after secure HTTP closure
+
+After the real vertical proof is green: real-user evidence/telemetry, UX corrections from actual use, TRACE/full visual polish, Sip & Show/Nimiq feedback incorporation, submission video/story, Skool/social promotion checklist and final judging-package assurance.
 
 ## Still blocked
 
-Public Early Access, mainnet funds/cutover, marketing launch, full TRACE polish, target claiming/public discovery, prizes/wagers/pools, forwarding rewards, AI spend/routing, marketplace expansion, unique-human claims.
+Public Early Access, mainnet funds/cutover, broad marketing launch, full TRACE polish before vertical proof, target claiming/public discovery, prizes/wagers/pools, forwarding rewards, AI spend/routing, marketplace expansion and unique-human claims.
