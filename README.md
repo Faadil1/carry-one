@@ -1,10 +1,11 @@
 <p align="center">
-  <img src="web/favicon.svg" alt="Carry One logo" width="92" height="92" />
+  <img src="web/favicon.svg" alt="NimCarry logo" width="92" height="92" />
 </p>
 
-<h1 align="center">Carry One</h1>
+<h1 align="center">NimCarry</h1>
 
 <p align="center"><strong>Get this to someone you cannot reach directly — one human bridge at a time.</strong></p>
+<p align="center"><strong>One NIM. One bridge at a time.</strong></p>
 
 <p align="center">
   <a href="https://carry-one-sip-show.vercel.app/?demo=1"><strong>Live clickable demo</strong></a>
@@ -14,15 +15,17 @@
   <a href="CANONICAL-STATE.yaml">Current state</a>
 </p>
 
+> **Naming decision — 2026-09-09:** the product formerly presented as **Carry One** is now **NimCarry**. The existing repository slug, deployment URL and internal `carryone.*` storage keys remain temporarily stable to avoid breaking the active Cycle II demo/integration work. Public-facing product identity is NimCarry.
+
 > **Sip & Show note:** the public URL above is an explicit **demo-only** surface: no wallet writes, no backend/network mutations, and no claim of real testnet finality. The real Nimiq Pay E2E proof is the next runtime gate.
 
-Carry One is a **destination-bound human routing Mini App** for the Nimiq Mini Apps Competition — Cycle II. One verified **1 NIM** baton moves through consenting human bridges until the defined destination becomes the finalized recipient. Each holder chooses the next person who can move the mission closer.
+NimCarry is a **destination-bound human routing Mini App** for the Nimiq Mini Apps Competition — Cycle II. One verified **1 NIM** baton moves through consenting human bridges until the defined destination becomes the finalized recipient. Each holder chooses the next person who can move the mission closer.
 
-## Why Carry One
+## Why NimCarry
 
 Warm introductions and community routing become opaque after the first handoff: you rarely know whether something was forwarded, where it stalled, or whether it actually reached the destination.
 
-Carry One turns that invisible chain into a verifiable path while keeping the core mechanic simple:
+NimCarry turns that invisible chain into a verifiable path while keeping the core mechanic simple:
 
 **1 NIM → verified handoff → next holder → FINAL route → destination**
 
@@ -58,24 +61,11 @@ See [`SECURITY.md`](SECURITY.md) for vulnerability reporting and current release
 
 ## Current build state
 
-Already merged:
-
-- frozen Reach Mission product law + UX/state/security contracts;
-- foundation mission/invitation/auth/finality services;
-- blind-spot hardening;
-- five-screen frontend skeleton;
-- PostgreSQL repository/relay adapter, migration runner and durability guards;
-- public Sip & Show clickable demo;
-- demo navigation + favicon usability fix.
+Already merged: frozen Reach Mission product law + UX/state/security contracts; foundation mission/invitation/auth/finality services; blind-spot hardening; five-screen frontend skeleton; PostgreSQL persistence; public Sip & Show clickable demo; demo navigation/favicon fixes; Cycle II hidden-spot audit; and the NimCarry public-facing naming transition.
 
 Current gate: **secure HTTP + frontend/PostgreSQL vertical integration**.
 
-Still intentionally unclaimed until real runtime proof:
-
-- real Nimiq Pay multi-account behavior;
-- exactly-1-NIM forwarding with requested fee 0;
-- native invite deeplink on a real device;
-- full 3-wallet testnet `CREATE → INVITE → ACCEPT → AUTHORIZE → PASS → FINAL → ARRIVED`.
+Still intentionally unclaimed until real runtime proof: real Nimiq Pay multi-account behavior; exactly-1-NIM forwarding with requested fee 0; native invite deeplink on a real device; and full 3-wallet testnet `CREATE → INVITE → ACCEPT → AUTHORIZE → PASS → FINAL → ARRIVED`.
 
 Public Early Access and mainnet remain blocked until those security/runtime gates pass.
 
