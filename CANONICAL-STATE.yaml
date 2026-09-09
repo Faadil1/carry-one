@@ -3,10 +3,10 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.14
+state_version: 0.8.15
 date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_WITH_COMPLETE_SEVEN_CALL_WINNING_INTELLIGENCE_AND_SCORE_CAPTURE
+phase: MVP_VERTICAL_SLICE_1_WITH_HIDDEN_SPOTS_PRODUCT_LAYER_MERGED
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -127,6 +127,11 @@ completed_milestones:
   sip_ship_seven_call_winning_intelligence_audit: true
   transcript_only_hidden_spot_delta_recorded: true
   cycle2_score_capture_strategy_locked: true
+  cycle2_hidden_spot_product_layer_merged: true
+  route_receipt_judge_surface_implemented: true
+  judge_window_smoke_tooling_implemented: true
+  first_five_60_second_test_protocol_armed: true
+  score_floor_promotion_and_usage_ladder_armed: true
 
 verified_code_baseline_before_brand_migration:
   latest_source_fix_pr: 16
@@ -137,12 +142,26 @@ verified_code_baseline_before_brand_migration:
   test_files: 20
   authoritative_vitest_tests: 124
   build: pass
-  note: re_run_full_CI_after_next_code_bearing_brand_migration_or_HTTP_merge
+  note: superseded_for_current_main_by_hidden_spot_product_layer_baseline_below
+
+hidden_spot_product_layer_baseline:
+  pull_request: 19
+  merge_sha: 7ccf67aefb53ee101b2df7fdc1dc638d976cb4cc
+  premerge_ci_run: 34413498020
+  postmerge_ci_run: 34413573164
+  public_repo_secret_scan: pass
+  browser_javascript_syntax: pass
+  typecheck: pass
+  tests: pass
+  build: pass
+  implementation_doc: docs/CYCLE2-HIDDEN-SPOT-IMPLEMENTATION-PACK-2026-09-09.md
+  milestone_doc: docs/HIDDEN-SPOTS-IMPLEMENTATION-MILESTONE-2026-09-09.md
 
 http_parallel_work:
   owner: opeyemi
   branch: feat/mission-http-bindings
   latest_observed_head_sha: 4f219cbd153484e560c4079ffd8c549ec52e483f
+  latest_refetch_on: 2026-09-09
   merged_to_main: false
   before_reconcile: RE_FETCH_LIVE_HEAD
   preserve_branch_without_force_update: true
@@ -197,6 +216,41 @@ score_capture_strategy:
     twenty_five_plus_users_plus_promotion_points: 20
     bots_or_artificial_wallets: forbidden
     objective: capture_deterministic_low_friction_points_then_reuse_testing_to_improve_reliability_and_UX
+
+hidden_spot_implementation:
+  status: IMPLEMENTABLE_NOW_LAYER_MERGED_REMAINDER_GATED_BY_REAL_EVIDENCE
+  pull_request: 19
+  merge_sha: 7ccf67aefb53ee101b2df7fdc1dc638d976cb4cc
+  implementation_doc: docs/CYCLE2-HIDDEN-SPOT-IMPLEMENTATION-PACK-2026-09-09.md
+  implemented_now:
+    - problem_first_home_framing
+    - concrete_warm_introduction_example
+    - five_step_judge_flow_visualization
+    - one_NIM_baton_not_reward_disambiguation
+    - visible_wallet_approval_finality_custody_proof_ladder
+    - invitation_lifecycle_clarity
+    - private_invite_share_action_without_referral_reward
+    - final_only_route_explanation
+    - privacy_safe_arrived_route_receipt
+    - explicit_demo_only_arrived_receipt_preview
+    - static_web_health_contract
+    - deterministic_judge_smoke_script
+    - manual_github_judge_smoke_workflow
+    - browser_javascript_syntax_CI
+    - first_five_60_second_test_protocol
+    - score_floor_4_11_25_user_ladder
+    - gated_skool_and_public_social_post_drafts
+    - README_judge_legibility
+  gated_until_prerequisite:
+    - real_A_B_C_testnet_proof
+    - five_real_observed_first_time_tests
+    - four_eleven_twenty_five_genuine_unique_wallet_opens
+    - actual_skool_and_public_social_posts
+    - Sep_16_real_product_demo
+    - scheduled_judge_window_monitoring_on_final_secure_runtime
+    - My_Routes_if_safe_after_E2E
+    - reusable_external_route_receipt_primitive_post_cycle_II
+  evidence_rule: never_mark_gated_item_complete_until_observed_or_executed
 
 sip_ship_corpus_intelligence:
   status: COMPLETE_FULL_SEVEN_CALL_OTTER_PASS_AND_CROSS_CALL_SYNTHESIS
@@ -296,7 +350,7 @@ sip_ship_corpus_intelligence:
 
 current_gate:
   name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
-  status: READY_WAITING_FOR_PARALLEL_SECURITY_WORK
+  status: READY_RESUME_AFTER_HIDDEN_SPOT_PRODUCT_LAYER_MERGE
   exit_criteria:
     - all_five_HTTP_security_integration_blockers_closed
     - frontend_HTTP_Postgres_combined_harness_green
@@ -316,14 +370,14 @@ next_gate_after_HTTP_merge:
     - iOS_cold_warm_background_resume_and_deeplink_lifecycle
 
 post_E2E_priority_order:
-  - judge_visible_Route_Receipt
+  - verify_judge_visible_Route_Receipt_against_real_arrived_route
   - first_5_observed_60_second_user_tests
   - capture_builder_promotion_5_of_5_points
   - capture_4_plus_legitimate_wallet_opens_for_initial_11_point_outside_core_floor
   - submit_to_Cycle_II_showcase_as_soon_as_product_is_genuinely_usable
   - legitimate_community_testing_until_11_plus_then_25_plus_unique_wallet_opens
   - Sep_16_Sip_Show_real_product_proof_if_green
-  - judge_window_reliability_monitoring_smoke_test_and_safe_rollback
+  - enable_judge_window_reliability_monitoring_against_final_secure_runtime
   - small_real_user_feedback_iteration
   - TRACE_visual_polish_focused_on_first_screen_arrival_and_receipt
   - real_testnet_demo_video_and_submission_story
