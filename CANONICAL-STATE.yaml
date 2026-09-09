@@ -3,10 +3,10 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.9
+state_version: 0.8.10
 date: 2026-09-09
 
-phase: MVP_VERTICAL_SLICE_1_WITH_FULL_NIMCARRY_BRAND_MIGRATION_AND_SIP_SHIP_TRANSCRIPT_INGESTION
+phase: MVP_VERTICAL_SLICE_1_WITH_FULL_NIMCARRY_BRAND_MIGRATION_AND_SEVEN_CALL_SIP_SHIP_CORPUS
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -16,6 +16,7 @@ continuity_protocol:
   update_canonical_state_after_every_meaningful_milestone: true
   update_handover_after_every_meaningful_milestone: true
   next_conversation_must_be_able_to_take_lead_without_chat_history: true
+  user_reconfirmed_on: 2026-09-09
 
 brand_identity:
   public_name: NimCarry
@@ -24,9 +25,7 @@ brand_identity:
   tagline: One NIM. One bridge at a time.
   promise: Get this to someone you cannot reach directly — one human bridge at a time.
   judge_facing_thesis: NimCarry turns an invisible chain of human introductions into a consented verifiable human route using exactly 1 NIM as the baton.
-  decision_doc: docs/NIMCARRY-NAMING-DECISION-2026-09-09.md
   full_migration_authorized: true
-  full_migration_authorized_on: 2026-09-09
   public_facing_identity_must_use_nimcarry: true
   new_docs_and_new_code_must_use_nimcarry: true
   historical_evidence_may_preserve_former_name_when_rewriting_would_damage_traceability: true
@@ -37,7 +36,6 @@ brand_identity:
     desired_demo_alias: https://nimcarry.vercel.app
     current_demo_alias: https://carry-one-sip-show.vercel.app
     status: AUTHORIZED_PENDING_EXTERNAL_RENAME
-    note: current_connected_GitHub_and_Vercel_actions_do_not_expose_repository_or_project_alias_rename
 
 team:
   faadil: { role: repo_owner_product_lead }
@@ -91,18 +89,14 @@ completed_milestones:
   sip_show_clickable_demo: true
   repository_presentation_and_governance_pack: true
   cycle2_hidden_spot_audit: true
-  sip_show_live_talk_track: true
   nimcarry_brand_lock: true
-  nimcarry_public_readme_update: true
-  nimcarry_public_ui_shell_update: true
-  nimcarry_sip_show_deck: true
-  nimcarry_security_policy_update: true
-  nimcarry_contributor_guide_update: true
   nimcarry_full_migration_authorized: true
   sip_ship_historical_corpus_registered: true
   sip_ship_public_recap_hidden_spot_pass: true
-  sip_ship_six_historical_transcriptions_completed: true
-  sip_ship_transcript_ingestion_checkpoint_recorded: true
+  whisper_six_historical_transcriptions_completed: true
+  otter_six_historical_transcript_packages_uploaded: true
+  sep9_cycle2_call3_video_available_in_drive: true
+  otter_sep9_corpus_expansion_checkpoint_recorded: true
 
 verified_code_baseline_before_brand_migration:
   latest_source_fix_pr: 16
@@ -154,44 +148,64 @@ cycle2_hidden_spot_audit:
   differentiation: destination_bound_verified_route
 
 sip_ship_corpus_intelligence:
-  status: SIX_HISTORICAL_TRANSCRIPTIONS_COMPLETE_FULL_TEXT_CODING_PENDING_EXPORT_OR_FULL_RESULT_ACCESS
+  status: OTTER_SIX_FULL_TRANSCRIPT_PACKAGES_UPLOADED_SEP9_VIDEO_ADDED_FULL_CODING_IN_PROGRESS
   corpus_doc: docs/SIP-SHIP-CORPUS-HIDDEN-SPOT-INTELLIGENCE-2026-09-09.md
-  ingestion_checkpoint_doc: docs/SIP-SHIP-TRANSCRIPT-INGESTION-CHECKPOINT-2026-09-09.md
-  historical_recordings_transcribed: 6
-  todays_2026_09_09_recording: PENDING_PUBLICATION
-  transcript_provider: WhisperTranscribe
-  transcript_jobs_status: completed
-  current_connector_exposure: OPENING_MINUTE_ONLY_FOR_LONG_FILES
-  public_share_page_automated_fetch: CACHE_MISS
-  do_not_overclaim_unobserved_transcript_segments: true
-  evidence_classes: [VERIFIED_OFFICIAL_PUBLIC, USER_SUPPLIED_LIVE_FEEDBACK, TRANSCRIPT_VERIFIED_OPENING_SEGMENT, TRANSCRIPT_FULL_PASS_PENDING]
-  opening_segment_signals:
-    - Cycle_I_Call_1_competition_explicitly_supports_idea_validation_useful_apps_community_and_collaboration
-    - Cycle_I_Call_3_submissions_open_during_cycle_and_Sip_and_Submit_reinforces_iterative_submission
-    - Cycle_I_Call_4_live_praise_centers_real_world_problem_problem_first_story_existing_competitors_functionality_and_simple_elegant_strong_use_case
-    - Cycle_II_Call_1_adjustments_explicitly_based_on_builder_feedback_and_transparency_value
-    - Cycle_II_Call_2_returning_builders_encouraged_to_apply_Cycle_I_learning_and_new_builder_inflow_is_high
-  p0_new_findings:
-    - exactly_1_NIM_should_be_positioned_as_semantic_state_bearing_baton_not_economic_incentive
-    - NimCarry_should_own_NIM_as_coordination_primitive_not_generic_payment
-    - product_must_look_simpler_than_implementation
-    - final_Sep_16_Sip_Show_should_be_treated_as_real_product_proof_event_if_E2E_is_green
-    - reciprocal_builder_testing_can_improve_functionality_usage_and_UX_scores_simultaneously
-    - judge_story_should_open_with_real_world_problem_and_keep_solution_simple_elegant_and_functional
-  p1_new_findings:
+  prior_ingestion_doc: docs/SIP-SHIP-TRANSCRIPT-INGESTION-CHECKPOINT-2026-09-09.md
+  current_ingestion_doc: docs/SIP-SHIP-OTTER-INGESTION-AND-SEP9-CORPUS-EXPANSION-2026-09-09.md
+  historical_calls_with_otter_packages: 6
+  current_cycle2_calls_with_video_reference: 3
+  total_recording_corpus_available: 7
+  otter_packages_current_chat:
+    - Cycle_I_Call_1_July_8
+    - Cycle_I_Call_2_July_15
+    - Cycle_I_Call_3_July_22
+    - Cycle_I_Call_4_July_29
+    - Cycle_II_Call_1_Aug_26
+    - Cycle_II_Call_2_Sep_2
+  sep9_recording:
+    status: VIDEO_AVAILABLE_TRANSCRIPT_NOT_YET_REGISTERED
+    drive_folder: 03 - Sip & Ship Call #3 (Sep 9)
+    drive_file: 01 - Sip & Ship Call #3 (Sep 9).mp4
+    drive_file_id: 1cyeBj2KFbriRSSoADZPLByf9Rz3JaYES
+    size_bytes: 167824742
+    use: visual_demo_reference_and_future_full_transcript_coding
+  transcript_source_preference: OTTER_FOR_LONG_FORM_FULL_PASS
+  whisper_role: opening_segment_cross_check_only
+  do_not_overclaim_unparsed_or_untranscribed_segments: true
+  evidence_classes:
+    - VERIFIED_OFFICIAL_PUBLIC
+    - USER_SUPPLIED_LIVE_FEEDBACK
+    - TRANSCRIPT_VERIFIED_OPENING_SEGMENT
+    - OTTER_FULL_TRANSCRIPT_PACKAGE_UPLOADED_PENDING_PARSE
+    - VIDEO_REFERENCE_AVAILABLE_PENDING_VISUAL_PASS
+    - TRANSCRIPT_FULL_PASS_VERIFIED
+  already_supported_signals:
+    - competition_values_idea_validation_useful_apps_community_and_collaboration
+    - iterative_submission_is_normal
+    - live_praise_centers_real_world_problem_problem_first_story_existing_competitors_functionality_simplicity_elegance_and_strong_use_case
+    - cycle2_changes_are_feedback_driven
+    - returning_builders_expected_to_apply_previous_learning
+    - exactly_1_NIM_should_be_semantic_baton_not_economic_incentive
+    - NimCarry_should_own_NIM_as_coordination_primitive
     - Route_Receipt_should_be_demo_climax
-    - judge_window_reliability_layer_needed_because_evaluation_time_is_unknown_after_deadline
-    - private_bridge_invite_is_a_natural_real_usage_acquisition_loop_after_secure_E2E
-    - Nim_prefix_branding_is_now_locked_as_ecosystem_legibility_signal
-  transcript_level_next_pass:
-    - obtain_full_TXT_SRT_or_VTT_exports_for_all_six_jobs
-    - exact_Nimiq_team_wording
-    - every_demoed_product_and_reaction
-    - repeated_objections_and_questions
-    - onboarding_failures_seen_live
-    - native_Nimiq_patterns_praised
-    - platform_friction
-    - winner_changes_between_demo_and_final_submission
+  full_transcript_coding_schema:
+    - exact_or_tight_Nimiq_team_wording
+    - timestamp
+    - app_or_demo_subject
+    - category_PRODUCT_JUDGING_DISTRIBUTION_PLATFORM_COMPETITOR
+    - signal_PRAISE_CONCERN_QUESTION_FAILURE_ADVICE
+    - recurrence_across_calls
+    - rubric_explicit_or_implicit
+    - confidence
+    - NimCarry_action_DO_DO_NOT_DO_WATCH_ALREADY_COVERED
+    - priority_P0_P1_P2_POST_CYCLE_II
+  next_evidence_steps:
+    - parse_all_six_Otter_packages
+    - code_all_six_historical_calls
+    - use_Sep9_video_for_visual_demo_reference_checks
+    - obtain_or_create_Sep9_full_transcript
+    - code_Sep9_call_and_expand_to_seven_call_matrix
+    - synthesize_cross_call_hidden_spots_and_update_NimCarry_priorities
 
 current_gate:
   name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
@@ -219,7 +233,7 @@ post_E2E_priority_order:
   - submit_to_Cycle_II_showcase_as_soon_as_product_is_genuinely_usable
   - first_5_observed_60_second_user_tests
   - legitimate_community_testing_until_25_plus_unique_wallet_opens
-  - final_Sep_16_Sip_Show_real_product_proof_if_green
+  - Sep_16_Sip_Show_real_product_proof_if_green
   - judge_window_reliability_monitoring_and_safe_deploy_layer
   - small_real_user_feedback_iteration
   - TRACE_visual_polish
