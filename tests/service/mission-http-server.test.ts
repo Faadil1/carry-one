@@ -192,14 +192,27 @@ describe("Reach Mission HTTP bindings", () => {
     expect(intent.expected_sender).toBe(creator.address);
     expect(intent.value_luna).toBe(ONE_NIM_IN_LUNA);
     expect(intent.recipient_data).toMatch(/^co:v1:/);
+    expect(intent.broadcast_capability).toMatch(/^[A-Za-z0-9_-]{32,}$/);
+    expect(new Date(intent.broadcast_capability_expires_at).getTime()).toBeGreaterThan(Date.now());
 
     const txHash = randomBytes(32).toString("hex");
-    const broadcastRes = await request("POST", `/missions/${missionId}/broadcast`, {
+    const broadcastBody = {
       invitation_id: invitationId,
       tx_hash: txHash,
-    }, { "Idempotency-Key": "broadcast-e2e" });
+      broadcast_capability: intent.broadcast_capability,
+    };
+    const broadcastRes = await request("POST", `/missions/${missionId}/broadcast`, broadcastBody, { "Idempotency-Key": "broadcast-e2e" });
     expect(broadcastRes.status).toBe(201);
     expect(broadcastRes.body.tx_hash).toBe(txHash);
+
+    const broadcastRetry = await request("POST", `/missions/${missionId}/broadcast`, broadcastBody, { "Idempotency-Key": "broadcast-e2e" });
+    expect(broadcastRetry.status).toBe(201);
+    expect(broadcastRetry.headers.get("Idempotency-Replayed")).toBe("true");
+    expect(broadcastRetry.body.tx_hash).toBe(txHash);
+
+    const capabilityReplay = await request("POST", `/missions/${missionId}/broadcast`, broadcastBody, { "Idempotency-Key": "broadcast-replay-new-key" });
+    expect(capabilityReplay.status).toBe(401);
+    expect(capabilityReplay.body.error).toBe("BROADCAST_CAPABILITY_REPLAY");
 
     rpc.tx = {
       hash: txHash,
@@ -223,6 +236,15 @@ describe("Reach Mission HTTP bindings", () => {
     expect(targetViewRes.body.primary_action).toBe("START_NEW_ROUTE");
     expect(targetViewRes.body.route).toHaveLength(1);
     expect(targetViewRes.body.route[0].recipient.is_viewer).toBe(true);
+  });
+
+  it("rejects broadcast claims that do not present a capability", async () => {
+    const response = await request("POST", "/missions/00000000-0000-4000-8000-000000000000/broadcast", {
+      invitation_id: "00000000-0000-4000-8000-000000000001",
+      tx_hash: "ab".repeat(32),
+    }, { "Idempotency-Key": "missing-broadcast-capability" });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("INVALID_STRING");
   });
 
   it("replays a mutation with the same Idempotency-Key instead of creating a second mission", async () => {
