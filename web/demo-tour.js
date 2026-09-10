@@ -119,6 +119,31 @@
     row.prepend(open);
   }
 
+  function keepTourBrowserOnly() {
+    document.querySelectorAll('a[href^="nimiqpay://"]').forEach((link) => {
+      link.hidden = true;
+      link.setAttribute("aria-hidden", "true");
+      link.tabIndex = -1;
+    });
+  }
+
+  function autoOpenNextInvite() {
+    const meta = readMeta();
+    if (!meta.autoOpenNextInvite) return;
+    const demo = readDemo();
+    if (!demo?.mission || demo.mission.status === "ARRIVED") return;
+    const path = location.pathname.replace(/\/+$/, "");
+    const expected = `/mission/${encodeURIComponent(demo.mission.mission_id)}`;
+    if (path !== expected) return;
+    const button = screen.querySelector("#invite-button");
+    if (!button) return;
+
+    const nextMeta = { ...meta };
+    delete nextMeta.autoOpenNextInvite;
+    writeMeta(nextMeta);
+    button.click();
+  }
+
   async function simulatePass(event) {
     const button = event.target.closest?.("#send");
     if (!button) return;
@@ -200,6 +225,7 @@
     button.className = "button primary";
     button.textContent = "Continue demo to destination";
     button.addEventListener("click", () => {
+      writeMeta({ ...readMeta(), autoOpenNextInvite: true });
       history.pushState({}, "", `/mission/${encodeURIComponent(demo.mission.mission_id)}`);
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
@@ -219,8 +245,10 @@
   function enhance() {
     addTourBadge();
     prefillCreate();
+    autoOpenNextInvite();
     prefillInvite();
     enhanceInviteCard();
+    keepTourBrowserOnly();
     enhanceRoute();
   }
 
