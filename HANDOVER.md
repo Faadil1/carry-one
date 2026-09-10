@@ -1,12 +1,12 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-10  
-Canonical version: **0.8.21**  
-State: `GUIDED_DEMO_VIDEO_QA_SECOND_BRIDGE_FIX_GREEN_PENDING_VERCEL_OBSERVATION_HTTP_SECURITY_PARALLEL_RECONCILIATION`
+Canonical version: **0.8.22**  
+State: `GUIDED_DEMO_1_TO_5_VISUAL_QA_PASS_MINOR_POLISH_GREEN_HTTP_SECURITY_PARALLEL_RECONCILIATION`
 
 ## Read first
 
-`CANONICAL-STATE.yaml` is the current source of truth and overrides chat memory. Update **both** `CANONICAL-STATE.yaml` and `HANDOVER.md` after every meaningful milestone.
+`CANONICAL-STATE.yaml` is the current source of truth and overrides chat memory. Update both `CANONICAL-STATE.yaml` and `HANDOVER.md` after every meaningful milestone.
 
 ## Product law — FROZEN
 
@@ -30,45 +30,46 @@ Truthfulness boundary: presentation does not create real transactions, FINAL, cu
 
 ## Vercel production — READY
 
-Initial `public/` output failure was fixed by PR #22 / merge `90673c0...`; root `vercel.json` now builds and serves `web/`. User observed Production `Ready / Current` at `https://carry-one-mu.vercel.app`, and `/create` direct route renders.
+Initial Vercel output failure was fixed by PR #22 / merge `90673c0...`; root `vercel.json` serves `web/`. User observed Production `Ready / Current` at `https://carry-one-mu.vercel.app`, and `/create` direct route renders.
 
-## Provider-free guided demo — FIRST VIDEO QA DONE
+## Guided provider-free demo — 1→5 VIDEO QA PASSED
 
 Clean-start link:
 `https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1`
 
-The user supplied an ~81.8s screen recording of the guided tour. Observed PASS through:
+A second user-supplied production recording (~109.3s) was inspected across the full timeline after the second-bridge continuation fix. The fresh guided run is visible from roughly 12s and reaches **ARRIVED / DEMO Route Receipt** around 66s — approximately **54 seconds** from the fresh home surface to the proof climax in that recording.
+
+Observed PASS:
 - home/problem-first surface;
-- Create with prefill;
+- Create;
 - first bridge invitation;
-- browser-only `Open demo invite`;
-- Accept as a no-funds consent step;
-- simulated demo FINAL;
-- custody moving to Bridge B;
-- route showing **1 FINAL** handoff.
+- browser-only demo invite;
+- Accept as no-funds consent;
+- first simulated FINAL and custody move to Bridge B;
+- automatic continuation into the second bridge cycle;
+- second simulated FINAL;
+- destination reached;
+- **ARRIVED**;
+- **DEMO Route Receipt with two finalized hops**;
+- a new mission can be started after arrival.
 
-Observed friction at the second bridge cycle: **Continue demo to destination** returned to Mission Home, but the next required action was not obvious. The recording therefore ended with one FINAL handoff and did **not** reach ARRIVED.
+Evidence record: `docs/GUIDED-DEMO-SECOND-VIDEO-QA-2026-09-10.md`.
 
-Fix is already on `main`:
-- `web/demo-tour.js` commit `ede8737a63ff1988be5540322ece4966d529fbe0`;
-- CI run `34440569128`: **PASS** across secret scan, browser syntax, typecheck, tests and build.
+Two minor presentation issues observed in the video were already fixed on `main` in `61a64e530b74f1f3c0300fc1387694c6ef6218af`, CI run `34441565599` = **PASS**:
+- pre-FINAL pass headline now says **`Pass the 1 NIM baton.`** rather than prematurely claiming a verified handoff;
+- Invitation / Pass / Route kickers are normalized to STEP 3 / 4 / 5;
+- `Preview ARRIVED receipt` is hidden only in `demo=1&tour=1` so the guided tester cannot skip the intended narrative; ordinary `?demo=1` preview remains available.
 
-New behavior:
-- `Continue demo to destination` returns to Mission Home **and automatically opens the next bridge dialog**;
-- that second dialog is prefilled with the precommitted destination;
-- real `nimiqpay://` links are hidden **only inside the guided browser demo**, preventing provider confusion;
-- production and real Nimiq Pay paths are unchanged.
+Critical boundary: guided demo is UI/story QA only. **Never present simulated demo FINAL/ARRIVED as Nimiq testnet or on-chain evidence.**
 
-Critical evidence boundary: this tour is for UI/story/interaction QA only. **Never present it as testnet or on-chain proof.**
-
-Next QA action: wait for Vercel deployment containing `ede8737...` or later, reopen the clean-start link, and record/observe the path all the way through the second invitation, second Pass, **ARRIVED**, and the **DEMO RECEIPT**.
+Vercel should next deploy `61a64e5...` or later; no need to rerun the whole demo unless checking that final minor polish.
 
 ## HTTP security — CURRENT REAL GATE
 
-PR #20 `Secure broadcast claims and add client idempotency` is green but not merged. Opeyemi branch remains `feat/mission-http-bindings` at last observed `4f219c...`; **re-fetch before reconciliation and never force-update his branch**.
+PR #20 `Secure broadcast claims and add client idempotency` is green but not merged. Opeyemi branch remains `feat/mission-http-bindings` at last observed `4f219c...`; re-fetch before reconciliation and never force-update his branch.
 
 Split:
-- Opeyemi: route-view capability, invitation privacy/redaction, legacy `/relay` production gate;
+- Opeyemi: verified route-view capability, invitation privacy/redaction, legacy `/relay` production gate;
 - Faadil side: PR #20 one-time scoped broadcast capability + TS mutation idempotency;
 - Shared: browser secure contract + frontend/HTTP/PostgreSQL vertical integration + real testnet E2E.
 
@@ -76,7 +77,7 @@ Current gate: **`NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION`**.
 
 ## Next real proof gate
 
-After secure merge: Wallet A creator/holder → Wallet B bridge → Wallet C destination, two devices preferred.
+After secure merge: Wallet A creator/holder → Wallet B bridge → Wallet C destination, two physical devices preferred.
 
 Target:
 `CREATE → INVITE → ACCEPT → AUTHORIZE → A sends exactly 1 NIM to B → FINAL → B holder → AUTHORIZE → B sends exactly 1 NIM to C → FINAL → ARRIVED → Verified Route Receipt`.
@@ -89,14 +90,15 @@ Builder Promotion = Skool 2 + public social 3 = **5/5**. Real Usage = `0–3:0`,
 
 ## Current execution order
 
-1. Verify Vercel has deployed `ede8737...` or later and rerun guided tour through **ARRIVED / DEMO RECEIPT**.
-2. Fix only remaining presentation/demo friction that does not touch blocked backend contracts.
-3. Re-fetch Opeyemi branch/PR status.
-4. Reconcile PR #20 + Opeyemi route-view/privacy/relay changes without force updates.
-5. Wire browser + HTTP + PostgreSQL preserving Living Route UI and Vercel config.
-6. Full CI green → merge → update canon/handover.
-7. Run real A→B→C testnet through ARRIVED and validate Route Receipt against real data.
-8. Then five first-time tests, 5/5 promotion, 4→11→25+ legitimate wallet opens, submission, Sep 16 proof event if green, judge-window monitoring and final TRACE polish.
+1. Re-fetch Opeyemi live branch / PR status.
+2. Reconcile his route-view/privacy/relay work with green PR #20 without force-updating his branch.
+3. Wire browser + HTTP + PostgreSQL while preserving Living Route UI, guided demo isolation and Vercel config.
+4. Full CI green → merge → update canon/handover.
+5. Run real A→B→C testnet through ARRIVED and validate Route Receipt against real data.
+6. Run 5 observed first-time tests under 60 seconds.
+7. Publish genuine Skool + public posts for 5/5 promotion.
+8. Reach 4+, 11+, then 25+ legitimate unique wallet opens; submit once genuinely usable.
+9. Sep 16 Sip & Show only as real-product proof if runtime is green; then judge-window monitoring/rollback and final TRACE/demo packaging.
 
 ## External naming debt
 
