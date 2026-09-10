@@ -1,11 +1,11 @@
 project: NimCarry
 former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
-repository: Faadil1/carry-one
+repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.22
+state_version: 0.8.23
 date: 2026-09-10
-phase: GUIDED_DEMO_1_TO_5_VISUAL_QA_PASS_MINOR_POLISH_GREEN_HTTP_SECURITY_PARALLEL_RECONCILIATION
+phase: HTTP_SECURITY_REVIEW_PR23_CHANGES_REQUESTED_REPO_RENAMED_BROWSER_INTEGRATION_PENDING
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -22,10 +22,11 @@ brand_identity:
   tagline: One NIM. One bridge at a time.
   promise: Get this to someone you cannot reach directly — one human bridge at a time.
   desired_repository_slug: Faadil1/nimcarry
-  current_repository_slug: Faadil1/carry-one
+  current_repository_slug: Faadil1/nimcarry
+  repository_rename_status: COMPLETE
   desired_demo_alias: https://nimcarry.vercel.app
   current_observed_production_domain: https://carry-one-mu.vercel.app
-  external_identifier_migration_status: AUTHORIZED_PENDING_EXTERNAL_RENAME
+  external_identifier_migration_status: REPOSITORY_RENAME_COMPLETE_VERCEL_ALIAS_PENDING
 
 core_product_laws:
   baton: THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT, WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
@@ -89,73 +90,81 @@ vercel_deployment:
 guided_demo_tour:
   purpose: provider_free_end_to_end_UI_and_story_test_only
   clean_start_link: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
-  implementation_file: web/demo-tour.js
-  original_implementation_commit: 13e26bfa831d267a0b7a3beb5837009980161925
-  first_continuation_fix_commit: ede8737a63ff1988be5540322ece4966d529fbe0
   second_video_qa_doc: docs/GUIDED-DEMO-SECOND-VIDEO-QA-2026-09-10.md
   second_video_qa:
-    duration_seconds: 109.3
-    clean_run_observed_from_seconds_approx: 12
-    arrived_observed_at_seconds_approx: 66
     fresh_start_to_arrived_seconds_approx: 54
     verdict: PASS_WITH_MINOR_POLISH_APPLIED
-    observed_pass:
-      - home_problem_first_surface
-      - create
-      - first_bridge_invite
-      - browser_only_demo_invite
-      - accept_no_funds
-      - first_simulated_FINAL
-      - custody_moves_to_Bridge_B
-      - second_bridge_cycle_auto_continues
-      - second_simulated_FINAL
-      - ARRIVED
-      - DEMO_Route_Receipt_with_two_finalized_hops
-      - start_new_mission_after_arrival
+    observed_pass: [home_problem_first_surface, create, first_bridge_invite, browser_only_demo_invite, accept_no_funds, first_simulated_FINAL, custody_moves_to_Bridge_B, second_bridge_cycle_auto_continues, second_simulated_FINAL, ARRIVED, DEMO_Route_Receipt_with_two_finalized_hops, start_new_mission_after_arrival]
   minor_polish:
     commit: 61a64e530b74f1f3c0300fc1387694c6ef6218af
     ci_run: 34441565599
     ci: PASS
-    behaviors:
-      - pre_FINAL_pass_headline_is_action_not_false_proof
-      - pass_headline_is_Pass_the_1_NIM_baton
-      - normalize_invite_pass_route_step_kickers
-      - hide_Preview_ARRIVED_receipt_shortcut_only_in_guided_tour
-      - ordinary_demo_receipt_preview_remains_available
   evidence_boundary: NEVER_USE_GUIDED_DEMO_AS_REAL_TESTNET_OR_ONCHAIN_PROOF
-  production_status: PENDING_OBSERVED_VERCEL_DEPLOYMENT_CONTAINING_61a64e5_OR_LATER
 
 http_parallel_work:
-  opeyemi_branch: feat/mission-http-bindings
-  latest_observed_head_sha: 4f219cbd153484e560c4079ffd8c549ec52e483f
-  preserve_branch_without_force_update: true
-  before_reconcile: RE_FETCH_LIVE_HEAD
+  opeyemi_base_branch: feat/mission-http-bindings
+  latest_observed_base_head_sha: 77c89bb9f289de1c00b5d22d6f8c7280dc223b01
+  preserve_collaborator_branches_without_force_update: true
   split:
     opeyemi: [route_view_capability, invitation_privacy_redaction, legacy_relay_dev_gate]
     faadil: [secure_tx_hash_broadcast_capability, typescript_api_client_Idempotency_Key]
     shared: [browser_secure_contract_wiring, frontend_HTTP_Postgres_integration, real_testnet_E2E]
   blockers:
-    route_view_capability: PENDING_OPEYEMI
-    invitation_privacy_redaction: PENDING_OPEYEMI
-    legacy_relay_dev_gate: PENDING_OPEYEMI
-    broadcast_capability: PR20_CI_GREEN_PENDING_RECONCILIATION
-    typescript_client_idempotency: PR20_CI_GREEN
+    route_view_capability: IMPLEMENTED_IN_PR23_REVIEW_FIXES_REQUIRED
+    invitation_privacy_redaction: IMPLEMENTED_IN_PR23_REVIEW_FIXES_REQUIRED
+    legacy_relay_dev_gate: IMPLEMENTED_IN_PR23_REVIEW_FIXES_REQUIRED
+    broadcast_capability: PR20_MERGED_INTO_BASE_BRANCH
+    typescript_client_idempotency: PR20_MERGED_INTO_BASE_BRANCH
     browser_secure_contract_wiring: PENDING_SHARED_INTEGRATION
     combined_frontend_HTTP_Postgres: PENDING_SHARED_INTEGRATION
 
 faadil_http_security:
   pull_request: 20
-  url: https://github.com/Faadil1/carry-one/pull/20
+  url: https://github.com/Faadil1/nimcarry/pull/20
   branch: feat/faadil-http-security
   head_sha: 2588021ea45c806ec9588c24b00ce209f67ddbfe
+  merge_sha_into_feat_mission_http_bindings: 77c89bb9f289de1c00b5d22d6f8c7280dc223b01
   ci_run: 34416146070
   ci: PASS
-  reviewer: opeblow
-  status: OPEN_REVIEW_REQUESTED_NOT_MERGED
+  status: MERGED_INTO_FEAT_MISSION_HTTP_BINDINGS
+
+opeyemi_security:
+  pull_request: 23
+  url: https://github.com/Faadil1/nimcarry/pull/23
+  author: opeblow
+  branch: feat/route-privacy-security
+  base_branch: feat/mission-http-bindings
+  base_sha: 77c89bb9f289de1c00b5d22d6f8c7280dc223b01
+  head_sha: 07745e6dd8cc60f309c576ec8125d6a609281097
+  ci_run: 34454548111
+  ci: PASS
+  declared_tests: 145_of_145
+  review_status: CHANGES_REQUESTED_BY_FAADIL
+  review_id: 5166605684
+  confirmed_good_scope:
+    - spoofable_X_Wallet_route_auth_removed
+    - signed_VIEW_ROUTE_capability_mint_added
+    - invitation_summary_server_redaction_added
+    - legacy_relay_mutation_gate_added
+  required_review_fixes:
+    - anonymous_POST_reconcile_must_not_bypass_UNLISTED_or_PRIVATE_route_view_privacy
+    - invite_token_claim_as_generic_route_view_capability_must_be_implemented_safely_or_removed_and_replaced_with_explicit_signed_VIEW_ROUTE_flow
+  merge_authorized: false
 
 current_gate:
   name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
-  status: WAITING_OPEYEMI_PARALLEL_BLOCKERS_THEN_RECONCILE_PR20_AND_BROWSER
+  status: WAITING_PR23_REVIEW_FIXES_THEN_MERGE_TO_BASE_AND_SHARED_BROWSER_INTEGRATION
+  exit_criteria:
+    - PR23_two_review_findings_closed
+    - route_view_capability_closed
+    - invitation_privacy_redaction_closed
+    - legacy_relay_dev_gate_closed
+    - PR20_security_preserved
+    - browser_view_token_and_broadcast_capability_contract_wired
+    - frontend_HTTP_Postgres_combined_harness_green
+    - full_CI_green
+    - merged_to_main
+    - canonical_and_handover_updated
 
 next_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
