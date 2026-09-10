@@ -10,7 +10,8 @@ export type MissionAction =
   | "ACCEPT_INVITATION"
   | "WITHDRAW_INVITATION"
   | "AUTHORIZE_PASS"
-  | "CANCEL_MISSION";
+  | "CANCEL_MISSION"
+  | "VIEW_ROUTE";
 
 export interface VerifiedWalletAction {
   wallet: string;

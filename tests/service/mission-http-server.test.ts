@@ -142,7 +142,9 @@ describe("Reach Mission HTTP bindings", () => {
     expect(JSON.stringify(missionView)).not.toContain(target.address.replaceAll(" ", ""));
     const missionId = missionView.mission_id;
 
-    const viewRes = await request("GET", `/missions/${missionId}`, undefined, { "X-Wallet": creator.address });
+    const viewRes = await request("GET", `/missions/${missionId}`, undefined, {
+      Authorization: `Bearer ${missionView.view_token}`,
+    });
     expect(viewRes.status).toBe(200);
     expect(viewRes.body.current_holder.is_viewer).toBe(true);
 
@@ -163,6 +165,7 @@ describe("Reach Mission HTTP bindings", () => {
     const inviteViewRes = await request("GET", `/i/${token}`);
     expect(inviteViewRes.status).toBe(200);
     expect(inviteViewRes.body.invitation.status).toBe("INVITED");
+    expect(inviteViewRes.body.mission.invitation.candidate_label).toBe("Bridge");
 
     const acceptCh = await challenge(target.address, "ACCEPT_INVITATION", {
       mission_id: missionId,
@@ -230,7 +233,14 @@ describe("Reach Mission HTTP bindings", () => {
     expect(reconcileRes.body.mission.sequence).toBe(1);
     expect(reconcileRes.body.mission.finalized_hop_count).toBe(1);
 
-    const targetViewRes = await request("GET", `/missions/${missionId}`, undefined, { "X-Wallet": target.address });
+    const targetViewCh = await challenge(target.address, "VIEW_ROUTE", { mission_id: missionId });
+    const targetMintRes = await request("POST", `/missions/${missionId}/view`, envelope(targetViewCh, target), { "Idempotency-Key": "view-target-e2e" });
+    expect(targetMintRes.status).toBe(200);
+    expect(targetMintRes.body.view_token).toBeTruthy();
+
+    const targetViewRes = await request("GET", `/missions/${missionId}`, undefined, {
+      Authorization: `Bearer ${targetMintRes.body.view_token}`,
+    });
     expect(targetViewRes.status).toBe(200);
     expect(targetViewRes.body.viewer_role).toBe("TARGET");
     expect(targetViewRes.body.primary_action).toBe("START_NEW_ROUTE");
@@ -332,6 +342,100 @@ describe("Reach Mission HTTP bindings", () => {
     const declineRes = await request("POST", `/i/${inviteRes.body.invite_token}/decline`, {}, { "Idempotency-Key": "decline-1" });
     expect(declineRes.status).toBe(200);
     expect(declineRes.body.status).toBe("DECLINED");
+  });
+});
+
+describe("Reach Mission route-view privacy", () => {
+  beforeAll(async () => {
+    dir = mkdtempSync(join(tmpdir(), "carry-one-privacy-"));
+    rpc = new FakeRpcClient();
+    const missionPath = join(dir, "missions.json");
+    const relayPath = join(dir, "relay.json");
+    const repository = new FileMissionRepository(missionPath);
+    const missions = new ReachMissionService(repository, PROTECTOR);
+    const relay = new CanonicalRelayService(new FileRelayStore(relayPath), rpc);
+    const coordinator = new ReachMissionCoordinator(missions, repository, relay, PROTECTOR);
+    const authorizer = new NimiqWalletAuthorizer(repository, "https://carry.one");
+    const server = createMissionHttpServer({
+      coordinator,
+      missions,
+      repository,
+      authorizer,
+      relay,
+      protector: PROTECTOR,
+      canonicalOrigin: "https://carry.one",
+      idempotency: new MemoryIdempotencyStore(),
+      limiter: new MemoryRateLimiter(),
+    });
+    baseUrl = await listen(server);
+    close = () => new Promise((resolve) => server.close(() => resolve()));
+  });
+
+  afterAll(async () => {
+    await close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("requires a route view capability for unlisted missions and ignores the spoofable X-Wallet header", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "privacy-create");
+    expect(createRes.status).toBe(201);
+    const missionId = createRes.body.mission_id;
+
+    const anonymous = await request("GET", `/missions/${missionId}`);
+    expect(anonymous.status).toBe(401);
+    expect(anonymous.body.error).toBe("ROUTE_VIEW_CAPABILITY_REQUIRED");
+
+    const spoofed = await request("GET", `/missions/${missionId}`, undefined, { "X-Wallet": creator.address });
+    expect(spoofed.status).toBe(401);
+    expect(spoofed.body.error).toBe("ROUTE_VIEW_CAPABILITY_REQUIRED");
+
+    const garbage = await request("GET", `/missions/${missionId}`, undefined, { Authorization: "Bearer not-a-real-token" });
+    expect(garbage.status).toBe(401);
+    expect(garbage.body.error).toBe("ROUTE_VIEW_CAPABILITY_INVALID");
+
+    const valid = await request("GET", `/missions/${missionId}`, undefined, {
+      Authorization: `Bearer ${createRes.body.view_token}`,
+    });
+    expect(valid.status).toBe(200);
+    expect(valid.body.current_holder.is_viewer).toBe(true);
+  });
+
+  it("rejects a capability that is bound to another mission with 403", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const first = await createMissionViaApi(creator, target.address, "cap-a");
+    const second = await createMissionViaApi(creator, wallet().address, "cap-b");
+
+    const cross = await request("GET", `/missions/${second.body.mission_id}`, undefined, {
+      Authorization: `Bearer ${first.body.view_token}`,
+    });
+    expect(cross.status).toBe(403);
+    expect(cross.body.error).toBe("ROUTE_VIEW_CAPABILITY_MISSION_MISMATCH");
+  });
+
+  it("rejects strangers minting a route view capability on an unlisted mission", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "mint-stranger");
+    const missionId = createRes.body.mission_id;
+
+    const stranger = wallet();
+    const ch = await challenge(stranger.address, "VIEW_ROUTE", { mission_id: missionId });
+    const mintRes = await request("POST", `/missions/${missionId}/view`, envelope(ch, stranger), { "Idempotency-Key": "mint-stranger-1" });
+    expect(mintRes.status).toBe(403);
+    expect(mintRes.body.error).toBe("NOT_MISSION_PARTICIPANT");
+
+    const boundElsewhere = await challenge(stranger.address, "VIEW_ROUTE", {
+      mission_id: createRes.body.mission_id,
+    });
+    const otherMission = await createMissionViaApi(wallet(), wallet().address, "mint-other");
+    const mismatched = await request("POST", `/missions/${otherMission.body.mission_id}/view`, envelope(boundElsewhere, stranger), {
+      "Idempotency-Key": "mint-other-1",
+    });
+    expect(mismatched.status).toBe(401);
+    expect(["AUTH_MISSION_MISMATCH", "AUTH_BINDING_MISMATCH"]).toContain(mismatched.body.error);
   });
 });
 
