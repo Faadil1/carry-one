@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.21
+state_version: 0.8.22
 date: 2026-09-10
-phase: GUIDED_DEMO_VIDEO_QA_SECOND_BRIDGE_FIX_GREEN_PENDING_VERCEL_OBSERVATION_HTTP_SECURITY_PARALLEL_RECONCILIATION
+phase: GUIDED_DEMO_1_TO_5_VISUAL_QA_PASS_MINOR_POLISH_GREEN_HTTP_SECURITY_PARALLEL_RECONCILIATION
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -52,6 +52,8 @@ judge_demo_law:
   target_core_flow: Create -> Invite -> Accept -> Pass_1_NIM -> Arrive
   judge_cooperation_required_for_core_proof: false
   route_receipt_is_demo_climax: true
+  target_first_time_understanding_seconds: 10
+  target_core_point_seconds: 60
   truthfulness: Demo/local simulated states are never real testnet evidence.
 
 winning_intelligence:
@@ -65,24 +67,6 @@ score_capture_strategy:
   real_usage: { zero_to_three: 0, four_to_ten: 6, eleven_to_twenty_four: 10, twenty_five_plus: 15 }
   score_floor_after_secure_E2E: { promotion_plus_4_users: 11, promotion_plus_11_users: 15, promotion_plus_25_users: 20 }
   bots_artificial_wallets_or_gaming: forbidden
-
-completed_major_milestones:
-  product_law: true
-  ux_state_contract: true
-  foundation_slice_1: true
-  postgres_vertical_slice: true
-  nimcarry_brand_lock: true
-  seven_call_winning_intelligence: true
-  hidden_spot_product_layer_pr19_merged: true
-  living_route_ui_pr21_merged: true
-  vercel_static_output_pr22_merged: true
-  vercel_production_ready_observed: true
-  production_create_deep_link_observed: true
-  create_surface_polish_patch_ci_green: true
-  guided_provider_free_demo_tour_implemented: true
-  guided_provider_free_demo_tour_ci_green: true
-  guided_demo_first_video_qa_completed: true
-  guided_demo_second_bridge_continuation_fix_ci_green: true
 
 living_route_ui:
   status: MERGED_TO_MAIN_AND_OBSERVED_IN_PRODUCTION
@@ -107,38 +91,39 @@ guided_demo_tour:
   clean_start_link: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
   implementation_file: web/demo-tour.js
   original_implementation_commit: 13e26bfa831d267a0b7a3beb5837009980161925
-  loader_commit: d5a3945a4f7556460134c9ccbeed148362404c9f
-  original_ci_commit: 49301203e96934aefc6b597536a689a54649bbc4
-  original_ci_run: 34439421092
-  first_user_video_qa:
-    duration_seconds: 81.8
+  first_continuation_fix_commit: ede8737a63ff1988be5540322ece4966d529fbe0
+  second_video_qa_doc: docs/GUIDED-DEMO-SECOND-VIDEO-QA-2026-09-10.md
+  second_video_qa:
+    duration_seconds: 109.3
+    clean_run_observed_from_seconds_approx: 12
+    arrived_observed_at_seconds_approx: 66
+    fresh_start_to_arrived_seconds_approx: 54
+    verdict: PASS_WITH_MINOR_POLISH_APPLIED
     observed_pass:
       - home_problem_first_surface
-      - create_prefill_and_submit
-      - first_bridge_invite_creation
-      - browser_only_open_demo_invite
-      - accept_no_funds_transition
-      - first_pass_demo_FINAL
+      - create
+      - first_bridge_invite
+      - browser_only_demo_invite
+      - accept_no_funds
+      - first_simulated_FINAL
       - custody_moves_to_Bridge_B
-      - route_shows_one_FINAL_handoff
-    observed_issue: Continue_demo_to_destination_returned_to_Mission_Home_without_making_next_required_action_obvious; recording ended at one_FINAL_without_ARRIVED.
-  qa_fix:
-    commit: ede8737a63ff1988be5540322ece4966d529fbe0
-    ci_run: 34440569128
+      - second_bridge_cycle_auto_continues
+      - second_simulated_FINAL
+      - ARRIVED
+      - DEMO_Route_Receipt_with_two_finalized_hops
+      - start_new_mission_after_arrival
+  minor_polish:
+    commit: 61a64e530b74f1f3c0300fc1387694c6ef6218af
+    ci_run: 34441565599
     ci: PASS
     behaviors:
-      - Continue_demo_to_destination now returns to Mission_Home_and_auto_opens_next_bridge_dialog
-      - second_bridge_dialog_is_prefilled_with_precommitted_target
-      - real_nimiqpay_deeplinks_are_hidden_only_inside_guided_browser_demo_to_avoid_provider_confusion
-      - production_and_real_Nimiq_Pay_paths_are_unchanged
+      - pre_FINAL_pass_headline_is_action_not_false_proof
+      - pass_headline_is_Pass_the_1_NIM_baton
+      - normalize_invite_pass_route_step_kickers
+      - hide_Preview_ARRIVED_receipt_shortcut_only_in_guided_tour
+      - ordinary_demo_receipt_preview_remains_available
   evidence_boundary: NEVER_USE_GUIDED_DEMO_AS_REAL_TESTNET_OR_ONCHAIN_PROOF
-  production_status: PENDING_OBSERVED_VERCEL_DEPLOYMENT_CONTAINING_ede8737_OR_LATER_AND_SECOND_VIDEO_QA_THROUGH_ARRIVED
-
-create_surface_polish:
-  commits: [3a8093e6feedd7198738518ff90c9bf3fdb66867, 1479e49a61b460d7606f0012854cb49938deed3f, d96234b9b3476dc9400555f3edcce733e9ee9927]
-  ci_run: 34422173066
-  ci: PASS
-  behaviors: [keep_brand_chrome_visible_on_route_change, create_kicker_STEP_1_OF_5, remove_Cycle_II_jargon_from_create_surface]
+  production_status: PENDING_OBSERVED_VERCEL_DEPLOYMENT_CONTAINING_61a64e5_OR_LATER
 
 http_parallel_work:
   opeyemi_branch: feat/mission-http-bindings
@@ -175,6 +160,7 @@ current_gate:
 next_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
   status: PREP_ALLOWED_EXECUTION_BLOCKED_UNTIL_SECURE_HTTP_MERGE
+  topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
   never_claim_before_observed: real_testnet_FINAL_or_ARRIVED
 
@@ -192,7 +178,7 @@ still_blocked:
   - public_early_access_before_secure_vertical_flow
   - mainnet_cutover_and_funds
   - broad_marketing_launch_before_real_E2E
-  - target_claiming_or_public_target_discovery
+  - target_claiming_or_public_discovery
   - prizes_wagers_or_pooled_funds
   - forwarding_rewards
   - autonomous_AI_spend_or_routing
