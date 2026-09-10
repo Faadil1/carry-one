@@ -1,179 +1,153 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-09  
-State: `MVP_VERTICAL_SLICE_1_WITH_HIDDEN_SPOTS_MERGED_AND_FAADIL_HTTP_SECURITY_PR_GREEN`
+Canonical version: **0.8.17**  
+State: `LIVING_ROUTE_UI_P0_P1_MERGED_HTTP_SECURITY_PARALLEL_RECONCILIATION`
 
-## Source of truth / continuity
+## Read first
 
-Read `CANONICAL-STATE.yaml` first; it overrides chat memory. After every meaningful milestone update **both** `CANONICAL-STATE.yaml` and `HANDOVER.md` so a new conversation can immediately take lead.
-
-Current canonical version: **0.8.16**.
+`CANONICAL-STATE.yaml` is the current source of truth and overrides chat memory. Update **both** `CANONICAL-STATE.yaml` and `HANDOVER.md` after every meaningful milestone.
 
 ## Product law — FROZEN
 
-Product: **NimCarry**  
-Tagline: **One NIM. One bridge at a time.**  
+**NimCarry** — *One NIM. One bridge at a time.*
+
 Promise: **Get this to someone you cannot reach directly — one human bridge at a time.**
 
-Category = destination-bound human routing. Exactly `1 NIM = 100000 Luna` is a semantic custody baton, **not** a reward, stake, wager, prize or pooled fund. A bridge consents before payment. Only independently verified `FINAL` changes custody. Destination becoming the finalized recipient means `ARRIVED`. No surprise bridges, route loops, clawbacks, forwarding rewards, gamification, AI routing or unique-human claims.
+Exactly `1 NIM = 100000 Luna` is the semantic custody baton, not a reward, stake, wager, prize or pooled fund. Every mission has a destination. Every bridge consents. Only independently verified `FINAL` changes custody. Destination as finalized recipient = `ARRIVED`. No surprise bridges, route loops, clawbacks, forwarding rewards, gamification, AI routing or unique-human claims.
 
-Judge-facing short line:
+Judge line: **NimCarry uses 1 NIM to make warm introductions verifiable.**
 
-> **NimCarry uses 1 NIM to make warm introductions verifiable.**
+## Winning Intelligence — COMPLETE
 
-Front-door narrative = human problem, not crypto. Nimiq becomes explicit at wallet authorization / finality / proof moments.
+Seven full Otter transcripts were analyzed: Cycle I Jul 8/15/22/29 + Cycle II Aug 26/Sep 2/Sep 9.
 
-## Seven-call Winning Intelligence — COMPLETE
+Primary docs:
+- `docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md`
+- `docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md`
 
-Otter.ai is connected. Full transcripts with timestamps + speakers were fetched for all seven currently available Sip & Ship calls: Cycle I Jul 8/15/22/29 and Cycle II Aug 26/Sep 2/Sep 9.
+Locked transfer patterns: problem-first; live proof > architecture; simple/intuitive/crystal-clear behaves like an implicit meta-rubric; persistent proof artifacts win attention; real-user behavior signals PMF; natural sharing beats bolted-on referral mechanics; avoid crypto as front-door but make Nimiq explicit at authorization/finality/proof; do not depend on judge participation; lifecycle gaps get noticed; freeze a known-good build for the random judge window.
 
-Primary audit:
-`docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md`
+## Hidden spots product layer — MERGED
 
-Score/hidden-spot delta:
-`docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md`
+PR **#19** → `main` merge `7ccf67aefb53ee101b2df7fdc1dc638d976cb4cc`, CI PASS.
 
-High-confidence patterns: problem-first story; live proof > architecture; simple/intuitive/crystal-clear as implicit meta-rubric; persistent proof artifact; real user behavior as PMF signal; natural share loop; first users by hand; Cycle-II reweighting toward utility + Nimiq; avoid crypto as front-door; known-good runtime during judge window; only visible evidence gets rewarded; financial-looking mechanics need immediate disambiguation; never depend on judge cooperation for demo; lifecycle gaps are noticed; after core comprehension, distribution + abuse are next questions.
+Implemented: problem-first framing, five-step flow, 1-NIM baton disambiguation, wallet/finality/custody proof ladder, bridge lifecycle, private share loop, FINAL-only route explanation, privacy-safe `ARRIVED / Verified Route Receipt`, judge smoke tooling, first-five 60-second testing protocol, 4/11/25 real-usage ladder and promotion drafts.
 
-## Hidden spots — PRODUCT LAYER MERGED
+## Living Route UI P0/P1 — MERGED
 
-PR **#19** merged to `main` as:
-`7ccf67aefb53ee101b2df7fdc1dc638d976cb4cc`
+PR **#21** → `main` merge:
+`08b3ce1d3662e78a40c5c43e647a6940900e92bc`
 
-Pre-merge CI `34413498020`: PASS.  
-Post-merge CI `34413573164`: PASS.
+Pre-merge CI `34419875834`: PASS.  
+Post-merge CI `34419936778`: PASS.
 
 Implementation contract:
-`docs/CYCLE2-HIDDEN-SPOT-IMPLEMENTATION-PACK-2026-09-09.md`
+`docs/LIVING-ROUTE-UI-P0-P1-2026-09-09.md`
 
-Milestone record:
-`docs/HIDDEN-SPOTS-IMPLEMENTATION-MILESTONE-2026-09-09.md`
+Implemented now, without touching blocked backend contracts:
+- new route-native **NimCarry logo** in header + favicon;
+- install manifest and social-preview asset source;
+- five-step progress rendered as a continuous living route;
+- current baton holder visually emphasized;
+- wallet approval → verification → FINAL proof ladder reacts only to state already reported by the app;
+- finalized route hops reveal progressively;
+- ARRIVED / Verified Route Receipt receives the strongest visual climax;
+- physical button press/hover feedback;
+- loading affordances derived from the existing busy state;
+- stronger bridge-consent copy without inventing sender identity;
+- dashed/unverified empty-route state;
+- one-time focus on ARRIVED receipt;
+- reduced-motion preserved.
 
-### Implemented now
+Truthfulness boundary: `living-route.js` is presentation-only. It does **not** send transactions, create FINAL, move custody or manufacture ARRIVED.
 
-- problem-first home line: `Warm introductions disappear after the first handoff.`;
-- relatable warm-introduction example;
-- five-step judge flow: `Create → Invite → Accept → Pass → Arrive`;
-- explicit 1 NIM baton/not-reward language;
-- wallet approval → independent FINAL → custody movement proof ladder;
-- bridge lifecycle clarification;
-- private invite sharing without referral incentives;
-- FINAL-only route explanation;
-- privacy-safe `ARRIVED / Verified Route Receipt` derived from already-authorized route data;
-- explicit demo-only ARRIVED receipt preview;
-- `/health.json` static judge marker;
-- `scripts/judge-smoke.mjs` and `npm run smoke:judge`;
-- manual `Judge Window Smoke` GitHub workflow;
-- browser-runtime JS syntax check added to CI;
-- first-five observed 60-second test protocol;
-- 4/11/25 real-usage ladder + promotion drafts;
-- README now explicitly communicates problem, why 1 NIM, FINAL, ARRIVED, differentiation and Route Receipt.
+Still deferred until secure integration / real-device evidence: browser wiring to the final HTTP contract, production route-view capability, browser transport of PR #20 broadcast capability, real Nimiq Pay timing, iOS lifecycle/deeplink assurance and final TRACE polish.
 
-### Still gated — never claim complete before evidence exists
+## Faadil HTTP security — PR #20 GREEN, NOT MERGED
 
-- real A→B→C Nimiq Pay testnet proof;
-- 5 actual observed first-time tests;
-- 4 / 11 / 25 genuine unique wallet opens;
-- actual 2-point Skool + 3-point public post;
-- Sep 16 real-product Sip & Show proof;
-- scheduled judge-window monitoring against the final secure runtime;
-- `My Routes` only if safe after E2E;
-- reusable external route/receipt verification primitive after Cycle II.
-
-## Easy-point / score-floor strategy — LOCKED
-
-Cycle II:
-- Builder Promotion: Skool post `2` + public social post `3` = **5/5**.
-- Real Usage: `0–3 = 0`, `4–10 = 6`, `11–24 = 10`, `25+ = 15`.
-
-Once secure E2E is green:
-- promotion + 4 genuine opens = **11 points** outside the 80-point core;
-- promotion + 11 genuine opens = **15 points**;
-- promotion + 25+ genuine opens = **20/20**.
-
-No bots, artificial wallets or gaming. The same first testers should improve Reliability/Usefulness + UX while legitimately moving the usage bucket.
-
-## Faadil HTTP security delta — PR #20 GREEN, NOT MERGED
-
-Branch: `feat/faadil-http-security`  
-Base: Opeyemi's `feat/mission-http-bindings` at `4f219cbd153484e560c4079ffd8c549ec52e483f`  
 PR: **#20** — `Secure broadcast claims and add client idempotency`  
+Branch: `feat/faadil-http-security`  
+Base: Opeyemi's `feat/mission-http-bindings`  
 Head: `2588021ea45c806ec9588c24b00ce209f67ddbfe`  
-CI run `34416146070`: **PASS** — secret scan, typecheck, tests, build all green.  
-Reviewer requested: **Opeyemi (`opeblow`)**.
+CI run `34416146070`: PASS  
+Reviewer: **Opeyemi (`opeblow`)**
 
-Implemented and tested on PR #20:
-- signed `AUTHORIZE_PASS` issues a cryptographically random short-lived broadcast capability;
-- capability is bound to mission + invitation + sequence + pass-intent nonce + canonical holder wallet;
-- capability is one-time and cannot be replayed with a new idempotency key;
-- exact same broadcast retry with same idempotency key replays cached success safely;
-- process restart invalidates bearer capability fail-closed while preserving durable pass intent;
-- TypeScript Mini App API client automatically creates `Idempotency-Key` for canonical mutations;
-- API client transports the broadcast capability and supports an explicit stable retry key;
-- tests cover capability binding, expiration, replay, missing token and client transport.
+Implemented on PR #20:
+- one-time short-lived broadcast capability issued only after signed `AUTHORIZE_PASS`;
+- binding to mission + invitation + sequence + intent nonce + canonical holder wallet;
+- replay/binding/expiry protections;
+- TypeScript API client automatic mutation `Idempotency-Key`;
+- stable broadcast retry key.
 
-Important precision: **do not mark HTTP blockers #3/#4 fully closed yet.** PR #20 has not been merged into Opeyemi's branch or `main`, and the current standalone browser `web/app.js` must still be reconciled with the new API contract during the shared vertical integration. In particular it still uses the pre-HTTP broadcast route and must inherit the capability + idempotency behavior during integration.
+Do **not** call blockers #3/#4 fully closed yet: the browser shell still needs the final secure contract during shared integration.
 
-Implementation record on PR branch:
-`docs/FAADIL-HTTP-SECURITY-DELTA-2026-09-09.md`
+## Opeyemi parallel HTTP work — DO NOT FORCE UPDATE
 
-## Opeyemi HTTP work — CURRENT GATE
+Last observed branch: `feat/mission-http-bindings` at `4f219cbd153484e560c4079ffd8c549ec52e483f`. Re-fetch live before integration.
 
-Branch: `feat/mission-http-bindings`  
-Re-fetched 2026-09-09; observed head at start of PR #20:
-`4f219cbd153484e560c4079ffd8c549ec52e483f`
-
-Do **not** force-update or rewrite Opeyemi's branch.
-
-Agreed split:
+Split:
 - **Opeyemi:** verified route-view capability replacing spoofable `X-Wallet`; invitation privacy/redaction; production dev-gate for legacy `/relay` mutations.
-- **Faadil side:** scoped short-lived broadcast capability + client mutation `Idempotency-Key` generation — implemented on green PR #20, pending integration.
-- **Shared:** browser frontend + HTTP + PostgreSQL integration, NimCarry runtime branding, real 3-wallet testnet E2E.
+- **Faadil side:** PR #20 broadcast capability + TS API client idempotency.
+- **Shared:** final browser contract + frontend/HTTP/PostgreSQL vertical integration + real 3-wallet E2E.
 
-Blocker status:
-1. spoofable `X-Wallet` → verified route-view capability: **PENDING OPEYEMI**;
-2. role-scope/redact private invitation context: **PENDING OPEYEMI**;
-3. secure tx-hash broadcast claim with scoped capability: **PR #20 GREEN / PENDING MERGE**;
-4. frontend mutation idempotency keys: **TS API CLIENT GREEN ON PR #20 / BROWSER WIRING PENDING SHARED INTEGRATION**;
-5. disable/dev-gate legacy relay mutations: **PENDING OPEYEMI**;
-6. combined frontend + HTTP + PostgreSQL harness: **PENDING SHARED INTEGRATION**.
+Current blockers:
+1. route-view capability — `PENDING_OPEYEMI`;
+2. invitation privacy/redaction — `PENDING_OPEYEMI`;
+3. legacy `/relay` dev gate — `PENDING_OPEYEMI`;
+4. PR #20 broadcast capability — `GREEN_PENDING_RECONCILIATION`;
+5. browser idempotency + broadcast-capability wiring — `PENDING_SHARED_INTEGRATION`;
+6. combined frontend + HTTP + PostgreSQL harness — `PENDING_SHARED_INTEGRATION`.
 
-Current gate: **`NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION`**. Do not move to real testnet proof until the integrated secure runtime is green.
+Current gate: **`NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION`**.
 
-## First real testnet proof after secure merge
+## Demo law
+
+`docs/SEP16-DETERMINISTIC-DEMO-RUNBOOK-2026-09-09.md`
+
+Target narrative:
+`human problem → Create → Invite → Accept → Pass 1 NIM → FINAL → next bridge → FINAL → ARRIVED → Verified Route Receipt`.
+
+The judge must not be required to install/sign/play a role. If live finality is slow, show `Waiting for independent finality`; only an already-captured **real testnet run** may be used as fallback proof. Never present local demo mode as testnet evidence.
+
+## Next real gate after secure HTTP merge
 
 Preferred topology: Wallet A creator/initial holder, Wallet B bridge, Wallet C destination; two physical devices preferred.
 
 Target:
 `CREATE → INVITE → ACCEPT → AUTHORIZE → A sends exactly 1 NIM to B → FINAL → B holder → AUTHORIZE → B sends exactly 1 NIM to C → FINAL → ARRIVED → Verified Route Receipt`
 
-Real Nimiq Pay human confirmations required. Never claim PASS before observed testnet finality.
+Also prove multi-account behavior, exact 1-NIM forwarding with requested fee 0, native invite deeplink, and iOS cold/warm/background/resume/deeplink lifecycle.
 
-Also prove: multi-account behavior, exact-balance forwarding with requested fee 0, native invitation deep link, and iOS cold/warm/background/resume/deeplink lifecycle.
+## Score-floor strategy after secure E2E
+
+Builder Promotion = Skool `2` + public social `3` = **5/5**.
+
+Real Usage = `0–3:0`, `4–10:6`, `11–24:10`, `25+:15`.
+
+Therefore promotion + 4 genuine users = **11 points**, +11 users = **15**, +25 users = **20/20** outside the 80-point core. No bots/artificial wallets/gaming.
 
 ## Execution order — CURRENT
 
-1. Wait for / inspect Opeyemi's review or new commits on `feat/mission-http-bindings`; re-fetch before reconciliation.
-2. Reconcile PR #20 with Opeyemi's route-view/privacy/legacy-relay changes without force-updating his branch.
-3. Integrate browser frontend + HTTP + PostgreSQL + NimCarry runtime branding, including broadcast capability + browser mutation idempotency.
-4. Full CI green; merge the combined vertical runtime to `main`; update canon + handover immediately.
-5. Run real A→B→C testnet route through `ARRIVED`.
-6. Verify the already-merged Route Receipt against real route data; capture screenshots/timestamps/tx hashes.
-7. Run 5 observed cold-start <60-second tests.
-8. Publish the genuine Skool post + public social post for 5/5 promotion points.
-9. Reach 4+ genuine wallet opens, then 11+, then 25+.
-10. Submit to Cycle II showcase as soon as the app is genuinely usable.
-11. If runtime is green, use Sep 16 Sip & Show as a real-product proof event; otherwise attend without faking proof.
-12. Enable production judge-window monitoring/safe rollback once final secure URL exists.
-13. Apply focused TRACE polish only after proof-critical work is green.
+1. Re-fetch Opeyemi's live branch / PR status.
+2. Reconcile his route-view/privacy/relay work with green PR #20, without force-updating his branch.
+3. Wire browser + HTTP + PostgreSQL while preserving the newly merged Living Route UI.
+4. Full CI green → merge → update canon + handover.
+5. Run real A→B→C testnet through `ARRIVED` and validate the Route Receipt against real route data.
+6. Run 5 observed first-time tests under 60 seconds.
+7. Publish genuine Skool + public posts for 5/5 promotion.
+8. Reach 4+, then 11+, then 25+ legitimate unique wallet opens.
+9. Submit once genuinely usable.
+10. Sep 16 Sip & Show only as real-product proof if runtime is green.
+11. Enable judge-window monitoring/rollback, then focused TRACE polish and final demo packaging.
 
 ## External naming debt
 
-Public product identity is NimCarry, but do not claim external identifiers are renamed yet:
-- desired repo slug: `Faadil1/nimcarry`; current locator: `Faadil1/carry-one`;
-- desired Vercel alias: `https://nimcarry.vercel.app`; current legacy demo locator: `https://carry-one-sip-show.vercel.app`.
+Public identity is NimCarry, but external identifiers are not yet claimed renamed:
+- desired repo: `Faadil1/nimcarry`; current: `Faadil1/carry-one`;
+- desired alias: `https://nimcarry.vercel.app`; current legacy demo: `https://carry-one-sip-show.vercel.app`.
 
-Some legacy code/doc/storage identifiers still use Carry One / `carryone.*`; reconcile safely during HTTP/runtime integration rather than breaking compatibility.
+Legacy `carryone.*` storage/protocol fixtures may remain only where backward compatibility or evidence traceability requires them.
 
 ## Still blocked
 
