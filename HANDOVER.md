@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-10  
-Canonical version: **0.8.20**  
-State: `GUIDED_PROVIDER_FREE_DEMO_GREEN_PENDING_VERCEL_OBSERVATION_HTTP_SECURITY_PARALLEL_RECONCILIATION`
+Canonical version: **0.8.21**  
+State: `GUIDED_DEMO_VIDEO_QA_SECOND_BRIDGE_FIX_GREEN_PENDING_VERCEL_OBSERVATION_HTTP_SECURITY_PARALLEL_RECONCILIATION`
 
 ## Read first
 
@@ -32,36 +32,36 @@ Truthfulness boundary: presentation does not create real transactions, FINAL, cu
 
 Initial `public/` output failure was fixed by PR #22 / merge `90673c0...`; root `vercel.json` now builds and serves `web/`. User observed Production `Ready / Current` at `https://carry-one-mu.vercel.app`, and `/create` direct route renders.
 
-Create-surface polish is also on `main` with CI PASS: keep header visible after route navigation, `STEP 1 OF 5 · CREATE MISSION`, no Cycle-II jargon on the production create form.
+## Provider-free guided demo — FIRST VIDEO QA DONE
 
-## NEW — provider-free guided demo tour
-
-User wanted a link that can exercise the product from the first screen through ARRIVED without requiring the Nimiq Pay provider. Implemented directly on `main` and CI green.
-
-Code:
-- `web/demo-tour.js` commit `13e26bfa831d267a0b7a3beb5837009980161925`;
-- loaded by `web/index.html` commit `d5a3945a4f7556460134c9ccbeed148362404c9f`;
-- CI syntax coverage commit `49301203e96934aefc6b597536a689a54649bbc4`;
-- CI run `34439421092`: **PASS**.
-
-Intended public clean-start link after Vercel deploy:
+Clean-start link:
 `https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1`
 
-What it does:
-- explicit banner remains `DEMO MODE — no wallet or network writes` and adds `GUIDED 1→5 TOUR`;
-- `reset=1` clears prior local demo state, then removes only the reset flag so refreshes do not keep wiping progress;
-- pre-fills a safe fictional scenario but all fields remain editable;
-- creates a demo invite link with `demo=1&tour=1` preserved, so no Nimiq Pay provider is needed;
-- `Accept` remains a no-funds consent transition;
-- `Pass 1 NIM` simulates wallet-approved → independent FINAL only inside explicit demo mode;
-- first pass: Creator → Bridge B, FINAL, custody moves;
-- route view provides **Continue demo to destination**;
-- second invite is prefilled as the precommitted target;
-- second simulated FINAL sets `ARRIVED` and triggers the existing **DEMO RECEIPT** / Route Receipt climax.
+The user supplied an ~81.8s screen recording of the guided tour. Observed PASS through:
+- home/problem-first surface;
+- Create with prefill;
+- first bridge invitation;
+- browser-only `Open demo invite`;
+- Accept as a no-funds consent step;
+- simulated demo FINAL;
+- custody moving to Bridge B;
+- route showing **1 FINAL** handoff.
 
-Critical evidence boundary: this tour is for UI/story/interaction testing only. **Never present it as testnet or on-chain proof.** Real proof remains blocked until secure HTTP integration and the real A→B→C Nimiq Pay testnet run.
+Observed friction at the second bridge cycle: **Continue demo to destination** returned to Mission Home, but the next required action was not obvious. The recording therefore ended with one FINAL handoff and did **not** reach ARRIVED.
 
-Production status of the new tour: **PENDING OBSERVED VERCEL DEPLOYMENT CONTAINING `49301203` OR LATER**. If the auto-deploy is Ready, open the clean-start link above and test the whole guided path.
+Fix is already on `main`:
+- `web/demo-tour.js` commit `ede8737a63ff1988be5540322ece4966d529fbe0`;
+- CI run `34440569128`: **PASS** across secret scan, browser syntax, typecheck, tests and build.
+
+New behavior:
+- `Continue demo to destination` returns to Mission Home **and automatically opens the next bridge dialog**;
+- that second dialog is prefilled with the precommitted destination;
+- real `nimiqpay://` links are hidden **only inside the guided browser demo**, preventing provider confusion;
+- production and real Nimiq Pay paths are unchanged.
+
+Critical evidence boundary: this tour is for UI/story/interaction QA only. **Never present it as testnet or on-chain proof.**
+
+Next QA action: wait for Vercel deployment containing `ede8737...` or later, reopen the clean-start link, and record/observe the path all the way through the second invitation, second Pass, **ARRIVED**, and the **DEMO RECEIPT**.
 
 ## HTTP security — CURRENT REAL GATE
 
@@ -89,8 +89,8 @@ Builder Promotion = Skool 2 + public social 3 = **5/5**. Real Usage = `0–3:0`,
 
 ## Current execution order
 
-1. Observe newest Vercel deployment with `49301203` or later and run the provider-free guided tour from clean start through ARRIVED/DEMO RECEIPT.
-2. Use the tour to QA all five screen types, interactions, labels, overflows and demo narrative; fix only presentation issues that do not touch blocked backend contracts.
+1. Verify Vercel has deployed `ede8737...` or later and rerun guided tour through **ARRIVED / DEMO RECEIPT**.
+2. Fix only remaining presentation/demo friction that does not touch blocked backend contracts.
 3. Re-fetch Opeyemi branch/PR status.
 4. Reconcile PR #20 + Opeyemi route-view/privacy/relay changes without force updates.
 5. Wire browser + HTTP + PostgreSQL preserving Living Route UI and Vercel config.
