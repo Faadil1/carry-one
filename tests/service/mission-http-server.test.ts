@@ -517,6 +517,53 @@ describe("Reach Mission route-view privacy", () => {
   });
 });
 
+describe("Reach Mission legacy /relay gate", () => {
+  let gateBaseUrl: string;
+  let gateClose: () => Promise<void>;
+
+  beforeAll(async () => {
+    const dir = mkdtempSync(join(tmpdir(), "carry-one-relay-gate-"));
+    const repository = new FileMissionRepository(join(dir, "missions.json"));
+    const missions = new ReachMissionService(repository, PROTECTOR);
+    const rpcClient = new FakeRpcClient();
+    const relay = new CanonicalRelayService(new FileRelayStore(join(dir, "relay.json")), rpcClient);
+    const coordinator = new ReachMissionCoordinator(missions, repository, relay, PROTECTOR);
+    const authorizer = new NimiqWalletAuthorizer(repository, "https://carry.one");
+    const server = createMissionHttpServer({
+      coordinator,
+      missions,
+      repository,
+      authorizer,
+      relay,
+      protector: PROTECTOR,
+      canonicalOrigin: "https://carry.one",
+      idempotency: new MemoryIdempotencyStore(),
+      limiter: new MemoryRateLimiter(),
+      legacyRelayEnabled: false,
+    });
+    gateBaseUrl = await listen(server);
+    gateClose = () => new Promise((resolve) => server.close(() => resolve()));
+  });
+
+  afterAll(() => gateClose());
+
+  it("rejects legacy /relay mutations with 403 while leaving the read surface open", async () => {
+    for (const action of ["intent", "broadcast", "cancel", "reconcile"]) {
+      const res = await fetch(`${gateBaseUrl}/relay/gated-baton/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.error).toBe("LEGACY_RELAY_DISABLED");
+    }
+
+    const history = await fetch(`${gateBaseUrl}/relay/gated-baton/history`);
+    expect(history.status).toBe(200);
+  });
+});
+
 describe("Reach Mission HTTP rate limiting", () => {
   it("returns 429 with Retry-After once the reads budget is exhausted", async () => {
     const dir = mkdtempSync(join(tmpdir(), "carry-one-rate-"));

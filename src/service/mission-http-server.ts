@@ -17,7 +17,7 @@ import {
   type BroadcastCapabilityStore,
 } from "./broadcast-capability.js";
 import type { CanonicalRelayService } from "./canonical-relay-service.js";
-import { handleRelayRequest } from "./http-server.js";
+import { handleRelayRequest, legacyRelayEnabledFromEnv } from "./http-server.js";
 import {
   MemoryRouteViewCapabilityStore,
   RouteViewCapabilityError,
@@ -75,6 +75,12 @@ export interface MissionHttpDeps {
   broadcastCapabilities?: BroadcastCapabilityStore;
   /** Optional injection point for tests. Defaults to a process-local store; invite tokens always double as capabilities. */
   routeViewCapabilities?: RouteViewCapabilityStore;
+  /**
+   * Explicit legacy `/relay` mutation gate. Defaults to
+   * `CARRY_ONE_LEGACY_RELAY_ENABLED` (enabled outside production, disabled in
+   * production).
+   */
+  legacyRelayEnabled?: boolean;
 }
 
 const defaultCapabilityStores = new WeakMap<MissionHttpDeps, BroadcastCapabilityStore>();
@@ -137,7 +143,7 @@ async function handleRequest(deps: MissionHttpDeps, req: IncomingMessage, res: S
     return send(res, 200, { status: "ok" });
   }
   if (segments[0] === "relay") {
-    return handleRelayRequest(deps.relay, req, res);
+    return handleRelayRequest(deps.relay, req, res, { legacyRelayEnabled: deps.legacyRelayEnabled ?? legacyRelayEnabledFromEnv() });
   }
   if (segments[0] === "usage" && segments.length === 1) {
     if (req.method !== "GET") return notFound(req, res, url);
