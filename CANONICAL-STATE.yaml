@@ -3,13 +3,17 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.16
+state_version: 0.8.17
 date: 2026-09-09
-
-phase: MVP_VERTICAL_SLICE_1_WITH_HIDDEN_SPOTS_MERGED_AND_FAADIL_HTTP_SECURITY_PR_GREEN
+phase: LIVING_ROUTE_UI_P0_P1_MERGED_HTTP_SECURITY_PARALLEL_RECONCILIATION
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
+
+canonical_compaction_note:
+  status: INTENTIONAL_V0_8_17_COMPACTION
+  product_law_changed: false
+  reason: Keep CURRENT source concise enough for reliable conversation handover while preserving detailed historical evidence in referenced docs and git history.
 
 continuity_protocol:
   source_of_truth: CANONICAL-STATE.yaml
@@ -21,15 +25,11 @@ continuity_protocol:
 brand_identity:
   public_name: NimCarry
   status: LOCKED
-  locked_on: 2026-09-09
   tagline: One NIM. One bridge at a time.
   promise: Get this to someone you cannot reach directly — one human bridge at a time.
   judge_facing_thesis: NimCarry turns an invisible chain of human introductions into a consented verifiable human route using exactly 1 NIM as the baton.
-  full_migration_authorized: true
   public_facing_identity_must_use_nimcarry: true
-  new_docs_and_new_code_must_use_nimcarry: true
-  historical_evidence_may_preserve_former_name_when_rewriting_would_damage_traceability: true
-  legacy_protocol_fixtures_may_remain_only_when_required_for_backward_compatibility_or_negative_tests: true
+  historical_legacy_names_allowed_only_for_traceability_or_backward_compatibility: true
   external_identifier_migration:
     desired_repository_slug: Faadil1/nimcarry
     current_repository_slug: Faadil1/carry-one
@@ -56,19 +56,12 @@ product_positioning:
   holder_question: Who can move this one person closer?
   native_nimiq_thesis: NIM_AS_COORDINATION_PRIMITIVE_NOT_JUST_PAYMENT
   one_nim_semantics: SEMANTIC_STATE_BEARING_BATON_NOT_ECONOMIC_INCENTIVE
-  simple_judge_flow: [Create, Invite, Accept, Pass_1_NIM, Arrive]
   front_door_language: HUMAN_ROUTING_NOT_CRYPTO_PAYMENT_APP
   primary_judge_line: NimCarry uses 1 NIM to make warm introductions verifiable.
+  native_nimiq_explanation: Without Nimiq, a bridge can only say I forwarded it. With NimCarry, the custody handoff has a wallet-approved transaction and independent finality behind it.
   baton_disambiguation: The 1 NIM is the baton, not the reward.
-  cycle_ii_target_policy:
-    known_target_wallet_required: true
-    creator_attested_target_consent_required: true
-  competitor_differentiation:
-    generic_relay_or_gift_chain: false
-    destination_bound_route: true
-    consented_human_bridges: true
-    finality_verified_chain_of_custody: true
-    distinct_terminal_arrival: true
+  simple_judge_flow: [Create, Invite, Accept, Pass_1_NIM, Arrive]
+  cycle_ii_target_policy: { known_target_wallet_required: true, creator_attested_target_consent_required: true }
 
 mvp_contract:
   recipient_value_luna: 100000
@@ -78,28 +71,64 @@ mvp_contract:
   finalized_route_wallet_reuse: forbidden
   cancel_or_reroute_after_broadcast: forbidden_fail_closed
   arrival_condition: finalized_recipient_hmac_equals_private_target_wallet_hmac
+  opaque_onchain_commitment_prefix: co:v1:
   five_screens: [Mission_Home, Create_Mission, Bridge_Invitation, Pass_1_NIM, Route_Arrival]
   gamification: forbidden
 
 judge_demo_law:
   problem_first: true
   architecture_first: false
-  target_first_problem_line: Warm introductions disappear after the first handoff.
+  first_problem_line: Warm introductions disappear after the first handoff.
   target_core_flow: Create -> Invite -> Accept -> Pass_1_NIM -> Arrive
   judge_cooperation_required_for_core_proof: false
-  visible_nimiq_states:
+  route_receipt_is_demo_climax: true
+  target_first_time_understanding_seconds: 10
+  target_core_point_seconds: 60
+  visible_states:
     - Accepted_with_Nimiq_Pay
     - 1_NIM_handoff_authorized
     - Waiting_for_independent_finality
     - FINAL_custody_moved
     - ARRIVED
     - Verified_Route_Receipt
-  route_receipt_is_demo_climax: true
-  route_receipt_is_persistent_proof_artifact: true
-  target_first_time_understanding_seconds: 10
-  target_core_point_seconds: 60
+  truthfulness: Never present local demo state as real testnet evidence.
+  sep16_runbook: docs/SEP16-DETERMINISTIC-DEMO-RUNBOOK-2026-09-09.md
 
-completed_milestones:
+winning_intelligence:
+  seven_call_otter_corpus: COMPLETE_7_OF_7_THROUGH_2026_09_09
+  definitive_audit: docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md
+  score_delta: docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md
+  high_confidence_patterns:
+    - problem_first_storytelling
+    - live_proof_beats_architecture
+    - simplicity_is_implicit_meta_rubric
+    - persistent_visible_proof_artifact
+    - real_user_behavior_as_PMF_signal
+    - natural_invite_share_loop
+    - first_users_by_hand
+    - avoid_crypto_as_front_door
+    - visible_Nimiq_at_authorization_finality_and_proof
+    - deterministic_demo_not_dependent_on_judge
+    - lifecycle_gaps_get_noticed
+    - distribution_and_abuse_questions_follow_core_comprehension
+    - freeze_known_good_build_for_random_judge_window
+    - easy_builder_promotion_points_should_be_captured
+  winner_transfer:
+    Nimiq_Space: persistent_world_plus_real_users
+    NimJump: structural_fix_plus_replay_proof_plus_share_loop
+    NimQuest: server_graded_completion_plus_wallet_signed_proof
+    NimCarry: consented_finality_verified_route_plus_ARRIVED_plus_Route_Receipt
+
+score_capture_strategy:
+  builder_promotion: { skool_post_points: 2, public_social_post_points: 3, target_total: 5 }
+  real_usage: { zero_to_three: 0, four_to_ten: 6, eleven_to_twenty_four: 10, twenty_five_plus: 15 }
+  score_floor_after_secure_E2E:
+    promotion_plus_4_users: 11
+    promotion_plus_11_users: 15
+    promotion_plus_25_users: 20
+  bots_artificial_wallets_or_gaming: forbidden
+
+completed_major_milestones:
   product_law: true
   ux_state_contract: true
   foundation_slice_1: true
@@ -108,321 +137,125 @@ completed_milestones:
   postgres_vertical_slice: true
   public_repo_secret_scan: true
   sip_show_clickable_demo: true
-  repository_presentation_and_governance_pack: true
-  cycle2_hidden_spot_audit: true
+  repository_governance_pack: true
   nimcarry_brand_lock: true
-  nimcarry_full_migration_authorized: true
-  sip_ship_historical_corpus_registered: true
-  sip_ship_public_recap_hidden_spot_pass: true
-  whisper_six_historical_transcriptions_completed: true
-  otter_six_historical_transcript_packages_uploaded: true
-  sep9_cycle2_call3_video_available_in_drive: true
-  otter_sep9_transcript_package_uploaded: true
-  complete_seven_call_otter_corpus_assembled: true
-  complete_seven_call_checkpoint_recorded: true
-  otter_direct_connector_path_discovered: true
-  otter_direct_connector_checkpoint_recorded: true
-  otter_direct_connector_connected: true
-  sip_ship_full_seven_call_otter_transcript_pass: true
-  sip_ship_seven_call_winning_intelligence_audit: true
-  transcript_only_hidden_spot_delta_recorded: true
-  cycle2_score_capture_strategy_locked: true
-  cycle2_hidden_spot_product_layer_merged: true
-  route_receipt_judge_surface_implemented: true
-  judge_window_smoke_tooling_implemented: true
+  seven_call_winning_intelligence: true
+  hidden_spot_product_layer_pr19_merged: true
+  route_receipt_surface: true
+  judge_window_smoke_tooling: true
   first_five_60_second_test_protocol_armed: true
-  score_floor_promotion_and_usage_ladder_armed: true
-  faadil_http_security_pr20_opened: true
+  score_floor_4_11_25_ladder_armed: true
   faadil_http_security_pr20_ci_green: true
-  broadcast_capability_implemented_on_pr20: true
-  api_client_idempotency_implemented_on_pr20: true
-  opeyemi_review_requested_on_pr20: true
+  living_route_ui_pr21_merged: true
 
-verified_code_baseline_before_brand_migration:
-  latest_source_fix_pr: 16
-  latest_source_fix_merge_sha: 37e518d0661baadb72e2c0283fccef31246dd7f6
-  npm_ci: pass
-  public_repo_secret_scan: pass
-  typecheck: pass
-  test_files: 20
-  authoritative_vitest_tests: 124
-  build: pass
-  note: superseded_for_current_main_by_hidden_spot_product_layer_baseline_below
-
-hidden_spot_product_layer_baseline:
+hidden_spot_product_layer:
   pull_request: 19
   merge_sha: 7ccf67aefb53ee101b2df7fdc1dc638d976cb4cc
-  premerge_ci_run: 34413498020
-  postmerge_ci_run: 34413573164
-  public_repo_secret_scan: pass
-  browser_javascript_syntax: pass
-  typecheck: pass
-  tests: pass
-  build: pass
   implementation_doc: docs/CYCLE2-HIDDEN-SPOT-IMPLEMENTATION-PACK-2026-09-09.md
-  milestone_doc: docs/HIDDEN-SPOTS-IMPLEMENTATION-MILESTONE-2026-09-09.md
+  ci: PASS
+
+living_route_ui:
+  status: MERGED_TO_MAIN
+  pull_request: 21
+  merge_sha: 08b3ce1d3662e78a40c5c43e647a6940900e92bc
+  premerge_ci_run: 34419875834
+  postmerge_ci_run: 34419936778
+  ci: PASS
+  implementation_doc: docs/LIVING-ROUTE-UI-P0-P1-2026-09-09.md
+  p0_implemented:
+    - route_native_NimCarry_logo_header_and_favicon
+    - install_manifest_and_social_preview_source
+    - five_step_progress_rendered_as_continuous_route
+    - current_baton_holder_emphasis
+    - pass_proof_ladder_reacts_to_existing_wallet_verification_FINAL_status
+    - finalized_hop_progressive_reveal
+    - ARRIVED_Route_Receipt_climax_treatment
+  p1_implemented:
+    - button_press_hover_feedback
+    - existing_busy_state_loading_affordance
+    - stronger_bridge_consent_copy_without_fictional_sender_identity
+    - dashed_unverified_empty_route
+    - one_time_ARRIVED_receipt_focus
+    - subtle_header_network_interactions
+  reduced_motion: enforced
+  proof_rule: presentation_layer_does_not_create_transaction_FINAL_custody_or_ARRIVED_state
+  deferred_because_blocked:
+    - final_browser_wiring_to_merged_secure_HTTP_contract
+    - production_route_view_capability
+    - browser_broadcast_capability_transport
+    - real_Nimiq_Pay_timing_adjustments
+    - iOS_lifecycle_deeplink_assurance
+    - final_TRACE_polish_after_real_E2E
 
 http_parallel_work:
-  owner: opeyemi
-  branch: feat/mission-http-bindings
+  opeyemi_branch: feat/mission-http-bindings
   latest_observed_head_sha: 4f219cbd153484e560c4079ffd8c549ec52e483f
-  latest_refetch_on: 2026-09-09
-  merged_to_main: false
-  before_reconcile: RE_FETCH_LIVE_HEAD
   preserve_branch_without_force_update: true
-  brand_reconcile_required_at_integration: true
-  task_split:
+  before_reconcile: RE_FETCH_LIVE_HEAD
+  split:
     opeyemi: [route_view_capability, invitation_privacy_redaction, legacy_relay_dev_gate]
-    faadil_side: [secure_tx_hash_broadcast_capability, frontend_Idempotency_Key]
-    shared: [combined_frontend_HTTP_Postgres_integration, real_testnet_E2E]
-  blocker_status:
+    faadil: [secure_tx_hash_broadcast_capability, typescript_api_client_Idempotency_Key]
+    shared: [browser_secure_contract_wiring, frontend_HTTP_Postgres_integration, real_testnet_E2E]
+  blockers:
     route_view_capability: PENDING_OPEYEMI
     invitation_privacy_redaction: PENDING_OPEYEMI
-    secure_tx_hash_broadcast_capability: PR20_CI_GREEN_PENDING_MERGE
-    frontend_Idempotency_Key: TS_API_CLIENT_GREEN_ON_PR20_BROWSER_WIRING_PENDING_SHARED_INTEGRATION
     legacy_relay_dev_gate: PENDING_OPEYEMI
-    combined_frontend_HTTP_Postgres_vertical_flow: PENDING_SHARED_INTEGRATION
-  remaining_security_blockers:
-    - replace_spoofable_X_Wallet_with_verified_route_view_capability
-    - role_scope_and_redact_why_you_private_invitation_context
-    - merge_and_reconcile_secure_tx_hash_broadcast_capability
-    - wire_browser_frontend_Idempotency_Key_and_new_broadcast_contract
-    - disable_or_dev_gate_legacy_relay_mutations
-    - combine_frontend_HTTP_Postgres_vertical_flow
+    broadcast_capability: PR20_CI_GREEN_PENDING_RECONCILIATION
+    typescript_client_idempotency: PR20_CI_GREEN
+    browser_secure_contract_wiring: PENDING_SHARED_INTEGRATION
+    combined_frontend_HTTP_Postgres: PENDING_SHARED_INTEGRATION
 
-faadil_http_security_work:
+faadil_http_security:
+  pull_request: 20
+  url: https://github.com/Faadil1/carry-one/pull/20
   branch: feat/faadil-http-security
   base_branch: feat/mission-http-bindings
-  base_sha: 4f219cbd153484e560c4079ffd8c549ec52e483f
-  pull_request: 20
-  pull_request_url: https://github.com/Faadil1/carry-one/pull/20
   head_sha: 2588021ea45c806ec9588c24b00ce209f67ddbfe
-  status: CI_GREEN_REVIEW_REQUESTED_NOT_MERGED
-  reviewer_requested: opeblow
   ci_run: 34416146070
-  public_repo_secret_scan: pass
-  typecheck: pass
-  tests: pass
-  build: pass
-  implementation_doc: docs/FAADIL-HTTP-SECURITY-DELTA-2026-09-09.md
-  broadcast_capability:
-    issued_after_signed_AUTHORIZE_PASS_only: true
-    binding: [mission_id, invitation_id, sequence, intent_nonce, canonical_holder_wallet]
-    short_lived: true
-    one_time: true
-    process_restart_invalidates_token_fail_closed: true
-    same_idempotency_key_retry_replays_cached_success: true
-    new_key_replay_after_consumption_rejected: true
-  client_idempotency:
-    typescript_api_client_automatic_mutation_keys: true
-    stable_broadcast_retry_key_supported: true
-    auth_challenge_uses_replay_cache: false
-    reconcile_uses_replay_cache: false
-    standalone_web_app_wiring_complete: false
-  merge_rule: do_not_mark_blockers_closed_until_reconciled_with_opeyemi_work_and_final_browser_runtime
-
-self_run_testnet_decision:
-  locked: true
-  external_users_required_for_first_e2e: false
-  team_can_run_first_proof_itself: true
-  preferred_topology: { wallets: 3, physical_devices: 2_preferred, A: creator_initial_holder, B: bridge, C: destination }
-  target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED
-  real_human_confirmation_in_Nimiq_Pay_required: true
-  do_not_claim_pass_before_real_testnet_finality: true
-
-cycle2_hidden_spot_audit:
-  status: COMPLETE_RESEARCH_NOT_PRODUCT_LAW_REWRITE
-  doc: docs/CYCLE2-HIDDEN-SPOT-AUDIT-2026-09-09.md
-  winner_pattern: persistent_visible_proof_artifact
-  nimcarry_equivalent: privacy_safe_Route_Receipt_or_Handoff_Receipt
-  full_real_usage_score_requires: 25_plus_legitimate_unique_Nimiq_wallet_opens
-  direct_collision: Pay_It_Sideways_exact_NIM_relay_story
-  differentiation: destination_bound_verified_route
-
-score_capture_strategy:
-  status: LOCKED_AFTER_FULL_TRANSCRIPT_PASS
-  source_doc: docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md
-  builder_promotion:
-    skool_post_points: 2
-    public_social_post_points: 3
-    easy_total_points: 5
-    must_capture: true
-  real_usage_buckets:
-    zero_to_three_unique_wallet_opens_points: 0
-    four_to_ten_unique_wallet_opens_points: 6
-    eleven_to_twenty_four_unique_wallet_opens_points: 10
-    twenty_five_plus_unique_wallet_opens_points: 15
-  score_floor_engineering:
-    after_secure_E2E_only: true
-    four_plus_users_plus_promotion_points: 11
-    eleven_plus_users_plus_promotion_points: 15
-    twenty_five_plus_users_plus_promotion_points: 20
-    bots_or_artificial_wallets: forbidden
-    objective: capture_deterministic_low_friction_points_then_reuse_testing_to_improve_reliability_and_UX
-
-hidden_spot_implementation:
-  status: IMPLEMENTABLE_NOW_LAYER_MERGED_REMAINDER_GATED_BY_REAL_EVIDENCE
-  pull_request: 19
-  merge_sha: 7ccf67aefb53ee101b2df7fdc1dc638d976cb4cc
-  implementation_doc: docs/CYCLE2-HIDDEN-SPOT-IMPLEMENTATION-PACK-2026-09-09.md
-  implemented_now:
-    - problem_first_home_framing
-    - concrete_warm_introduction_example
-    - five_step_judge_flow_visualization
-    - one_NIM_baton_not_reward_disambiguation
-    - visible_wallet_approval_finality_custody_proof_ladder
-    - invitation_lifecycle_clarity
-    - private_invite_share_action_without_referral_reward
-    - final_only_route_explanation
-    - privacy_safe_arrived_route_receipt
-    - explicit_demo_only_arrived_receipt_preview
-    - static_web_health_contract
-    - deterministic_judge_smoke_script
-    - manual_github_judge_smoke_workflow
-    - browser_javascript_syntax_CI
-    - first_five_60_second_test_protocol
-    - score_floor_4_11_25_user_ladder
-    - gated_skool_and_public_social_post_drafts
-    - README_judge_legibility
-  gated_until_prerequisite:
-    - real_A_B_C_testnet_proof
-    - five_real_observed_first_time_tests
-    - four_eleven_twenty_five_genuine_unique_wallet_opens
-    - actual_skool_and_public_social_posts
-    - Sep_16_real_product_demo
-    - scheduled_judge_window_monitoring_on_final_secure_runtime
-    - My_Routes_if_safe_after_E2E
-    - reusable_external_route_receipt_primitive_post_cycle_II
-  evidence_rule: never_mark_gated_item_complete_until_observed_or_executed
-
-sip_ship_corpus_intelligence:
-  status: COMPLETE_FULL_SEVEN_CALL_OTTER_PASS_AND_CROSS_CALL_SYNTHESIS
-  definitive_audit_doc: docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md
-  transcript_delta_score_doc: docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md
-  corpus_doc: docs/SIP-SHIP-CORPUS-HIDDEN-SPOT-INTELLIGENCE-2026-09-09.md
-  prior_ingestion_doc: docs/SIP-SHIP-TRANSCRIPT-INGESTION-CHECKPOINT-2026-09-09.md
-  complete_corpus_checkpoint_doc: docs/SIP-SHIP-CORPUS-COMPLETE-7-CALLS-2026-09-09.md
-  direct_otter_connector_checkpoint_doc: docs/SIP-SHIP-OTTER-DIRECT-CONNECTOR-CHECKPOINT-2026-09-09.md
-  total_recording_corpus_available: 7
-  total_full_otter_transcripts_fetched: 7
-  corpus_complete_through: 2026-09-09
-  calls:
-    - Cycle_I_Call_1_July_8
-    - Cycle_I_Call_2_July_15
-    - Cycle_I_Call_3_July_22
-    - Cycle_I_Call_4_July_29
-    - Cycle_II_Call_1_Aug_26
-    - Cycle_II_Call_2_Sep_2
-    - Cycle_II_Call_3_Sep_9
-  sep9_recording:
-    status: VIDEO_AND_FULL_OTTER_TRANSCRIPT_AVAILABLE
-    drive_folder: 03 - Sip & Ship Call #3 (Sep 9)
-    drive_file: 01 - Sip & Ship Call #3 (Sep 9).mp4
-    drive_file_id: 1cyeBj2KFbriRSSoADZPLByf9Rz3JaYES
-    size_bytes: 167824742
-    use: targeted_visual_demo_reference_if_needed
-  transcript_source_preference: OTTER_DIRECT_CONNECTOR
-  visual_source_preference: GOOGLE_DRIVE_VIDEO_FOR_TARGETED_HIGH_SIGNAL_CHECKS
-  whisper_role: opening_segment_cross_check_only
-  direct_otter_connector:
-    plugin: Otter.ai
-    connection_status: CONNECTED
-    full_transcript_fetch_status: COMPLETE_7_OF_7
-    speaker_attribution_available: true
-  evidence_classes:
-    - VERIFIED_OFFICIAL_PUBLIC
-    - USER_SUPPLIED_LIVE_FEEDBACK
-    - OTTER_FULL_TRANSCRIPT_VERIFIED
-    - VIDEO_REFERENCE_AVAILABLE_FOR_TARGETED_VISUAL_PASS
-  high_confidence_cross_call_patterns:
-    - problem_first_storytelling_repeatedly_drives_strong_positive_reaction
-    - live_proof_beats_architecture_explanation
-    - simplicity_intuitiveness_and_fast_legibility_behave_like_implicit_meta_rubric
-    - persistent_visible_proof_artifact_is_winner_pattern
-    - emergent_real_user_behavior_is_treated_as_PMF_signal
-    - natural_invite_or_share_loop_is_repeatedly_praised
-    - first_users_by_hand_is_repeatedly_taught_as_expected_starting_method
-    - deep_Nimiq_protocol_utility_was_underweighted_in_cycle1_and_materially_reweighted_in_cycle2
-    - Nimiq_native_does_not_require_payments_first_positioning
-    - avoid_crypto_as_front_door_but_make_Nimiq_visible_at_proof_moments
-    - freeze_known_good_build_before_live_demo_and_random_judge_window
-    - judge_can_only_reward_visible_legible_evidence
-    - mechanics_resembling_stake_reward_pool_or_gambling_require_immediate_disambiguation
-    - judge_or_host_should_not_be_required_to_cooperate_for_core_demo_proof
-    - ecosystem_reusable_infrastructure_generates_deep_team_interest
-    - lifecycle_completion_and_reengagement_gaps_get_noticed_immediately
-    - after_core_understanding_distribution_and_abuse_vectors_become_next_questions
-    - memorable_receipt_or_result_artifact_improves_demo_recall
-    - best_demos_let_observer_map_product_to_their_own_life
-    - real_distribution_should_be_inherent_in_product_not_bolted_on
-    - easy_builder_promotion_points_should_be_treated_as_guaranteed_score_floor
-  eventual_winner_transfer:
-    Nimiq_Space: real_users_plus_emergent_user_created_behavior_plus_persistent_world
-    NimJump: structural_problem_plus_server_verified_fix_plus_replay_artifact_plus_share_loop
-    NimQuest: server_graded_completion_plus_persistent_wallet_signed_proof
-    NimCarry_equivalent: consented_finality_verified_route_plus_ARRIVED_plus_Route_Receipt
-  cycle1_to_cycle2_expectation_shift:
-    observed_cycle1_problem: pretty_apps_often_broken_or_low_utility_and_protocol_utility_underweighted
-    observed_cycle2_response:
-      functionality_reliability_usefulness_points: 45
-      Nimiq_integration_points: 25
-      real_usage_points: 15
-      design_UX_points: 10
-      builder_promotion_points: 5
-      random_post_deadline_judging: true
-      continued_maintenance_after_submission: encouraged
-  p0_nimcarry_decisions:
-    - secure_HTTP_and_combined_runtime_before_public_Early_Access
-    - real_A_B_C_testnet_to_ARRIVED_before_claiming_proof
-    - deterministic_demo_not_dependent_on_judge_cooperation
-    - explicit_baton_not_reward_stake_wager_pool_language
-    - visible_wallet_authorization_and_FINAL_states
-    - Route_Receipt_as_demo_climax_and_persistent_proof_artifact
-    - known_good_build_smoke_test_and_rollback_during_judge_window
-    - five_observed_first_time_tests_before_broad_push
-    - problem_first_submission_story_and_destination_bound_differentiation
-    - capture_5_of_5_builder_promotion_points_once_secure_E2E_is_green
-  p1_nimcarry_decisions:
-    - My_Routes_or_follow_after_handoff_if_safe_after_E2E
-    - privacy_safe_shareable_handoff_or_arrival_card
-    - legitimate_testing_toward_25_plus_wallet_opens
-    - first_screen_receipt_and_arrival_visual_polish
-    - error_cancel_retry_recovery_assurance
-    - iOS_lifecycle_deeplink_assurance
-    - Sep_16_Sip_Show_only_as_real_product_proof_if_runtime_green
+  ci: PASS
+  reviewer: opeblow
+  status: OPEN_REVIEW_REQUESTED_NOT_MERGED
+  broadcast_capability: { short_lived: true, one_time: true, issued_after_signed_AUTHORIZE_PASS: true, bound_to: [mission, invitation, sequence, intent_nonce, holder_wallet] }
+  client_idempotency: { automatic_for_mutations: true, stable_broadcast_retry_key: true }
+  merge_rule: Do not call the HTTP blockers closed until reconciled with Opeyemi changes and the final browser runtime.
 
 current_gate:
   name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
-  status: PARTIAL_BLOCKERS_3_4_GREEN_ON_PR20_WAITING_OPEYEMI_1_2_5_AND_SHARED_INTEGRATION
+  status: WAITING_OPEYEMI_PARALLEL_BLOCKERS_THEN_RECONCILE_PR20_AND_BROWSER
   exit_criteria:
-    - all_five_HTTP_security_integration_blockers_closed
+    - route_view_capability_closed
+    - invitation_privacy_redaction_closed
+    - legacy_relay_dev_gate_closed
+    - broadcast_capability_reconciled
+    - browser_idempotency_and_broadcast_contract_wired
     - frontend_HTTP_Postgres_combined_harness_green
-    - NimCarry_brand_reconciled_in_integrated_runtime
+    - NimCarry_brand_and_Living_Route_preserved
     - full_CI_green
     - merged_to_main
-    - canonical_and_handover_updated_immediately
+    - canonical_and_handover_updated
 
-next_gate_after_HTTP_merge:
+next_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
   status: PREP_ALLOWED_EXECUTION_BLOCKED_UNTIL_SECURE_HTTP_MERGE
-  required_proofs:
-    - real_Nimiq_Pay_multi_account_behavior
-    - exact_balance_one_nim_wallet_forwards_exactly_one_nim_with_data_and_requested_fee_zero
-    - native_invite_deeplink_on_real_device
-    - full_3_wallet_CREATE_to_ARRIVED
-    - iOS_cold_warm_background_resume_and_deeplink_lifecycle
+  topology: { wallets: 3, devices: 2_preferred, A: creator_initial_holder, B: bridge, C: destination }
+  target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
+  required_additional_proofs:
+    - Nimiq_Pay_multi_account_behavior
+    - exact_one_NIM_forward_with_requested_fee_zero
+    - native_invite_deeplink_real_device
+    - iOS_cold_warm_background_resume_deeplink
+  never_claim_before_observed: real_testnet_FINAL_or_ARRIVED
 
 post_E2E_priority_order:
-  - verify_judge_visible_Route_Receipt_against_real_arrived_route
-  - first_5_observed_60_second_user_tests
-  - capture_builder_promotion_5_of_5_points
-  - capture_4_plus_legitimate_wallet_opens_for_initial_11_point_outside_core_floor
-  - submit_to_Cycle_II_showcase_as_soon_as_product_is_genuinely_usable
-  - legitimate_community_testing_until_11_plus_then_25_plus_unique_wallet_opens
-  - Sep_16_Sip_Show_real_product_proof_if_green
-  - enable_judge_window_reliability_monitoring_against_final_secure_runtime
+  - verify_Route_Receipt_against_real_arrived_route
+  - run_first_5_observed_cold_start_under_60_second_tests
+  - publish_real_Skool_and_public_social_posts_for_5_of_5_promotion
+  - reach_4_plus_then_11_plus_then_25_plus_genuine_unique_wallet_opens
+  - submit_to_Cycle_II_showcase_once_genuinely_usable
+  - Sep_16_Sip_Show_as_real_product_proof_only_if_runtime_green
+  - enable_judge_window_monitoring_and_safe_rollback
   - small_real_user_feedback_iteration
-  - TRACE_visual_polish_focused_on_first_screen_arrival_and_receipt
+  - final_TRACE_visual_polish
   - real_testnet_demo_video_and_submission_story
 
 still_blocked:
@@ -430,8 +263,8 @@ still_blocked:
   - mainnet_cutover_and_funds
   - broad_marketing_launch_before_real_E2E
   - target_claiming_or_public_target_discovery
-  - prizes_or_wagering_or_pooled_funds
+  - prizes_wagers_or_pooled_funds
   - forwarding_rewards
-  - autonomous_ai_spend_or_routing
+  - autonomous_AI_spend_or_routing
   - marketplace_expansion
   - unique_human_claims
