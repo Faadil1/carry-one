@@ -69,7 +69,7 @@ describe("static Mini App skeleton", () => {
     expect(html).toContain('/social-card.svg');
   });
   it("turns the progress helper into a living route without inventing custody state", () => {
-    expect(winning).toContain('className = "wi-flow"');
+    expect(winning).toContain('node("div", "wi-flow")');
     expect(living).toContain('routePhaseFromNotice');
     expect(living).toContain('waiting for independent FINAL');
     expect(living).toContain('FINAL — custody moved and the verified route advanced.');
