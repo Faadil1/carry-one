@@ -4,15 +4,27 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#f3ecdf" />
+  <meta name="description" content="NimCarry turns warm introductions into a consented, verifiable human route using exactly 1 NIM as the custody baton." />
+  <meta property="og:title" content="NimCarry — One NIM. One bridge at a time." />
+  <meta property="og:description" content="Get this to someone you cannot reach directly — one human bridge at a time." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/social-card.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="NimCarry — One NIM. One bridge at a time." />
+  <meta name="twitter:description" content="Destination-bound human routing with a verified 1 NIM custody baton." />
+  <meta name="twitter:image" content="/social-card.svg" />
   <title>NimCarry — Reach Mission</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/nimcarry-mark.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/winning-intelligence.css" />
+  <link rel="stylesheet" href="/living-route.css" />
 </head>
 <body>
   <div class="route-ribbon route-ribbon-a" aria-hidden="true"></div><div class="route-ribbon route-ribbon-b" aria-hidden="true"></div>
   <div id="app-shell" class="app-shell">
-    <header class="brandbar"><button id="brand-home" class="brand" type="button" aria-label="NimCarry home"><span class="brand-mark">1</span><span><strong>NimCarry</strong><small>Reach Mission</small></span></button><div class="network-chip"><span class="pulse"></span><span id="network-label">TESTNET READY</span></div></header>
+    <header class="brandbar"><button id="brand-home" class="brand" type="button" aria-label="NimCarry home"><img class="brand-logo" src="/nimcarry-mark.svg" alt="" width="44" height="44" /><span><strong>NimCarry</strong><small>Reach Mission</small></span></button><div class="network-chip"><span class="pulse"></span><span id="network-label">TESTNET READY</span></div></header>
     <div id="demo-banner" class="demo-banner" hidden>DEMO MODE — no wallet or network writes</div><div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
     <main id="screen" class="screen" tabindex="-1"></main>
     <footer class="footer"><span>1 NIM = verified handoff</span><span>Only FINAL changes custody</span></footer>
@@ -22,6 +34,7 @@
   <script src="/http-compat.js" defer></script>
   <script src="/app.js" defer></script>
   <script src="/winning-intelligence.js" defer></script>
+  <script src="/living-route.js" defer></script>
   <script src="/demo-ux.js" defer></script>
 </body>
 </html>
