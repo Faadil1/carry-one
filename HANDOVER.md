@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-09  
-Canonical version: **0.8.17**  
-State: `LIVING_ROUTE_UI_P0_P1_MERGED_HTTP_SECURITY_PARALLEL_RECONCILIATION`
+Canonical version: **0.8.18**  
+State: `LIVING_ROUTE_UI_MERGED_VERCEL_OUTPUT_FIXED_HTTP_SECURITY_PARALLEL_RECONCILIATION`
 
 ## Read first
 
@@ -36,33 +36,32 @@ Implemented: problem-first framing, five-step flow, 1-NIM baton disambiguation, 
 
 ## Living Route UI P0/P1 — MERGED
 
-PR **#21** → `main` merge:
-`08b3ce1d3662e78a40c5c43e647a6940900e92bc`
+PR **#21** → `main` merge `08b3ce1d3662e78a40c5c43e647a6940900e92bc`.
 
-Pre-merge CI `34419875834`: PASS.  
-Post-merge CI `34419936778`: PASS.
+Pre-merge CI `34419875834`: PASS. Post-merge CI `34419936778`: PASS.
 
-Implementation contract:
-`docs/LIVING-ROUTE-UI-P0-P1-2026-09-09.md`
+Implementation contract: `docs/LIVING-ROUTE-UI-P0-P1-2026-09-09.md`
 
-Implemented now, without touching blocked backend contracts:
-- new route-native **NimCarry logo** in header + favicon;
-- install manifest and social-preview asset source;
-- five-step progress rendered as a continuous living route;
-- current baton holder visually emphasized;
-- wallet approval → verification → FINAL proof ladder reacts only to state already reported by the app;
-- finalized route hops reveal progressively;
-- ARRIVED / Verified Route Receipt receives the strongest visual climax;
-- physical button press/hover feedback;
-- loading affordances derived from the existing busy state;
-- stronger bridge-consent copy without inventing sender identity;
-- dashed/unverified empty-route state;
-- one-time focus on ARRIVED receipt;
-- reduced-motion preserved.
+Implemented without touching blocked backend contracts: route-native NimCarry logo/header/favicon; install manifest/social preview source; continuous five-step living route; current holder emphasis; wallet approval → verification → FINAL state interactions; progressive finalized-hop reveal; ARRIVED/Verified Route Receipt climax; button/loading micro-interactions; stronger consent copy; dashed unverified empty route; one-time receipt focus; reduced-motion.
 
-Truthfulness boundary: `living-route.js` is presentation-only. It does **not** send transactions, create FINAL, move custody or manufacture ARRIVED.
+Truthfulness boundary: presentation only. It does **not** send transactions, create FINAL, move custody or manufacture ARRIVED.
 
-Still deferred until secure integration / real-device evidence: browser wiring to the final HTTP contract, production route-view capability, browser transport of PR #20 broadcast capability, real Nimiq Pay timing, iOS lifecycle/deeplink assurance and final TRACE polish.
+## Vercel production output failure — REPOSITORY FIX MERGED, PUBLIC READY PENDING VERIFICATION
+
+User-provided Vercel screenshots showed the Production deployment for main commit `4bb44455790a643f34b06a0c1b4c4468ce6bceac` failing **after a successful TypeScript build** with:
+
+`No Output Directory named "public" found after the Build completed.`
+
+Diagnosis: Vercel was looking for `public/`, but the browser Mini App is the static `web/` directory.
+
+Remediation:
+- PR **#22** `Fix Vercel static output for NimCarry`;
+- merged to `main` as `90673c060e7afbd1e3102326b845b2c1768584b3` after green GitHub CI;
+- new root `vercel.json` sets `buildCommand: npm run build` and `outputDirectory: web`;
+- SPA rewrites preserve direct/deep links for `/create`, `/mission/:path*`, and `/i/:path*`;
+- record: `docs/VERCEL-STATIC-OUTPUT-REMEDIATION-2026-09-09.md`.
+
+Important: repository configuration is fixed, but **do not claim production Vercel healthy yet**. The connected Vercel plugin is not exposing this Hobby project, so the next conversation/user should verify the post-fix Production deployment shows **Ready**, then smoke-test the public app/deep links. If Vercel does not auto-deploy the new main commit, redeploy the latest main deployment after the config merge.
 
 ## Faadil HTTP security — PR #20 GREEN, NOT MERGED
 
@@ -73,14 +72,9 @@ Head: `2588021ea45c806ec9588c24b00ce209f67ddbfe`
 CI run `34416146070`: PASS  
 Reviewer: **Opeyemi (`opeblow`)**
 
-Implemented on PR #20:
-- one-time short-lived broadcast capability issued only after signed `AUTHORIZE_PASS`;
-- binding to mission + invitation + sequence + intent nonce + canonical holder wallet;
-- replay/binding/expiry protections;
-- TypeScript API client automatic mutation `Idempotency-Key`;
-- stable broadcast retry key.
+Implemented on PR #20: one-time short-lived broadcast capability after signed `AUTHORIZE_PASS`, bound to mission + invitation + sequence + intent nonce + holder wallet; replay/binding/expiry protections; automatic mutation `Idempotency-Key` in TypeScript API client; stable broadcast retry key.
 
-Do **not** call blockers #3/#4 fully closed yet: the browser shell still needs the final secure contract during shared integration.
+Do **not** call blockers #3/#4 fully closed yet: browser shell still needs final secure contract during shared integration.
 
 ## Opeyemi parallel HTTP work — DO NOT FORCE UPDATE
 
@@ -105,8 +99,7 @@ Current gate: **`NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION`**.
 
 `docs/SEP16-DETERMINISTIC-DEMO-RUNBOOK-2026-09-09.md`
 
-Target narrative:
-`human problem → Create → Invite → Accept → Pass 1 NIM → FINAL → next bridge → FINAL → ARRIVED → Verified Route Receipt`.
+Target narrative: `human problem → Create → Invite → Accept → Pass 1 NIM → FINAL → next bridge → FINAL → ARRIVED → Verified Route Receipt`.
 
 The judge must not be required to install/sign/play a role. If live finality is slow, show `Waiting for independent finality`; only an already-captured **real testnet run** may be used as fallback proof. Never present local demo mode as testnet evidence.
 
@@ -114,32 +107,30 @@ The judge must not be required to install/sign/play a role. If live finality is 
 
 Preferred topology: Wallet A creator/initial holder, Wallet B bridge, Wallet C destination; two physical devices preferred.
 
-Target:
-`CREATE → INVITE → ACCEPT → AUTHORIZE → A sends exactly 1 NIM to B → FINAL → B holder → AUTHORIZE → B sends exactly 1 NIM to C → FINAL → ARRIVED → Verified Route Receipt`
+Target: `CREATE → INVITE → ACCEPT → AUTHORIZE → A sends exactly 1 NIM to B → FINAL → B holder → AUTHORIZE → B sends exactly 1 NIM to C → FINAL → ARRIVED → Verified Route Receipt`.
 
 Also prove multi-account behavior, exact 1-NIM forwarding with requested fee 0, native invite deeplink, and iOS cold/warm/background/resume/deeplink lifecycle.
 
 ## Score-floor strategy after secure E2E
 
-Builder Promotion = Skool `2` + public social `3` = **5/5**.
-
-Real Usage = `0–3:0`, `4–10:6`, `11–24:10`, `25+:15`.
+Builder Promotion = Skool `2` + public social `3` = **5/5**. Real Usage = `0–3:0`, `4–10:6`, `11–24:10`, `25+:15`.
 
 Therefore promotion + 4 genuine users = **11 points**, +11 users = **15**, +25 users = **20/20** outside the 80-point core. No bots/artificial wallets/gaming.
 
 ## Execution order — CURRENT
 
-1. Re-fetch Opeyemi's live branch / PR status.
-2. Reconcile his route-view/privacy/relay work with green PR #20, without force-updating his branch.
-3. Wire browser + HTTP + PostgreSQL while preserving the newly merged Living Route UI.
-4. Full CI green → merge → update canon + handover.
-5. Run real A→B→C testnet through `ARRIVED` and validate the Route Receipt against real route data.
-6. Run 5 observed first-time tests under 60 seconds.
-7. Publish genuine Skool + public posts for 5/5 promotion.
-8. Reach 4+, then 11+, then 25+ legitimate unique wallet opens.
-9. Submit once genuinely usable.
-10. Sep 16 Sip & Show only as real-product proof if runtime is green.
-11. Enable judge-window monitoring/rollback, then focused TRACE polish and final demo packaging.
+1. Verify the new Vercel Production deployment from PR #22/main is **Ready** and smoke-test `/`, `/create`, one `/mission/...` route and one `/i/...` route; do not treat prior failed deployment as current proof.
+2. Re-fetch Opeyemi's live branch / PR status.
+3. Reconcile his route-view/privacy/relay work with green PR #20, without force-updating his branch.
+4. Wire browser + HTTP + PostgreSQL while preserving Living Route UI and Vercel static-output config.
+5. Full CI green → merge → update canon + handover.
+6. Run real A→B→C testnet through `ARRIVED` and validate Route Receipt against real route data.
+7. Run 5 observed first-time tests under 60 seconds.
+8. Publish genuine Skool + public posts for 5/5 promotion.
+9. Reach 4+, then 11+, then 25+ legitimate unique wallet opens.
+10. Submit once genuinely usable.
+11. Sep 16 Sip & Show only as real-product proof if runtime is green.
+12. Enable judge-window monitoring/rollback, then focused TRACE polish and final demo packaging.
 
 ## External naming debt
 
