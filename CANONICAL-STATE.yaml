@@ -3,17 +3,17 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.17
+state_version: 0.8.18
 date: 2026-09-09
-phase: LIVING_ROUTE_UI_P0_P1_MERGED_HTTP_SECURITY_PARALLEL_RECONCILIATION
+phase: LIVING_ROUTE_UI_MERGED_VERCEL_OUTPUT_FIXED_HTTP_SECURITY_PARALLEL_RECONCILIATION
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
 
 canonical_compaction_note:
-  status: INTENTIONAL_V0_8_17_COMPACTION
+  status: INTENTIONAL_COMPACTION
   product_law_changed: false
-  reason: Keep CURRENT source concise enough for reliable conversation handover while preserving detailed historical evidence in referenced docs and git history.
+  reason: Keep CURRENT concise; detailed historical evidence remains in referenced docs and git history.
 
 continuity_protocol:
   source_of_truth: CANONICAL-STATE.yaml
@@ -28,14 +28,11 @@ brand_identity:
   tagline: One NIM. One bridge at a time.
   promise: Get this to someone you cannot reach directly — one human bridge at a time.
   judge_facing_thesis: NimCarry turns an invisible chain of human introductions into a consented verifiable human route using exactly 1 NIM as the baton.
-  public_facing_identity_must_use_nimcarry: true
-  historical_legacy_names_allowed_only_for_traceability_or_backward_compatibility: true
-  external_identifier_migration:
-    desired_repository_slug: Faadil1/nimcarry
-    current_repository_slug: Faadil1/carry-one
-    desired_demo_alias: https://nimcarry.vercel.app
-    current_demo_alias: https://carry-one-sip-show.vercel.app
-    status: AUTHORIZED_PENDING_EXTERNAL_RENAME
+  desired_repository_slug: Faadil1/nimcarry
+  current_repository_slug: Faadil1/carry-one
+  desired_demo_alias: https://nimcarry.vercel.app
+  current_legacy_demo_alias: https://carry-one-sip-show.vercel.app
+  external_identifier_migration_status: AUTHORIZED_PENDING_EXTERNAL_RENAME
 
 team:
   faadil: { role: repo_owner_product_lead }
@@ -51,18 +48,6 @@ core_product_laws:
   arrival: THE MISSION ENDS ONLY WHEN THE DESTINATION BECOMES THE FINALIZED RECIPIENT.
   reward: THE PATH IS THE PRODUCT.
 
-product_positioning:
-  category: destination_bound_human_routing
-  holder_question: Who can move this one person closer?
-  native_nimiq_thesis: NIM_AS_COORDINATION_PRIMITIVE_NOT_JUST_PAYMENT
-  one_nim_semantics: SEMANTIC_STATE_BEARING_BATON_NOT_ECONOMIC_INCENTIVE
-  front_door_language: HUMAN_ROUTING_NOT_CRYPTO_PAYMENT_APP
-  primary_judge_line: NimCarry uses 1 NIM to make warm introductions verifiable.
-  native_nimiq_explanation: Without Nimiq, a bridge can only say I forwarded it. With NimCarry, the custody handoff has a wallet-approved transaction and independent finality behind it.
-  baton_disambiguation: The 1 NIM is the baton, not the reward.
-  simple_judge_flow: [Create, Invite, Accept, Pass_1_NIM, Arrive]
-  cycle_ii_target_policy: { known_target_wallet_required: true, creator_attested_target_consent_required: true }
-
 mvp_contract:
   recipient_value_luna: 100000
   requested_fee_luna: 0
@@ -76,21 +61,13 @@ mvp_contract:
   gamification: forbidden
 
 judge_demo_law:
-  problem_first: true
-  architecture_first: false
   first_problem_line: Warm introductions disappear after the first handoff.
   target_core_flow: Create -> Invite -> Accept -> Pass_1_NIM -> Arrive
   judge_cooperation_required_for_core_proof: false
   route_receipt_is_demo_climax: true
   target_first_time_understanding_seconds: 10
   target_core_point_seconds: 60
-  visible_states:
-    - Accepted_with_Nimiq_Pay
-    - 1_NIM_handoff_authorized
-    - Waiting_for_independent_finality
-    - FINAL_custody_moved
-    - ARRIVED
-    - Verified_Route_Receipt
+  visible_states: [Accepted_with_Nimiq_Pay, 1_NIM_handoff_authorized, Waiting_for_independent_finality, FINAL_custody_moved, ARRIVED, Verified_Route_Receipt]
   truthfulness: Never present local demo state as real testnet evidence.
   sep16_runbook: docs/SEP16-DETERMINISTIC-DEMO-RUNBOOK-2026-09-09.md
 
@@ -98,34 +75,25 @@ winning_intelligence:
   seven_call_otter_corpus: COMPLETE_7_OF_7_THROUGH_2026_09_09
   definitive_audit: docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md
   score_delta: docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md
-  high_confidence_patterns:
+  locked_patterns:
     - problem_first_storytelling
     - live_proof_beats_architecture
     - simplicity_is_implicit_meta_rubric
     - persistent_visible_proof_artifact
     - real_user_behavior_as_PMF_signal
     - natural_invite_share_loop
-    - first_users_by_hand
     - avoid_crypto_as_front_door
     - visible_Nimiq_at_authorization_finality_and_proof
     - deterministic_demo_not_dependent_on_judge
     - lifecycle_gaps_get_noticed
     - distribution_and_abuse_questions_follow_core_comprehension
     - freeze_known_good_build_for_random_judge_window
-    - easy_builder_promotion_points_should_be_captured
-  winner_transfer:
-    Nimiq_Space: persistent_world_plus_real_users
-    NimJump: structural_fix_plus_replay_proof_plus_share_loop
-    NimQuest: server_graded_completion_plus_wallet_signed_proof
-    NimCarry: consented_finality_verified_route_plus_ARRIVED_plus_Route_Receipt
+    - capture_easy_builder_promotion_points
 
 score_capture_strategy:
   builder_promotion: { skool_post_points: 2, public_social_post_points: 3, target_total: 5 }
   real_usage: { zero_to_three: 0, four_to_ten: 6, eleven_to_twenty_four: 10, twenty_five_plus: 15 }
-  score_floor_after_secure_E2E:
-    promotion_plus_4_users: 11
-    promotion_plus_11_users: 15
-    promotion_plus_25_users: 20
+  score_floor_after_secure_E2E: { promotion_plus_4_users: 11, promotion_plus_11_users: 15, promotion_plus_25_users: 20 }
   bots_artificial_wallets_or_gaming: forbidden
 
 completed_major_milestones:
@@ -136,8 +104,6 @@ completed_major_milestones:
   frontend_vertical_slice_skeleton: true
   postgres_vertical_slice: true
   public_repo_secret_scan: true
-  sip_show_clickable_demo: true
-  repository_governance_pack: true
   nimcarry_brand_lock: true
   seven_call_winning_intelligence: true
   hidden_spot_product_layer_pr19_merged: true
@@ -147,45 +113,45 @@ completed_major_milestones:
   score_floor_4_11_25_ladder_armed: true
   faadil_http_security_pr20_ci_green: true
   living_route_ui_pr21_merged: true
-
-hidden_spot_product_layer:
-  pull_request: 19
-  merge_sha: 7ccf67aefb53ee101b2df7fdc1dc638d976cb4cc
-  implementation_doc: docs/CYCLE2-HIDDEN-SPOT-IMPLEMENTATION-PACK-2026-09-09.md
-  ci: PASS
+  vercel_static_output_pr22_merged: true
 
 living_route_ui:
   status: MERGED_TO_MAIN
   pull_request: 21
   merge_sha: 08b3ce1d3662e78a40c5c43e647a6940900e92bc
-  premerge_ci_run: 34419875834
   postmerge_ci_run: 34419936778
   ci: PASS
   implementation_doc: docs/LIVING-ROUTE-UI-P0-P1-2026-09-09.md
-  p0_implemented:
+  implemented:
     - route_native_NimCarry_logo_header_and_favicon
     - install_manifest_and_social_preview_source
-    - five_step_progress_rendered_as_continuous_route
+    - five_step_continuous_living_route
     - current_baton_holder_emphasis
-    - pass_proof_ladder_reacts_to_existing_wallet_verification_FINAL_status
+    - wallet_verification_FINAL_state_interactions
     - finalized_hop_progressive_reveal
-    - ARRIVED_Route_Receipt_climax_treatment
-  p1_implemented:
-    - button_press_hover_feedback
-    - existing_busy_state_loading_affordance
-    - stronger_bridge_consent_copy_without_fictional_sender_identity
+    - ARRIVED_Route_Receipt_climax
+    - button_press_hover_and_busy_feedback
+    - stronger_bridge_consent_copy
     - dashed_unverified_empty_route
     - one_time_ARRIVED_receipt_focus
-    - subtle_header_network_interactions
   reduced_motion: enforced
   proof_rule: presentation_layer_does_not_create_transaction_FINAL_custody_or_ARRIVED_state
-  deferred_because_blocked:
-    - final_browser_wiring_to_merged_secure_HTTP_contract
-    - production_route_view_capability
-    - browser_broadcast_capability_transport
-    - real_Nimiq_Pay_timing_adjustments
-    - iOS_lifecycle_deeplink_assurance
-    - final_TRACE_polish_after_real_E2E
+
+vercel_deployment:
+  observed_failed_production_commit: 4bb44455790a643f34b06a0c1b4c4468ce6bceac
+  observed_failure: No Output Directory named public found after the Build completed.
+  diagnosis: Vercel expected public but NimCarry browser shell is in web.
+  remediation_pull_request: 22
+  remediation_merge_sha: 90673c060e7afbd1e3102326b845b2c1768584b3
+  remediation_doc: docs/VERCEL-STATIC-OUTPUT-REMEDIATION-2026-09-09.md
+  repository_fix:
+    build_command: npm run build
+    output_directory: web
+    spa_rewrites: [/create, /mission/:path*, /i/:path*]
+  github_ci_before_merge: PASS
+  production_redeploy_status: PENDING_OBSERVED_READY_AND_PUBLIC_SMOKE_TEST
+  connected_vercel_tool_visibility: UNAVAILABLE_FOR_CURRENT_HOBBY_PROJECT
+  truth_rule: Do not claim Vercel production healthy until a post-fix deployment is observed Ready and smoke-tested.
 
 http_parallel_work:
   opeyemi_branch: feat/mission-http-bindings
@@ -217,7 +183,7 @@ faadil_http_security:
   status: OPEN_REVIEW_REQUESTED_NOT_MERGED
   broadcast_capability: { short_lived: true, one_time: true, issued_after_signed_AUTHORIZE_PASS: true, bound_to: [mission, invitation, sequence, intent_nonce, holder_wallet] }
   client_idempotency: { automatic_for_mutations: true, stable_broadcast_retry_key: true }
-  merge_rule: Do not call the HTTP blockers closed until reconciled with Opeyemi changes and the final browser runtime.
+  merge_rule: Do not call the HTTP blockers closed until reconciled with Opeyemi changes and final browser runtime.
 
 current_gate:
   name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
@@ -239,11 +205,7 @@ next_gate:
   status: PREP_ALLOWED_EXECUTION_BLOCKED_UNTIL_SECURE_HTTP_MERGE
   topology: { wallets: 3, devices: 2_preferred, A: creator_initial_holder, B: bridge, C: destination }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
-  required_additional_proofs:
-    - Nimiq_Pay_multi_account_behavior
-    - exact_one_NIM_forward_with_requested_fee_zero
-    - native_invite_deeplink_real_device
-    - iOS_cold_warm_background_resume_deeplink
+  required_additional_proofs: [Nimiq_Pay_multi_account_behavior, exact_one_NIM_forward_with_requested_fee_zero, native_invite_deeplink_real_device, iOS_cold_warm_background_resume_deeplink]
   never_claim_before_observed: real_testnet_FINAL_or_ARRIVED
 
 post_E2E_priority_order:
