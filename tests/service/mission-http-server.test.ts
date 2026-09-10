@@ -437,6 +437,84 @@ describe("Reach Mission route-view privacy", () => {
     expect(mismatched.status).toBe(401);
     expect(["AUTH_MISSION_MISMATCH", "AUTH_BINDING_MISMATCH"]).toContain(mismatched.body.error);
   });
+
+  it("lets participants mint a capability and sees the invitation context for their own role", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const candidate = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "role-create");
+    const missionId = createRes.body.mission_id;
+
+    const inviteCh = await challenge(creator.address, "CREATE_INVITATION", { mission_id: missionId, sequence: 1 });
+    const inviteRes = await request("POST", `/missions/${missionId}/invitations`, {
+      ...envelope(inviteCh, creator),
+      candidate_label: "Bridget",
+      candidate_wallet: candidate.address,
+      why_you: "You were closest to the destination last summer.",
+    }, { "Idempotency-Key": "role-invite" });
+    expect(inviteRes.status).toBe(201);
+
+    const candidateMint = await challenge(candidate.address, "VIEW_ROUTE", { mission_id: missionId });
+    const candidateCap = await request("POST", `/missions/${missionId}/view`, envelope(candidateMint, candidate), { "Idempotency-Key": "role-candidate-cap" });
+    expect(candidateCap.status).toBe(200);
+    const candidateView = await request("GET", `/missions/${missionId}`, undefined, { Authorization: `Bearer ${candidateCap.body.view_token}` });
+    expect(candidateView.status).toBe(200);
+    expect(candidateView.body.viewer_role).toBe("INVITEE");
+    expect(candidateView.body.invitation.candidate_label).toBe("Bridget");
+    expect(candidateView.body.invitation.why_you).toBe("You were closest to the destination last summer.");
+
+    const targetMint = await challenge(target.address, "VIEW_ROUTE", { mission_id: missionId });
+    const targetCap = await request("POST", `/missions/${missionId}/view`, envelope(targetMint, target), { "Idempotency-Key": "role-target-cap" });
+    expect(targetCap.status).toBe(200);
+    const targetView = await request("GET", `/missions/${missionId}`, undefined, { Authorization: `Bearer ${targetCap.body.view_token}` });
+    expect(targetView.status).toBe(200);
+    expect(targetView.body.viewer_role).toBe("TARGET");
+    expect(targetView.body.invitation.candidate_label).toBeNull();
+    expect(targetView.body.invitation.candidate_wallet_fingerprint).toBeNull();
+    expect(targetView.body.invitation.why_you).toBeNull();
+    expect(targetView.body.invitation.pass_deadline_at).toBeNull();
+    expect(targetView.body.invitation.status).toBe("INVITED");
+
+    const creatorView = await request("GET", `/missions/${missionId}`, undefined, {
+      Authorization: `Bearer ${createRes.body.view_token}`,
+    });
+    expect(creatorView.status).toBe(200);
+    expect(creatorView.body.invitation.candidate_label).toBe("Bridget");
+  });
+
+  it("keeps public missions readable but redacts invitation context for anonymous viewers", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const candidate = wallet();
+    const ch = await challenge(creator.address, "CREATE_MISSION");
+    const createRes = await request("POST", "/missions", {
+      ...envelope(ch, creator),
+      target_label: "Public route",
+      target_wallet: target.address,
+      target_consent_confirmed: true,
+      mission_note: "A public log everyone may follow.",
+      visibility: "PUBLIC",
+    }, { "Idempotency-Key": "public-create" });
+    expect(createRes.status).toBe(201);
+    const missionId = createRes.body.mission_id;
+
+    const inviteCh = await challenge(creator.address, "CREATE_INVITATION", { mission_id: missionId, sequence: 1 });
+    await request("POST", `/missions/${missionId}/invitations`, {
+      ...envelope(inviteCh, creator),
+      candidate_label: "Bridget",
+      candidate_wallet: candidate.address,
+      why_you: "Only the candidate should read this note.",
+    }, { "Idempotency-Key": "public-invite" });
+
+    const anonymous = await request("GET", `/missions/${missionId}`);
+    expect(anonymous.status).toBe(200);
+    expect(anonymous.body.viewer_role).toBe("UNLISTED_VIEWER");
+    expect(anonymous.body.invitation.candidate_label).toBeNull();
+    expect(anonymous.body.invitation.candidate_wallet_fingerprint).toBeNull();
+    expect(anonymous.body.invitation.why_you).toBeNull();
+    expect(anonymous.body.invitation.pass_deadline_at).toBeNull();
+    expect(anonymous.body.invitation.status).toBe("INVITED");
+  });
 });
 
 describe("Reach Mission HTTP rate limiting", () => {
