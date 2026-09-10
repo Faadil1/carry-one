@@ -28,7 +28,7 @@ jobs:
         run: node scripts/secret-scan.mjs
 
       - name: Browser JavaScript syntax
-        run: node --check web/app.js && node --check web/http-compat.js && node --check web/winning-intelligence.js && node --check web/living-route.js && node --check web/route-shell-polish.js && node --check web/demo-ux.js
+        run: node --check web/app.js && node --check web/http-compat.js && node --check web/winning-intelligence.js && node --check web/living-route.js && node --check web/route-shell-polish.js && node --check web/demo-ux.js && node --check web/demo-tour.js
 
       - name: Typecheck
         run: npm run typecheck
