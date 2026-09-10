@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.18
+state_version: 0.8.19
 date: 2026-09-09
-phase: LIVING_ROUTE_UI_MERGED_VERCEL_OUTPUT_FIXED_HTTP_SECURITY_PARALLEL_RECONCILIATION
+phase: LIVING_ROUTE_UI_PRODUCTION_READY_CREATE_ROUTE_VERIFIED_POLISH_GREEN_HTTP_SECURITY_PARALLEL_RECONCILIATION
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -114,9 +114,12 @@ completed_major_milestones:
   faadil_http_security_pr20_ci_green: true
   living_route_ui_pr21_merged: true
   vercel_static_output_pr22_merged: true
+  vercel_production_ready_observed: true
+  production_create_deep_link_observed: true
+  create_surface_polish_patch_ci_green: true
 
 living_route_ui:
-  status: MERGED_TO_MAIN
+  status: MERGED_TO_MAIN_AND_OBSERVED_IN_PRODUCTION
   pull_request: 21
   merge_sha: 08b3ce1d3662e78a40c5c43e647a6940900e92bc
   postmerge_ci_run: 34419936778
@@ -138,20 +141,42 @@ living_route_ui:
   proof_rule: presentation_layer_does_not_create_transaction_FINAL_custody_or_ARRIVED_state
 
 vercel_deployment:
-  observed_failed_production_commit: 4bb44455790a643f34b06a0c1b4c4468ce6bceac
-  observed_failure: No Output Directory named public found after the Build completed.
-  diagnosis: Vercel expected public but NimCarry browser shell is in web.
+  prior_failed_production_commit: 4bb44455790a643f34b06a0c1b4c4468ce6bceac
+  prior_failure: No Output Directory named public found after the Build completed.
   remediation_pull_request: 22
   remediation_merge_sha: 90673c060e7afbd1e3102326b845b2c1768584b3
   remediation_doc: docs/VERCEL-STATIC-OUTPUT-REMEDIATION-2026-09-09.md
-  repository_fix:
-    build_command: npm run build
-    output_directory: web
-    spa_rewrites: [/create, /mission/:path*, /i/:path*]
-  github_ci_before_merge: PASS
-  production_redeploy_status: PENDING_OBSERVED_READY_AND_PUBLIC_SMOKE_TEST
+  repository_fix: { build_command: npm run build, output_directory: web, spa_rewrites: [/create, /mission/:path*, /i/:path*] }
+  user_observed_production_status: READY_CURRENT
+  user_observed_production_source_commit: adeca0d360c727e1af71b23e86c8cefc9cbcc14f
+  user_observed_public_domain: https://carry-one-mu.vercel.app
+  observed_home_living_route_branding: true
+  observed_direct_create_url: https://carry-one-mu.vercel.app/create
+  observed_direct_create_render: PASS
+  remaining_public_smoke: [/mission/:path*, /i/:path*, mobile_Nimiq_Pay_webview]
   connected_vercel_tool_visibility: UNAVAILABLE_FOR_CURRENT_HOBBY_PROJECT
-  truth_rule: Do not claim Vercel production healthy until a post-fix deployment is observed Ready and smoke-tested.
+
+create_surface_polish:
+  trigger: user_provided_production_screenshot_of_direct_create_route
+  observations:
+    - direct_create_rewrite_works
+    - five_step_living_route_renders
+    - form_renders
+    - focus_scroll_can_hide_brand_header_on_navigation
+    - screen_2_of_5_label_conflicts_with_route_step_1_create
+    - Cycle_II_competition_jargon_reduces_real_product_feel
+  implementation:
+    route_shell_polish_js_commit: 3a8093e6feedd7198738518ff90c9bf3fdb66867
+    index_load_commit: 1479e49a61b460d7606f0012854cb49938deed3f
+    ci_syntax_commit: d96234b9b3476dc9400555f3edcce733e9ee9927
+    ci_run: 34422173066
+    ci: PASS
+    behaviors:
+      - restore_scroll_top_once_per_route_change_so_brand_chrome_remains_visible
+      - create_kicker_becomes_STEP_1_OF_5_CREATE_MISSION
+      - remove_Cycle_II_jargon_from_create_lede
+      - remove_Cycle_II_jargon_from_consent_checkbox
+  production_status: PENDING_OBSERVED_NEWEST_VERCEL_DEPLOYMENT
 
 http_parallel_work:
   opeyemi_branch: feat/mission-http-bindings
