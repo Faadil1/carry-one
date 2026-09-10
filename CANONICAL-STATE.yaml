@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.20
+state_version: 0.8.21
 date: 2026-09-10
-phase: GUIDED_PROVIDER_FREE_DEMO_GREEN_PENDING_VERCEL_OBSERVATION_HTTP_SECURITY_PARALLEL_RECONCILIATION
+phase: GUIDED_DEMO_VIDEO_QA_SECOND_BRIDGE_FIX_GREEN_PENDING_VERCEL_OBSERVATION_HTTP_SECURITY_PARALLEL_RECONCILIATION
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -81,6 +81,8 @@ completed_major_milestones:
   create_surface_polish_patch_ci_green: true
   guided_provider_free_demo_tour_implemented: true
   guided_provider_free_demo_tour_ci_green: true
+  guided_demo_first_video_qa_completed: true
+  guided_demo_second_bridge_continuation_fix_ci_green: true
 
 living_route_ui:
   status: MERGED_TO_MAIN_AND_OBSERVED_IN_PRODUCTION
@@ -102,36 +104,41 @@ vercel_deployment:
 
 guided_demo_tour:
   purpose: provider_free_end_to_end_UI_and_story_test_only
-  activation_query: "?demo=1&tour=1"
-  clean_start_query: "?demo=1&tour=1&reset=1"
-  intended_public_link_after_Vercel_deploy: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
+  clean_start_link: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
   implementation_file: web/demo-tour.js
-  implementation_commit: 13e26bfa831d267a0b7a3beb5837009980161925
+  original_implementation_commit: 13e26bfa831d267a0b7a3beb5837009980161925
   loader_commit: d5a3945a4f7556460134c9ccbeed148362404c9f
-  ci_commit: 49301203e96934aefc6b597536a689a54649bbc4
-  ci_run: 34439421092
-  ci: PASS
-  behavior:
-    - resets prior local demo state when reset=1 then removes reset from active URL
-    - prefills a safe fictional creator_target_bridge scenario but remains editable
-    - captures demo-only private target metadata locally
-    - creates an Open_demo_invite path that preserves demo_and_tour mode without Nimiq Pay
-    - Accept remains a no-funds consent step
-    - Pass simulates wallet_approved_then_independent_FINAL only inside explicit DEMO_MODE
-    - first finalized handoff moves custody Creator_to_Bridge_B
-    - Continue_demo_to_destination starts second bridge cycle
-    - second finalized handoff to the precommitted target sets ARRIVED
-    - ARRIVED triggers existing DEMO_RECEIPT visual surface
-    - no wallet_provider_backend_or_network_write_required
+  original_ci_commit: 49301203e96934aefc6b597536a689a54649bbc4
+  original_ci_run: 34439421092
+  first_user_video_qa:
+    duration_seconds: 81.8
+    observed_pass:
+      - home_problem_first_surface
+      - create_prefill_and_submit
+      - first_bridge_invite_creation
+      - browser_only_open_demo_invite
+      - accept_no_funds_transition
+      - first_pass_demo_FINAL
+      - custody_moves_to_Bridge_B
+      - route_shows_one_FINAL_handoff
+    observed_issue: Continue_demo_to_destination_returned_to_Mission_Home_without_making_next_required_action_obvious; recording ended at one_FINAL_without_ARRIVED.
+  qa_fix:
+    commit: ede8737a63ff1988be5540322ece4966d529fbe0
+    ci_run: 34440569128
+    ci: PASS
+    behaviors:
+      - Continue_demo_to_destination now returns to Mission_Home_and_auto_opens_next_bridge_dialog
+      - second_bridge_dialog_is_prefilled_with_precommitted_target
+      - real_nimiqpay_deeplinks_are_hidden_only_inside_guided_browser_demo_to_avoid_provider_confusion
+      - production_and_real_Nimiq_Pay_paths_are_unchanged
   evidence_boundary: NEVER_USE_GUIDED_DEMO_AS_REAL_TESTNET_OR_ONCHAIN_PROOF
-  production_status: PENDING_OBSERVED_VERCEL_DEPLOYMENT_CONTAINING_49301203_OR_LATER
+  production_status: PENDING_OBSERVED_VERCEL_DEPLOYMENT_CONTAINING_ede8737_OR_LATER_AND_SECOND_VIDEO_QA_THROUGH_ARRIVED
 
 create_surface_polish:
   commits: [3a8093e6feedd7198738518ff90c9bf3fdb66867, 1479e49a61b460d7606f0012854cb49938deed3f, d96234b9b3476dc9400555f3edcce733e9ee9927]
   ci_run: 34422173066
   ci: PASS
   behaviors: [keep_brand_chrome_visible_on_route_change, create_kicker_STEP_1_OF_5, remove_Cycle_II_jargon_from_create_surface]
-  production_status: USER_SAID_OK_BUT_NOT_INDEPENDENTLY_OBSERVED_BY_CONNECTOR
 
 http_parallel_work:
   opeyemi_branch: feat/mission-http-bindings
