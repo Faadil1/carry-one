@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-09  
-Canonical version: **0.8.18**  
-State: `LIVING_ROUTE_UI_MERGED_VERCEL_OUTPUT_FIXED_HTTP_SECURITY_PARALLEL_RECONCILIATION`
+Canonical version: **0.8.19**  
+State: `LIVING_ROUTE_UI_PRODUCTION_READY_CREATE_ROUTE_VERIFIED_POLISH_GREEN_HTTP_SECURITY_PARALLEL_RECONCILIATION`
 
 ## Read first
 
@@ -12,9 +12,7 @@ State: `LIVING_ROUTE_UI_MERGED_VERCEL_OUTPUT_FIXED_HTTP_SECURITY_PARALLEL_RECONC
 
 **NimCarry** — *One NIM. One bridge at a time.*
 
-Promise: **Get this to someone you cannot reach directly — one human bridge at a time.**
-
-Exactly `1 NIM = 100000 Luna` is the semantic custody baton, not a reward, stake, wager, prize or pooled fund. Every mission has a destination. Every bridge consents. Only independently verified `FINAL` changes custody. Destination as finalized recipient = `ARRIVED`. No surprise bridges, route loops, clawbacks, forwarding rewards, gamification, AI routing or unique-human claims.
+Exactly `1 NIM = 100000 Luna` is the semantic custody baton, not a reward, stake, wager, prize or pooled fund. Every mission has a destination. Every bridge consents. Only independently verified `FINAL` changes custody. Destination as finalized recipient = `ARRIVED`.
 
 Judge line: **NimCarry uses 1 NIM to make warm introductions verifiable.**
 
@@ -26,78 +24,75 @@ Primary docs:
 - `docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md`
 - `docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md`
 
-Locked transfer patterns: problem-first; live proof > architecture; simple/intuitive/crystal-clear behaves like an implicit meta-rubric; persistent proof artifacts win attention; real-user behavior signals PMF; natural sharing beats bolted-on referral mechanics; avoid crypto as front-door but make Nimiq explicit at authorization/finality/proof; do not depend on judge participation; lifecycle gaps get noticed; freeze a known-good build for the random judge window.
+Locked transfer patterns: problem-first; live proof > architecture; simplicity as implicit meta-rubric; persistent proof artifact; real-user behavior as PMF signal; natural share loop; avoid crypto as front-door; make Nimiq visible at authorization/finality/proof; deterministic demo; lifecycle closure; known-good judge-window runtime.
 
 ## Hidden spots product layer — MERGED
 
 PR **#19** → `main` merge `7ccf67aefb53ee101b2df7fdc1dc638d976cb4cc`, CI PASS.
 
-Implemented: problem-first framing, five-step flow, 1-NIM baton disambiguation, wallet/finality/custody proof ladder, bridge lifecycle, private share loop, FINAL-only route explanation, privacy-safe `ARRIVED / Verified Route Receipt`, judge smoke tooling, first-five 60-second testing protocol, 4/11/25 real-usage ladder and promotion drafts.
+Implemented: problem-first framing, five-step flow, 1-NIM baton disambiguation, wallet/finality/custody proof ladder, bridge lifecycle, private share loop, FINAL-only route explanation, privacy-safe `ARRIVED / Verified Route Receipt`, judge smoke tooling, first-five 60-second testing protocol, 4/11/25 usage ladder and promotion drafts.
 
-## Living Route UI P0/P1 — MERGED
+## Living Route UI P0/P1 — MERGED AND SEEN IN PRODUCTION
 
-PR **#21** → `main` merge `08b3ce1d3662e78a40c5c43e647a6940900e92bc`.
+PR **#21** → `main` merge `08b3ce1d3662e78a40c5c43e647a6940900e92bc`, CI PASS.
 
-Pre-merge CI `34419875834`: PASS. Post-merge CI `34419936778`: PASS.
+Implementation: `docs/LIVING-ROUTE-UI-P0-P1-2026-09-09.md`
 
-Implementation contract: `docs/LIVING-ROUTE-UI-P0-P1-2026-09-09.md`
-
-Implemented without touching blocked backend contracts: route-native NimCarry logo/header/favicon; install manifest/social preview source; continuous five-step living route; current holder emphasis; wallet approval → verification → FINAL state interactions; progressive finalized-hop reveal; ARRIVED/Verified Route Receipt climax; button/loading micro-interactions; stronger consent copy; dashed unverified empty route; one-time receipt focus; reduced-motion.
+Implemented: route-native NimCarry logo/header/favicon; install/social branding; continuous five-step living route; current holder emphasis; wallet approval → verification → FINAL interactions; progressive finalized-hop reveal; ARRIVED/Verified Route Receipt climax; button/loading micro-interactions; stronger consent copy; dashed unverified route; one-time receipt focus; reduced-motion.
 
 Truthfulness boundary: presentation only. It does **not** send transactions, create FINAL, move custody or manufacture ARRIVED.
 
-## Vercel production output failure — REPOSITORY FIX MERGED, PUBLIC READY PENDING VERIFICATION
+## Vercel production — READY, `/create` DIRECT ROUTE VERIFIED
 
-User-provided Vercel screenshots showed the Production deployment for main commit `4bb44455790a643f34b06a0c1b4c4468ce6bceac` failing **after a successful TypeScript build** with:
+Initial production failed because Vercel expected `public/` although the Mini App lives in `web/`. PR **#22** fixed this via root `vercel.json` (`buildCommand: npm run build`, `outputDirectory: web`, SPA rewrites) and merged as `90673c060e7afbd1e3102326b845b2c1768584b3`.
 
-`No Output Directory named "public" found after the Build completed.`
+User screenshots then confirmed:
+- Vercel status **Ready / Production / Current**;
+- observed source commit `adeca0d360c727e1af71b23e86c8cefc9cbcc14f`;
+- public production domain `https://carry-one-mu.vercel.app`;
+- Living Route/NimCarry visual shell present;
+- direct `https://carry-one-mu.vercel.app/create` loads successfully;
+- five-step route and create form render, proving the `/create` rewrite works.
 
-Diagnosis: Vercel was looking for `public/`, but the browser Mini App is the static `web/` directory.
+Still smoke-test later: one real `/mission/...` deep link, one `/i/...` invitation link, then mobile/Nimiq Pay WebView.
 
-Remediation:
-- PR **#22** `Fix Vercel static output for NimCarry`;
-- merged to `main` as `90673c060e7afbd1e3102326b845b2c1768584b3` after green GitHub CI;
-- new root `vercel.json` sets `buildCommand: npm run build` and `outputDirectory: web`;
-- SPA rewrites preserve direct/deep links for `/create`, `/mission/:path*`, and `/i/:path*`;
-- record: `docs/VERCEL-STATIC-OUTPUT-REMEDIATION-2026-09-09.md`.
+## Create-surface QA patch — GREEN, NEWEST VERCEL DEPLOYMENT NOT YET RE-OBSERVED
 
-Important: repository configuration is fixed, but **do not claim production Vercel healthy yet**. The connected Vercel plugin is not exposing this Hobby project, so the next conversation/user should verify the post-fix Production deployment shows **Ready**, then smoke-test the public app/deep links. If Vercel does not auto-deploy the new main commit, redeploy the latest main deployment after the config merge.
+The production `/create` screenshot exposed three non-backend polish issues:
+1. focus-on-render could scroll the brand header off-screen;
+2. `Screen 2 / 5` conflicted with the Living Route stepper showing Create as step 1;
+3. `Cycle II` competition language made the production product feel more like a hackathon prototype.
+
+A small presentation-only patch is already on `main`:
+- `web/route-shell-polish.js` commit `3a8093e6feedd7198738518ff90c9bf3fdb66867`;
+- loaded by `web/index.html` commit `1479e49a61b460d7606f0012854cb49938deed3f`;
+- CI syntax coverage commit `d96234b9b3476dc9400555f3edcce733e9ee9927`;
+- CI run `34422173066`: **PASS**.
+
+Behavior: route changes restore page scroll to top once so NimCarry branding remains visible; create kicker becomes `STEP 1 OF 5 · CREATE MISSION`; public lede and consent checkbox no longer mention `Cycle II`.
+
+Important: the screenshot predates this latest polish patch. Verify the next Vercel Production deployment before claiming those three corrections live.
 
 ## Faadil HTTP security — PR #20 GREEN, NOT MERGED
 
-PR: **#20** — `Secure broadcast claims and add client idempotency`  
-Branch: `feat/faadil-http-security`  
-Base: Opeyemi's `feat/mission-http-bindings`  
-Head: `2588021ea45c806ec9588c24b00ce209f67ddbfe`  
-CI run `34416146070`: PASS  
-Reviewer: **Opeyemi (`opeblow`)**
+PR **#20** `Secure broadcast claims and add client idempotency`; branch `feat/faadil-http-security`; base Opeyemi `feat/mission-http-bindings`; head `2588021ea45c806ec9588c24b00ce209f67ddbfe`; CI `34416146070` PASS; reviewer `opeblow`.
 
-Implemented on PR #20: one-time short-lived broadcast capability after signed `AUTHORIZE_PASS`, bound to mission + invitation + sequence + intent nonce + holder wallet; replay/binding/expiry protections; automatic mutation `Idempotency-Key` in TypeScript API client; stable broadcast retry key.
+Implemented: short-lived one-time broadcast capability after signed `AUTHORIZE_PASS`, bound to mission + invitation + sequence + intent nonce + holder wallet; replay/binding/expiry protection; automatic TypeScript mutation `Idempotency-Key`; stable broadcast retry key.
 
-Do **not** call blockers #3/#4 fully closed yet: browser shell still needs final secure contract during shared integration.
+Do not call blockers closed until reconciled with Opeyemi work and browser runtime.
 
 ## Opeyemi parallel HTTP work — DO NOT FORCE UPDATE
 
-Last observed branch: `feat/mission-http-bindings` at `4f219cbd153484e560c4079ffd8c549ec52e483f`. Re-fetch live before integration.
+Last observed: `feat/mission-http-bindings` at `4f219cbd153484e560c4079ffd8c549ec52e483f`. Re-fetch live before integration.
 
 Split:
-- **Opeyemi:** verified route-view capability replacing spoofable `X-Wallet`; invitation privacy/redaction; production dev-gate for legacy `/relay` mutations.
+- **Opeyemi:** verified route-view capability, invitation privacy/redaction, legacy `/relay` production dev-gate.
 - **Faadil side:** PR #20 broadcast capability + TS API client idempotency.
 - **Shared:** final browser contract + frontend/HTTP/PostgreSQL vertical integration + real 3-wallet E2E.
-
-Current blockers:
-1. route-view capability — `PENDING_OPEYEMI`;
-2. invitation privacy/redaction — `PENDING_OPEYEMI`;
-3. legacy `/relay` dev gate — `PENDING_OPEYEMI`;
-4. PR #20 broadcast capability — `GREEN_PENDING_RECONCILIATION`;
-5. browser idempotency + broadcast-capability wiring — `PENDING_SHARED_INTEGRATION`;
-6. combined frontend + HTTP + PostgreSQL harness — `PENDING_SHARED_INTEGRATION`.
 
 Current gate: **`NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION`**.
 
 ## Demo law
-
-`docs/SEP16-DETERMINISTIC-DEMO-RUNBOOK-2026-09-09.md`
 
 Target narrative: `human problem → Create → Invite → Accept → Pass 1 NIM → FINAL → next bridge → FINAL → ARRIVED → Verified Route Receipt`.
 
@@ -109,7 +104,7 @@ Preferred topology: Wallet A creator/initial holder, Wallet B bridge, Wallet C d
 
 Target: `CREATE → INVITE → ACCEPT → AUTHORIZE → A sends exactly 1 NIM to B → FINAL → B holder → AUTHORIZE → B sends exactly 1 NIM to C → FINAL → ARRIVED → Verified Route Receipt`.
 
-Also prove multi-account behavior, exact 1-NIM forwarding with requested fee 0, native invite deeplink, and iOS cold/warm/background/resume/deeplink lifecycle.
+Also prove multi-account behavior, exact 1-NIM forwarding with fee 0, native invite deeplink, and iOS cold/warm/background/resume/deeplink lifecycle.
 
 ## Score-floor strategy after secure E2E
 
@@ -119,27 +114,24 @@ Therefore promotion + 4 genuine users = **11 points**, +11 users = **15**, +25 u
 
 ## Execution order — CURRENT
 
-1. Verify the new Vercel Production deployment from PR #22/main is **Ready** and smoke-test `/`, `/create`, one `/mission/...` route and one `/i/...` route; do not treat prior failed deployment as current proof.
-2. Re-fetch Opeyemi's live branch / PR status.
-3. Reconcile his route-view/privacy/relay work with green PR #20, without force-updating his branch.
-4. Wire browser + HTTP + PostgreSQL while preserving Living Route UI and Vercel static-output config.
-5. Full CI green → merge → update canon + handover.
-6. Run real A→B→C testnet through `ARRIVED` and validate Route Receipt against real route data.
-7. Run 5 observed first-time tests under 60 seconds.
-8. Publish genuine Skool + public posts for 5/5 promotion.
-9. Reach 4+, then 11+, then 25+ legitimate unique wallet opens.
-10. Submit once genuinely usable.
-11. Sep 16 Sip & Show only as real-product proof if runtime is green.
-12. Enable judge-window monitoring/rollback, then focused TRACE polish and final demo packaging.
+1. Verify newest Vercel deployment contains `route-shell-polish.js`; refresh `/create` and confirm logo/header stays visible, kicker says `STEP 1 OF 5`, and Cycle-II jargon is gone.
+2. Smoke-test one `/mission/...` deep link and one `/i/...` invitation deep link when safe fixtures/runtime exist.
+3. Re-fetch Opeyemi live branch / PR status.
+4. Reconcile his route-view/privacy/relay work with green PR #20 without force-updating his branch.
+5. Wire browser + HTTP + PostgreSQL while preserving Living Route UI and Vercel config.
+6. Full CI green → merge → update canon + handover.
+7. Run real A→B→C testnet through `ARRIVED` and validate Route Receipt against real data.
+8. Run 5 observed first-time tests under 60 seconds.
+9. Publish genuine Skool + public posts for 5/5 promotion.
+10. Reach 4+, 11+, then 25+ legitimate unique wallet opens; submit once genuinely usable.
+11. Sep 16 Sip & Show only as real-product proof if runtime is green; then judge-window monitoring/rollback and final TRACE/demo packaging.
 
 ## External naming debt
 
-Public identity is NimCarry, but external identifiers are not yet claimed renamed:
+Public identity is NimCarry, but external identifiers are not yet renamed:
 - desired repo: `Faadil1/nimcarry`; current: `Faadil1/carry-one`;
-- desired alias: `https://nimcarry.vercel.app`; current legacy demo: `https://carry-one-sip-show.vercel.app`.
-
-Legacy `carryone.*` storage/protocol fixtures may remain only where backward compatibility or evidence traceability requires them.
+- desired alias: `https://nimcarry.vercel.app`; current production observed at `https://carry-one-mu.vercel.app` and legacy demo locator `https://carry-one-sip-show.vercel.app`.
 
 ## Still blocked
 
-Public Early Access before secure vertical flow; mainnet funds/cutover; broad marketing before real E2E; target claiming/public discovery; prizes/wagers/pools; forwarding rewards; autonomous AI spend/routing; marketplace expansion; unique-human claims.
+Public Early Access before secure vertical flow; mainnet cutover/funds; broad marketing before real E2E; target claiming/public discovery; prizes/wagers/pools; forwarding rewards; autonomous AI spend/routing; marketplace expansion; unique-human claims.
