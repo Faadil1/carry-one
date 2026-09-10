@@ -3,41 +3,29 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/carry-one
 visibility: public
-state_version: 0.8.19
-date: 2026-09-09
-phase: LIVING_ROUTE_UI_PRODUCTION_READY_CREATE_ROUTE_VERIFIED_POLISH_GREEN_HTTP_SECURITY_PARALLEL_RECONCILIATION
+state_version: 0.8.20
+date: 2026-09-10
+phase: GUIDED_PROVIDER_FREE_DEMO_GREEN_PENDING_VERCEL_OBSERVATION_HTTP_SECURITY_PARALLEL_RECONCILIATION
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
-
-canonical_compaction_note:
-  status: INTENTIONAL_COMPACTION
-  product_law_changed: false
-  reason: Keep CURRENT concise; detailed historical evidence remains in referenced docs and git history.
 
 continuity_protocol:
   source_of_truth: CANONICAL-STATE.yaml
   update_canonical_state_after_every_meaningful_milestone: true
   update_handover_after_every_meaningful_milestone: true
   next_conversation_must_be_able_to_take_lead_without_chat_history: true
-  user_reconfirmed_on: 2026-09-09
 
 brand_identity:
   public_name: NimCarry
   status: LOCKED
   tagline: One NIM. One bridge at a time.
   promise: Get this to someone you cannot reach directly — one human bridge at a time.
-  judge_facing_thesis: NimCarry turns an invisible chain of human introductions into a consented verifiable human route using exactly 1 NIM as the baton.
   desired_repository_slug: Faadil1/nimcarry
   current_repository_slug: Faadil1/carry-one
   desired_demo_alias: https://nimcarry.vercel.app
-  current_legacy_demo_alias: https://carry-one-sip-show.vercel.app
+  current_observed_production_domain: https://carry-one-mu.vercel.app
   external_identifier_migration_status: AUTHORIZED_PENDING_EXTERNAL_RENAME
-
-team:
-  faadil: { role: repo_owner_product_lead }
-  opeyemi: { role: collaborator_technical_lead, github_username: opeblow }
-  prize_split: { current: 50_50, condition: revisit_in_writing_if_either_party_steps_away_before_submission }
 
 core_product_laws:
   baton: THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT, WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
@@ -55,7 +43,6 @@ mvp_contract:
   one_active_invitation_per_mission: true
   finalized_route_wallet_reuse: forbidden
   cancel_or_reroute_after_broadcast: forbidden_fail_closed
-  arrival_condition: finalized_recipient_hmac_equals_private_target_wallet_hmac
   opaque_onchain_commitment_prefix: co:v1:
   five_screens: [Mission_Home, Create_Mission, Bridge_Invitation, Pass_1_NIM, Route_Arrival]
   gamification: forbidden
@@ -65,30 +52,13 @@ judge_demo_law:
   target_core_flow: Create -> Invite -> Accept -> Pass_1_NIM -> Arrive
   judge_cooperation_required_for_core_proof: false
   route_receipt_is_demo_climax: true
-  target_first_time_understanding_seconds: 10
-  target_core_point_seconds: 60
-  visible_states: [Accepted_with_Nimiq_Pay, 1_NIM_handoff_authorized, Waiting_for_independent_finality, FINAL_custody_moved, ARRIVED, Verified_Route_Receipt]
-  truthfulness: Never present local demo state as real testnet evidence.
-  sep16_runbook: docs/SEP16-DETERMINISTIC-DEMO-RUNBOOK-2026-09-09.md
+  truthfulness: Demo/local simulated states are never real testnet evidence.
 
 winning_intelligence:
   seven_call_otter_corpus: COMPLETE_7_OF_7_THROUGH_2026_09_09
   definitive_audit: docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md
   score_delta: docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md
-  locked_patterns:
-    - problem_first_storytelling
-    - live_proof_beats_architecture
-    - simplicity_is_implicit_meta_rubric
-    - persistent_visible_proof_artifact
-    - real_user_behavior_as_PMF_signal
-    - natural_invite_share_loop
-    - avoid_crypto_as_front_door
-    - visible_Nimiq_at_authorization_finality_and_proof
-    - deterministic_demo_not_dependent_on_judge
-    - lifecycle_gaps_get_noticed
-    - distribution_and_abuse_questions_follow_core_comprehension
-    - freeze_known_good_build_for_random_judge_window
-    - capture_easy_builder_promotion_points
+  locked_patterns: [problem_first_storytelling, live_proof_beats_architecture, simplicity_is_implicit_meta_rubric, persistent_visible_proof_artifact, real_user_behavior_as_PMF_signal, natural_invite_share_loop, avoid_crypto_as_front_door, deterministic_demo_not_dependent_on_judge, freeze_known_good_build_for_random_judge_window, capture_easy_builder_promotion_points]
 
 score_capture_strategy:
   builder_promotion: { skool_post_points: 2, public_social_post_points: 3, target_total: 5 }
@@ -100,83 +70,68 @@ completed_major_milestones:
   product_law: true
   ux_state_contract: true
   foundation_slice_1: true
-  blindspot_hardening: true
-  frontend_vertical_slice_skeleton: true
   postgres_vertical_slice: true
-  public_repo_secret_scan: true
   nimcarry_brand_lock: true
   seven_call_winning_intelligence: true
   hidden_spot_product_layer_pr19_merged: true
-  route_receipt_surface: true
-  judge_window_smoke_tooling: true
-  first_five_60_second_test_protocol_armed: true
-  score_floor_4_11_25_ladder_armed: true
-  faadil_http_security_pr20_ci_green: true
   living_route_ui_pr21_merged: true
   vercel_static_output_pr22_merged: true
   vercel_production_ready_observed: true
   production_create_deep_link_observed: true
   create_surface_polish_patch_ci_green: true
+  guided_provider_free_demo_tour_implemented: true
+  guided_provider_free_demo_tour_ci_green: true
 
 living_route_ui:
   status: MERGED_TO_MAIN_AND_OBSERVED_IN_PRODUCTION
   pull_request: 21
   merge_sha: 08b3ce1d3662e78a40c5c43e647a6940900e92bc
-  postmerge_ci_run: 34419936778
   ci: PASS
   implementation_doc: docs/LIVING-ROUTE-UI-P0-P1-2026-09-09.md
-  implemented:
-    - route_native_NimCarry_logo_header_and_favicon
-    - install_manifest_and_social_preview_source
-    - five_step_continuous_living_route
-    - current_baton_holder_emphasis
-    - wallet_verification_FINAL_state_interactions
-    - finalized_hop_progressive_reveal
-    - ARRIVED_Route_Receipt_climax
-    - button_press_hover_and_busy_feedback
-    - stronger_bridge_consent_copy
-    - dashed_unverified_empty_route
-    - one_time_ARRIVED_receipt_focus
   reduced_motion: enforced
   proof_rule: presentation_layer_does_not_create_transaction_FINAL_custody_or_ARRIVED_state
 
 vercel_deployment:
-  prior_failed_production_commit: 4bb44455790a643f34b06a0c1b4c4468ce6bceac
-  prior_failure: No Output Directory named public found after the Build completed.
   remediation_pull_request: 22
   remediation_merge_sha: 90673c060e7afbd1e3102326b845b2c1768584b3
-  remediation_doc: docs/VERCEL-STATIC-OUTPUT-REMEDIATION-2026-09-09.md
-  repository_fix: { build_command: npm run build, output_directory: web, spa_rewrites: [/create, /mission/:path*, /i/:path*] }
+  output_directory: web
   user_observed_production_status: READY_CURRENT
-  user_observed_production_source_commit: adeca0d360c727e1af71b23e86c8cefc9cbcc14f
   user_observed_public_domain: https://carry-one-mu.vercel.app
-  observed_home_living_route_branding: true
-  observed_direct_create_url: https://carry-one-mu.vercel.app/create
   observed_direct_create_render: PASS
   remaining_public_smoke: [/mission/:path*, /i/:path*, mobile_Nimiq_Pay_webview]
-  connected_vercel_tool_visibility: UNAVAILABLE_FOR_CURRENT_HOBBY_PROJECT
+
+guided_demo_tour:
+  purpose: provider_free_end_to_end_UI_and_story_test_only
+  activation_query: "?demo=1&tour=1"
+  clean_start_query: "?demo=1&tour=1&reset=1"
+  intended_public_link_after_Vercel_deploy: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
+  implementation_file: web/demo-tour.js
+  implementation_commit: 13e26bfa831d267a0b7a3beb5837009980161925
+  loader_commit: d5a3945a4f7556460134c9ccbeed148362404c9f
+  ci_commit: 49301203e96934aefc6b597536a689a54649bbc4
+  ci_run: 34439421092
+  ci: PASS
+  behavior:
+    - resets prior local demo state when reset=1 then removes reset from active URL
+    - prefills a safe fictional creator_target_bridge scenario but remains editable
+    - captures demo-only private target metadata locally
+    - creates an Open_demo_invite path that preserves demo_and_tour mode without Nimiq Pay
+    - Accept remains a no-funds consent step
+    - Pass simulates wallet_approved_then_independent_FINAL only inside explicit DEMO_MODE
+    - first finalized handoff moves custody Creator_to_Bridge_B
+    - Continue_demo_to_destination starts second bridge cycle
+    - second finalized handoff to the precommitted target sets ARRIVED
+    - ARRIVED triggers existing DEMO_RECEIPT visual surface
+    - no wallet_provider_backend_or_network_write_required
+  evidence_boundary: NEVER_USE_GUIDED_DEMO_AS_REAL_TESTNET_OR_ONCHAIN_PROOF
+  production_status: PENDING_OBSERVED_VERCEL_DEPLOYMENT_CONTAINING_49301203_OR_LATER
 
 create_surface_polish:
-  trigger: user_provided_production_screenshot_of_direct_create_route
-  observations:
-    - direct_create_rewrite_works
-    - five_step_living_route_renders
-    - form_renders
-    - focus_scroll_can_hide_brand_header_on_navigation
-    - screen_2_of_5_label_conflicts_with_route_step_1_create
-    - Cycle_II_competition_jargon_reduces_real_product_feel
-  implementation:
-    route_shell_polish_js_commit: 3a8093e6feedd7198738518ff90c9bf3fdb66867
-    index_load_commit: 1479e49a61b460d7606f0012854cb49938deed3f
-    ci_syntax_commit: d96234b9b3476dc9400555f3edcce733e9ee9927
-    ci_run: 34422173066
-    ci: PASS
-    behaviors:
-      - restore_scroll_top_once_per_route_change_so_brand_chrome_remains_visible
-      - create_kicker_becomes_STEP_1_OF_5_CREATE_MISSION
-      - remove_Cycle_II_jargon_from_create_lede
-      - remove_Cycle_II_jargon_from_consent_checkbox
-  production_status: PENDING_OBSERVED_NEWEST_VERCEL_DEPLOYMENT
+  commits: [3a8093e6feedd7198738518ff90c9bf3fdb66867, 1479e49a61b460d7606f0012854cb49938deed3f, d96234b9b3476dc9400555f3edcce733e9ee9927]
+  ci_run: 34422173066
+  ci: PASS
+  behaviors: [keep_brand_chrome_visible_on_route_change, create_kicker_STEP_1_OF_5, remove_Cycle_II_jargon_from_create_surface]
+  production_status: USER_SAID_OK_BUT_NOT_INDEPENDENTLY_OBSERVED_BY_CONNECTOR
 
 http_parallel_work:
   opeyemi_branch: feat/mission-http-bindings
@@ -200,37 +155,20 @@ faadil_http_security:
   pull_request: 20
   url: https://github.com/Faadil1/carry-one/pull/20
   branch: feat/faadil-http-security
-  base_branch: feat/mission-http-bindings
   head_sha: 2588021ea45c806ec9588c24b00ce209f67ddbfe
   ci_run: 34416146070
   ci: PASS
   reviewer: opeblow
   status: OPEN_REVIEW_REQUESTED_NOT_MERGED
-  broadcast_capability: { short_lived: true, one_time: true, issued_after_signed_AUTHORIZE_PASS: true, bound_to: [mission, invitation, sequence, intent_nonce, holder_wallet] }
-  client_idempotency: { automatic_for_mutations: true, stable_broadcast_retry_key: true }
-  merge_rule: Do not call the HTTP blockers closed until reconciled with Opeyemi changes and final browser runtime.
 
 current_gate:
   name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
   status: WAITING_OPEYEMI_PARALLEL_BLOCKERS_THEN_RECONCILE_PR20_AND_BROWSER
-  exit_criteria:
-    - route_view_capability_closed
-    - invitation_privacy_redaction_closed
-    - legacy_relay_dev_gate_closed
-    - broadcast_capability_reconciled
-    - browser_idempotency_and_broadcast_contract_wired
-    - frontend_HTTP_Postgres_combined_harness_green
-    - NimCarry_brand_and_Living_Route_preserved
-    - full_CI_green
-    - merged_to_main
-    - canonical_and_handover_updated
 
 next_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
   status: PREP_ALLOWED_EXECUTION_BLOCKED_UNTIL_SECURE_HTTP_MERGE
-  topology: { wallets: 3, devices: 2_preferred, A: creator_initial_holder, B: bridge, C: destination }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
-  required_additional_proofs: [Nimiq_Pay_multi_account_behavior, exact_one_NIM_forward_with_requested_fee_zero, native_invite_deeplink_real_device, iOS_cold_warm_background_resume_deeplink]
   never_claim_before_observed: real_testnet_FINAL_or_ARRIVED
 
 post_E2E_priority_order:
@@ -241,9 +179,7 @@ post_E2E_priority_order:
   - submit_to_Cycle_II_showcase_once_genuinely_usable
   - Sep_16_Sip_Show_as_real_product_proof_only_if_runtime_green
   - enable_judge_window_monitoring_and_safe_rollback
-  - small_real_user_feedback_iteration
   - final_TRACE_visual_polish
-  - real_testnet_demo_video_and_submission_story
 
 still_blocked:
   - public_early_access_before_secure_vertical_flow
