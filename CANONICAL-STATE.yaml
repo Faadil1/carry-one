@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.30
+state_version: 0.8.31
 date: 2026-09-11
-phase: DATABASE_PROVIDER_LOCKED_NEON_PROVISIONING_NEXT
+phase: NEON_PROVISIONED_MIGRATIONS_APPLIED_CLOUDFLARE_SECRETS_DEPLOYMENT_NEXT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -175,21 +175,32 @@ postgres_runtime:
   opeyemi_confirmation: never_set_up_or_connected_any_persistent_database_for_NimCarry_and_authorized_new_provider_provisioning
   database_provider_decision: Neon
   database_provider_status: LOCKED
-  neon_project_status: PENDING_PROVISIONING
+  neon_project_status: PROVISIONED
+  neon_project_name: nimcarry
+  neon_project_id: late-credit-21248077
+  neon_branch_name: main
+  neon_branch_id: br-bitter-surf-au36ra1d
+  neon_database_name: nimcarry
+  neon_region: aws-us-east-1
+  neon_postgres_version: 18
+  migrations_applied: [001_reach_mission_foundation.sql, 002_postgres_concurrency_guards.sql]
+  production_schema_verification: PASS_7_TABLES_3_CONCURRENCY_TRIGGERS
+  connection_string_status: OBTAINED_SECURELY_NOT_COMMITTED
   rule: USE_DEDICATED_NEON_POSTGRES_FOR_NIMCARRY_AND_KEEP_CREDENTIALS_OUT_OF_GIT
 
 current_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: DATABASE_PROVIDER_LOCKED_NEON_PROVISION_APPLY_MIGRATIONS_THEN_DEPLOY
+  status: NEON_READY_CLOUDFLARE_SECRETS_DEPLOY_THEN_REAL_PROOF
   code_merge_prerequisite: COMPLETE
   cloudflare_scaffold_merge_prerequisite: COMPLETE
   database_duplicate_check: COMPLETE_NONE_EXISTS
+  neon_provisioning: COMPLETE
+  production_migrations: COMPLETE
   next_exact_actions:
-    - provision_dedicated_NimCarry_Neon_Postgres
-    - apply_migrations_001_and_002
-    - obtain_database_connection_string_securely_and_set_CARRY_ONE_DATABASE_URL
     - enable_or_confirm_Cloudflare_Workers_Paid_for_Containers
-    - configure_remaining_Cloudflare_worker_secrets
+    - configure_CARRY_ONE_DATABASE_URL_from_Neon_as_Cloudflare_secret_without_committing_it
+    - generate_and_configure_distinct_32_byte_encryption_and_HMAC_secrets
+    - configure_CARRY_ONE_CANONICAL_ORIGIN_after_public_origin_is_known
     - deploy_Cloudflare_Worker_Static_Assets_plus_singleton_Container
     - verify_health_postgres_mode_same_origin_routing_and_legacy_relay_403
     - execute_real_Nimiq_Pay_A_to_B_to_C_testnet_proof
