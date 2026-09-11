@@ -2,7 +2,7 @@
 
 Date: 2026-09-11
 Gate: `NIMCARRY_REAL_TESTNET_E2E_PROOF`
-Status: **runtime topology locked; real FINAL/ARRIVED not yet observed**
+Status: **Cloudflare runtime topology prepared; real FINAL/ARRIVED not yet observed**
 
 ## 0. Non-negotiable evidence boundary
 
@@ -14,61 +14,113 @@ The guided/demo flow remains presentation evidence only.
 
 ## 1. Locked runtime topology
 
-Use the existing Vercel deployment as the Mini App/frontend surface and deploy the Mission HTTP API on a **long-lived single-process Node runtime** backed by a **dedicated PostgreSQL database**.
+NimCarry is now prepared to deploy as one Cloudflare Worker application with:
+
+- Cloudflare Workers Static Assets serving `web/`;
+- the canonical Node Mission HTTP runtime inside a Cloudflare Container;
+- one stable container identity: `nimcarry-primary`;
+- `max_instances: 1` during this proof gate;
+- a dedicated external PostgreSQL database;
+- Nimiq testnet only.
+
+Deployment files:
+
+- `cloudflare/worker.mjs`
+- `cloudflare/wrangler.jsonc`
+- `cloudflare/package.json`
+- `Dockerfile.cloudflare`
 
 Why this topology is locked for this gate:
 
-- `src/index.ts` is already the canonical Node application entrypoint.
+- `src/index.ts` stays the canonical Node application entrypoint; no product-runtime rewrite is required.
 - `CARRY_ONE_REPOSITORY=postgres` gives one shared durable Postgres-backed relay + mission store.
-- route-view and broadcast capabilities are intentionally process-local short-lived stores today; a multi-instance/serverless backend could route sequential requests to different processes and invalidate those capabilities.
-- the real E2E gate is not the place to redesign capability persistence. Keep one backend process for the proof run.
-- frontend and backend should remain same-origin from the browser's perspective via a reverse proxy/rewrite when possible. If a separate browser origin is introduced, add an explicit strict-origin CORS boundary before using it.
+- route-view and broadcast capabilities are intentionally short-lived process-local stores today.
+- Cloudflare Containers can be addressed through a stable Durable Object/container name, so all API requests in the proof window can be routed to the same logical container instance.
+- static frontend and API are served from the same Cloudflare origin, avoiding a new CORS trust boundary.
+- browser navigation to `/mission/*` and `/i/*` remains SPA navigation, while JSON API requests are routed to the Node backend based on method/Accept contract.
 
-### Required production shape
+### Important limitation
 
-- Frontend: current NimCarry Vercel Mini App
-- Backend: one long-lived Node process running `npm start`
-- Database: dedicated Postgres for NimCarry testnet proof
-- Network: Nimiq testnet only
-- Wallets: A creator/current holder, B bridge, C destination
-- Devices: preferably two physical devices
-- Legacy relay mutations: disabled
-- Mainnet/funds: forbidden for this gate
+Cloudflare does not guarantee that a container process will run forever. A platform restart or deployment can replace it. PostgreSQL state survives; process-local route/broadcast capabilities do not.
 
-## 2. External infrastructure prerequisites
+Therefore during `NIMCARRY_REAL_TESTNET_E2E_PROOF`:
+
+- keep one stable container ID;
+- do not redeploy during an active A -> B -> C proof run;
+- if the container restarts mid-run and a capability is lost, fail closed and restart the proof run rather than inventing recovery evidence;
+- durable/shared capability storage is a later production-hardening item, not a reason to weaken the current security contract.
+
+## 2. Cloudflare account prerequisite
+
+Cloudflare Containers requires Workers Paid. The current documented plan floor is USD 5/month.
+
+No Cloudflare account mutation or paid deployment has been executed by this repository preparation alone.
+
+## 3. PostgreSQL / Supabase status
+
+The repository contains Opeyemi's generic PostgreSQL adapter and migrations, but there is no committed Supabase project reference, Supabase URL, or Supabase-specific branch/configuration.
+
+The Supabase projects visible through Faadil's currently connected Supabase account do not include a dedicated NimCarry project. If Opeyemi provisioned one, it is not discoverable from the repository or Faadil's connected Supabase account and may live under Opeyemi's account/organization.
+
+Before creating a new database, confirm with Opeyemi whether a NimCarry/Postgres project already exists and, if so, obtain only the connection details/access needed for this project. Never paste credentials into GitHub issues, PRs, chat-visible code, or tracked files.
+
+## 4. External infrastructure prerequisites
 
 Before starting the real wallet run:
 
-1. Provision a dedicated Postgres database for NimCarry.
-2. Apply both migrations in order:
+1. Confirm whether Opeyemi already created the intended NimCarry Postgres/Supabase database.
+2. If none exists, provision a dedicated Postgres database for NimCarry.
+3. Apply both migrations in order:
    - `migrations/001_reach_mission_foundation.sql`
    - `migrations/002_postgres_concurrency_guards.sql`
-3. Provision a long-lived Node runtime capable of running one application process.
-4. Connect the frontend to that runtime without weakening the browser security boundary.
-5. Configure the exact environment contract below.
-6. Confirm `/health` returns `{ "status": "ok" }` from the Mission HTTP server.
-7. Open the deployed Mini App inside Nimiq Pay and confirm the injected provider is available.
+4. Enable Workers Paid / Containers in the Cloudflare account.
+5. Connect the repository to Cloudflare Workers Builds or deploy with Wrangler.
+6. Configure the exact Cloudflare Worker secrets below.
+7. Deploy the Worker + singleton container.
+8. Confirm `/health` returns `{ "status": "ok" }` from the Mission HTTP server.
+9. Open the deployed Mini App inside Nimiq Pay and confirm the injected provider is available.
 
-## 3. Environment contract
+## 5. Cloudflare deployment contract
 
-Use deployment secret storage. Never commit real values.
+From the repository root, the Cloudflare build/deploy command can be:
+
+```bash
+npm --prefix cloudflare install
+npm --prefix cloudflare run deploy
+```
+
+For Cloudflare Workers Builds, keep the build root at the repository root so both `cloudflare/wrangler.jsonc` and `Dockerfile.cloudflare` remain inside the build root.
+
+The Worker serves `web/` itself and forwards API requests to the stable `nimcarry-primary` container, so the frontend does not need a separate API hostname.
+
+## 6. Environment and secret contract
+
+The Worker passes these values into the Node container. Use Cloudflare Worker Secrets for sensitive values. Never commit real values.
+
+Required secrets/configuration:
+
+```bash
+CARRY_ONE_DATABASE_URL=postgres://...
+CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL=<random 32-byte base64url>
+CARRY_ONE_TARGET_HMAC_KEY_B64URL=<different random 32-byte base64url>
+CARRY_ONE_CANONICAL_ORIGIN=https://<public-cloudflare-origin>
+```
+
+Optional RPC overrides:
+
+```bash
+NIMIQ_RPC_URL=https://rpc.testnet.nimiqwatch.com
+# Prefer multiple independently operated read endpoints when available.
+NIMIQ_RPC_URLS=https://rpc-a.example,https://rpc-b.example
+```
+
+The container wrapper fixes these runtime values for this gate:
 
 ```bash
 NODE_ENV=production
 PORT=8787
-
 CARRY_ONE_REPOSITORY=postgres
-CARRY_ONE_DATABASE_URL=postgres://...
-
-CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL=<random 32-byte base64url>
-CARRY_ONE_TARGET_HMAC_KEY_B64URL=<different random 32-byte base64url>
-CARRY_ONE_CANONICAL_ORIGIN=https://<public-mini-app-origin>
-
 CARRY_ONE_LEGACY_RELAY_ENABLED=false
-
-NIMIQ_RPC_URL=https://rpc.testnet.nimiqwatch.com
-# Prefer a comma-separated independently operated fallback set when available.
-# NIMIQ_RPC_URLS=https://rpc-a.example,https://rpc-b.example
 ```
 
 Generate the two application keys independently, for example:
@@ -82,9 +134,17 @@ The two values must be different.
 
 Do **not** set or expose private wallet keys in the deployed runtime. Nimiq Pay remains the user-controlled signing and transaction surface.
 
-## 4. Database migration gate
+## 7. Database migration gate
 
-Run migrations against the dedicated database with stop-on-error behavior, for example:
+Use the repository migration runner or apply the SQL files directly against the dedicated database.
+
+Repository runner:
+
+```bash
+CARRY_ONE_DATABASE_URL='postgres://...' npx tsx scripts/migrate.ts
+```
+
+Direct SQL alternative:
 
 ```bash
 psql "$CARRY_ONE_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_reach_mission_foundation.sql
@@ -98,23 +158,27 @@ Pass criteria:
 - no fallback to file/in-memory mission persistence occurs;
 - restart preserves mission/hop state in Postgres.
 
-## 5. Runtime preflight
+## 8. Runtime preflight
 
 Before touching a testnet wallet, verify:
 
+- the Cloudflare deployment is active;
 - `GET /health` returns 200 with `status=ok`;
 - startup log reports `Repository mode: postgres`;
 - startup log reports Mission HTTP bindings enabled with PostgreSQL;
-- `NODE_ENV=production`;
-- `CARRY_ONE_LEGACY_RELAY_ENABLED=false` or omitted only when `NODE_ENV=production` is guaranteed;
-- canonical origin is the public Mini App origin;
+- Cloudflare routes API requests to the stable `nimcarry-primary` container;
+- only one container instance is allowed for this gate;
+- canonical origin exactly matches the public Cloudflare Mini App origin;
 - encryption and HMAC keys are present and distinct;
+- legacy `/relay` POST mutations return `403 LEGACY_RELAY_DISABLED`;
 - at least one working Nimiq testnet RPC read endpoint is configured, with fallback preferred;
-- frontend loads outside demo mode;
+- frontend loads outside demo mode from the same Cloudflare origin;
+- direct `/mission/...` and `/i/...` browser navigation returns the SPA shell;
+- JSON fetches to `/missions/...` and `/i/...` reach the backend;
 - inside Nimiq Pay, `window.nimiq.listAccounts()` succeeds;
 - multiple accounts can be selected when the wallet exposes more than one account.
 
-## 6. Real proof topology
+## 9. Real proof topology
 
 Use three genuine testnet wallets/accounts:
 
@@ -132,7 +196,7 @@ Each finalized hop must transfer exactly:
 
 Requested fee remains `0`. Record actual wallet/network behavior separately from the requested fee.
 
-## 7. Canonical real E2E sequence
+## 10. Canonical real E2E sequence
 
 ### Hop 1 — A to B
 
@@ -167,12 +231,12 @@ Requested fee remains `0`. Record actual wallet/network behavior separately from
 11. Verify mission state becomes `ARRIVED` only because the finalized recipient is the destination.
 12. Verify the second finalized hop and terminal mission state are durable in Postgres.
 
-## 8. Required evidence packet
+## 11. Required evidence packet
 
 Capture all of the following before declaring the gate PASS:
 
-- public Mini App URL used for the run;
-- backend runtime identifier/revision used for the run;
+- public Cloudflare Mini App URL used for the run;
+- Cloudflare deployment/container revision used for the run;
 - database migration/version confirmation;
 - timestamped start/end of the run;
 - wallet fingerprints for A/B/C only — never private keys or secrets;
@@ -191,7 +255,7 @@ Capture all of the following before declaring the gate PASS:
 - iOS warm resume result;
 - iOS background/resume result.
 
-## 9. Gate verdict rubric
+## 12. Gate verdict rubric
 
 ### PASS
 
@@ -207,7 +271,7 @@ Use HOLD if any of these occur:
 
 - transaction broadcasts but FINAL is not independently observed;
 - custody advances before FINAL;
-- browser loses route/broadcast capability because requests hit another backend process;
+- the Cloudflare container restarts and invalidates a required process-local capability;
 - Postgres durability cannot be verified;
 - B cannot become the next holder after Hop 1;
 - C receives funds but mission does not become ARRIVED;
@@ -218,7 +282,7 @@ Use HOLD if any of these occur:
 
 Never convert a timeout, UI projection, locally simulated state, wallet broadcast success, or mempool inclusion into `FINAL` or `ARRIVED` evidence.
 
-## 10. Evidence record template
+## 13. Evidence record template
 
 Copy this block into the eventual evidence file after the real run:
 
@@ -226,8 +290,9 @@ Copy this block into the eventual evidence file after the real run:
 gate: NIMCARRY_REAL_TESTNET_E2E_PROOF
 verdict: HOLD
 run_date: null
-frontend_url: null
-backend_revision: null
+cloudflare_origin: null
+cloudflare_deployment_revision: null
+container_identity: nimcarry-primary
 database_migrations: [001_reach_mission_foundation, 002_postgres_concurrency_guards]
 wallets:
   A_fingerprint: null
