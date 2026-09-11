@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.24
+state_version: 0.8.25
 date: 2026-09-11
-phase: HTTP_SECURITY_SPLIT_COMPLETE_SHARED_VERTICAL_INTEGRATION_NEXT
+phase: SECURE_BACKEND_PORTED_TO_LATEST_MAIN_CI_GREEN_BROWSER_WIRING_NEXT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -60,17 +60,7 @@ winning_intelligence:
   seven_call_otter_corpus: COMPLETE_7_OF_7_THROUGH_2026_09_09
   definitive_audit: docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md
   score_delta: docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md
-  locked_patterns:
-    - problem_first_storytelling
-    - live_proof_beats_architecture
-    - simplicity_is_implicit_meta_rubric
-    - persistent_visible_proof_artifact
-    - real_user_behavior_as_PMF_signal
-    - natural_invite_share_loop
-    - avoid_crypto_as_front_door
-    - deterministic_demo_not_dependent_on_judge
-    - freeze_known_good_build_for_random_judge_window
-    - capture_easy_builder_promotion_points
+  locked_patterns: [problem_first_storytelling, live_proof_beats_architecture, simplicity_is_implicit_meta_rubric, persistent_visible_proof_artifact, real_user_behavior_as_PMF_signal, natural_invite_share_loop, avoid_crypto_as_front_door, deterministic_demo_not_dependent_on_judge, freeze_known_good_build_for_random_judge_window, capture_easy_builder_promotion_points]
 
 score_capture_strategy:
   builder_promotion: { skool_post_points: 2, public_social_post_points: 3, target_total: 5 }
@@ -83,72 +73,72 @@ living_route_ui:
   pull_request: 21
   merge_sha: 08b3ce1d3662e78a40c5c43e647a6940900e92bc
   ci: PASS
-  implementation_doc: docs/LIVING-ROUTE-UI-P0-P1-2026-09-09.md
   reduced_motion: enforced
   proof_rule: presentation_layer_does_not_create_transaction_FINAL_custody_or_ARRIVED_state
 
-vercel_deployment:
-  remediation_pull_request: 22
-  remediation_merge_sha: 90673c060e7afbd1e3102326b845b2c1768584b3
-  output_directory: web
-  user_observed_production_status: READY_CURRENT
-  user_observed_public_domain: https://carry-one-mu.vercel.app
-  observed_direct_create_render: PASS
-  remaining_public_smoke: [/mission/:path*, /i/:path*, mobile_Nimiq_Pay_webview]
-
 guided_demo_tour:
-  purpose: provider_free_end_to_end_UI_and_story_test_only
   clean_start_link: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
-  implementation_file: web/demo-tour.js
-  second_video_qa_doc: docs/GUIDED-DEMO-SECOND-VIDEO-QA-2026-09-10.md
   fresh_start_to_arrived_seconds_approx: 54
   verdict: PASS_WITH_MINOR_POLISH_APPLIED
-  latest_polish_commit: 61a64e530b74f1f3c0300fc1387694c6ef6218af
   evidence_boundary: NEVER_USE_GUIDED_DEMO_AS_REAL_TESTNET_OR_ONCHAIN_PROOF
 
 http_security:
-  base_branch: feat/mission-http-bindings
-  split:
-    opeyemi: [route_view_capability, invitation_privacy_redaction, legacy_relay_production_gate]
-    faadil: [secure_tx_hash_broadcast_capability, typescript_api_client_Idempotency_Key]
-    shared: [browser_secure_contract_wiring, frontend_HTTP_Postgres_integration, real_testnet_E2E]
+  all_five_security_blockers: CLOSED
   faadil_pr20:
     status: MERGED_TO_FEAT_MISSION_HTTP_BINDINGS
     merge_sha: 77c89bb9f289de1c00b5d22d6f8c7280dc223b01
     features: [one_time_scoped_broadcast_capability, automatic_TS_client_idempotency]
   opeyemi_pr23:
-    status: REVIEW_FIXES_VERIFIED_APPROVED_AND_MERGED_TO_FEAT_MISSION_HTTP_BINDINGS
+    status: REVIEW_FIXES_VERIFIED_APPROVED_AND_MERGED
     head_sha_reviewed: 4dfc6ac1fb2f65cc2879dfb48f76643c5cd9d964
     merge_sha: 76fe73efe0e397dbacc447f7a0ead8f75c9fbca8
     ci_run: 34578961361
     ci: PASS
     tests: 148
-    features:
-      - route_view_capability_replaces_spoofable_X_Wallet
-      - invitation_sensitive_fields_redacted_by_viewer_role
-      - production_legacy_relay_mutation_gate
-      - nonpublic_reconcile_response_requires_route_view_capability
-      - invite_token_is_landing_only_not_route_view_capability
-    review_fixes:
-      reconcile_data_bypass: CLOSED
-      false_invite_token_route_capability_claim: CLOSED
-  all_five_security_blockers: CLOSED_ON_FEATURE_BRANCH
-  branch_divergence_against_main:
-    feature_ahead_by_commits: 22
-    feature_behind_main_by_commits: 100
-    existing_pr14_to_main: OPEN_NOT_MERGEABLE
-    rule: DO_NOT_FORCE_UPDATE_OPEYEMI_BRANCH
+    features: [route_view_capability, invitation_privacy_redaction, legacy_relay_production_gate, protected_nonpublic_reconcile, invite_token_landing_only]
+
+shared_vertical_integration:
+  branch: integration/secure-vertical-slice
+  base_main_sha: 2b36d85ef8d8e0355a1ff4cf27d99ee69ace5005
+  secure_feature_source_sha: 76fe73efe0e397dbacc447f7a0ead8f75c9fbca8
+  port_commit: 372cb8a1bbd3d09a561476f56c50fd3208185018
+  ci_run: 34597326151
+  ci: PASS
+  strategy: PORT_ONLY_SECURE_SOURCE_AND_TEST_FILES_ON_TOP_OF_LATEST_MAIN
+  preserved_from_main: [Living_Route_UI, guided_demo, Vercel_config, canonical_state, current_docs]
+  source_files_ported:
+    - src/index.ts
+    - src/mini-app/api-client.ts
+    - src/mission/service.ts
+    - src/mission/types.ts
+    - src/service/broadcast-capability.ts
+    - src/service/http-server.ts
+    - src/service/idempotency.ts
+    - src/service/mission-http-server.ts
+    - src/service/mission-view.ts
+    - src/service/rate-limiter.ts
+    - src/service/request-schema.ts
+    - src/service/route-view-capability.ts
+    - tests/mini-app/api-client.test.ts
+    - tests/service/broadcast-capability.test.ts
+    - tests/service/http-server.test.ts
+    - tests/service/mission-http-server.test.ts
+  stale_pr14:
+    status: CLOSED_SUPERSEDED_NOT_MERGED
+    reason: feature branch was 22 commits ahead and 100 commits behind main
+  do_not_force_update_opeyemi_branch: true
 
 current_gate:
   name: NIMCARRY_SHARED_VERTICAL_INTEGRATION
-  status: READY_TO_RECONCILE_SECURE_BACKEND_WITH_LATEST_MAIN
+  status: SECURE_BACKEND_PORT_GREEN_BROWSER_SECURE_CONTRACT_WIRING_NEXT
   next_actions:
-    - create_latest_main_based_integration_branch
-    - port_secure_HTTP_surface_without_overwriting_Living_Route_UI
-    - wire_browser_to_secure_route_view_and_broadcast_contract
-    - verify_Postgres_bootstrap_and_single_writer_durability
-    - full_CI_green
-    - merge_to_main
+    - wire_web_runtime_to_route_view_capability
+    - persist_and_forward_view_token_for_nonpublic_reads_and_reconcile
+    - wire_broadcast_capability_from_pass_intent_to_broadcast
+    - ensure_browser_mutations_use_Idempotency_Key
+    - verify_frontend_HTTP_Postgres_bootstrap_and_single_writer_durability
+    - run_full_CI_and_vertical_harness
+    - merge_integration_branch_to_main
     - update_canon_and_handover
 
 next_gate:
