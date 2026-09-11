@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "nimcarry",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-09-11",
+  "assets": {
+    "directory": "../web",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+  "containers": [
+    {
+      "name": "nimcarry-api",
+      "class_name": "NimCarryContainer",
+      "image": "../Dockerfile.cloudflare",
+      "image_build_context": "..",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NIMCARRY_API",
+        "class_name": "NimCarryContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["NimCarryContainer"]
+    }
+  ]
+}
