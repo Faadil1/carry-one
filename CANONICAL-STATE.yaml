@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.25
+state_version: 0.8.26
 date: 2026-09-11
-phase: SECURE_BACKEND_PORTED_TO_LATEST_MAIN_CI_GREEN_BROWSER_WIRING_NEXT
+phase: SHARED_VERTICAL_INTEGRATION_MERGED_MAIN_CI_GREEN_TESTNET_RUNTIME_NEXT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -83,69 +83,72 @@ guided_demo_tour:
   evidence_boundary: NEVER_USE_GUIDED_DEMO_AS_REAL_TESTNET_OR_ONCHAIN_PROOF
 
 http_security:
-  all_five_security_blockers: CLOSED
+  all_five_security_blockers: CLOSED_AND_MERGED_TO_MAIN
   faadil_pr20:
-    status: MERGED_TO_FEAT_MISSION_HTTP_BINDINGS
-    merge_sha: 77c89bb9f289de1c00b5d22d6f8c7280dc223b01
+    merge_sha_feature_base: 77c89bb9f289de1c00b5d22d6f8c7280dc223b01
     features: [one_time_scoped_broadcast_capability, automatic_TS_client_idempotency]
   opeyemi_pr23:
-    status: REVIEW_FIXES_VERIFIED_APPROVED_AND_MERGED
     head_sha_reviewed: 4dfc6ac1fb2f65cc2879dfb48f76643c5cd9d964
-    merge_sha: 76fe73efe0e397dbacc447f7a0ead8f75c9fbca8
-    ci_run: 34578961361
-    ci: PASS
-    tests: 148
+    merge_sha_feature_base: 76fe73efe0e397dbacc447f7a0ead8f75c9fbca8
     features: [route_view_capability, invitation_privacy_redaction, legacy_relay_production_gate, protected_nonpublic_reconcile, invite_token_landing_only]
-
-shared_vertical_integration:
-  branch: integration/secure-vertical-slice
-  base_main_sha: 2b36d85ef8d8e0355a1ff4cf27d99ee69ace5005
-  secure_feature_source_sha: 76fe73efe0e397dbacc447f7a0ead8f75c9fbca8
-  port_commit: 372cb8a1bbd3d09a561476f56c50fd3208185018
-  ci_run: 34597326151
-  ci: PASS
-  strategy: PORT_ONLY_SECURE_SOURCE_AND_TEST_FILES_ON_TOP_OF_LATEST_MAIN
-  preserved_from_main: [Living_Route_UI, guided_demo, Vercel_config, canonical_state, current_docs]
-  source_files_ported:
-    - src/index.ts
-    - src/mini-app/api-client.ts
-    - src/mission/service.ts
-    - src/mission/types.ts
-    - src/service/broadcast-capability.ts
-    - src/service/http-server.ts
-    - src/service/idempotency.ts
-    - src/service/mission-http-server.ts
-    - src/service/mission-view.ts
-    - src/service/rate-limiter.ts
-    - src/service/request-schema.ts
-    - src/service/route-view-capability.ts
-    - tests/mini-app/api-client.test.ts
-    - tests/service/broadcast-capability.test.ts
-    - tests/service/http-server.test.ts
-    - tests/service/mission-http-server.test.ts
   stale_pr14:
     status: CLOSED_SUPERSEDED_NOT_MERGED
-    reason: feature branch was 22 commits ahead and 100 commits behind main
-  do_not_force_update_opeyemi_branch: true
+    rule: DO_NOT_REOPEN_OR_FORCE_UPDATE_OPEYEMI_BRANCH
+
+shared_vertical_integration:
+  status: MERGED_TO_MAIN_CI_GREEN
+  integration_branch: integration/secure-vertical-slice
+  secure_feature_source_sha: 76fe73efe0e397dbacc447f7a0ead8f75c9fbca8
+  backend_port_commit: 372cb8a1bbd3d09a561476f56c50fd3208185018
+  browser_secure_wiring_commit: f0f4da99821d472df93dcb9370d3a2b0929eba74
+  browser_contract_test_commit: 4c27998f91d1120aa4fbd8da8d429116602251dc
+  vertical_harness_commit: 8c73c5a4a43142765b239ff4bbae022ab4440dfa
+  pull_request: 24
+  main_merge_sha: 449f1d3b942b8593596ea2e637033444f41f0bc9
+  branch_ci_run: 34598755496
+  branch_ci: PASS
+  pr_ci_run: 34598845208
+  pr_ci: PASS
+  post_merge_main_ci_run: 34598905774
+  post_merge_main_ci: PASS
+  browser_security_contract:
+    nonpublic_reads_use_bearer_route_view_capability: true
+    reconcile_forwards_route_view_capability: true
+    spoofable_X_Wallet_authorization: removed
+    accepted_bridge_mints_separate_signed_VIEW_ROUTE_capability: true
+    browser_mutations_attach_Idempotency_Key: true
+    broadcast_claim_requires_one_time_broadcast_capability: true
+    broadcast_retry_key_is_stable_per_authorized_pass: true
+    invitation_id_normalized_for_real_invite_flow: true
+  vertical_harness:
+    file: tests/integration/secure-vertical-slice.test.ts
+    path: browser_contract -> secure_HTTP -> PostgreSQL_adapter
+    proves: signed_create_invite_accept_VIEW_ROUTE_authorize_broadcast_reconcile_FINAL_holder_projection_and_durable_DB_state
+    database_test_mode: pg_mem_foundation_schema
+    production_concurrency_guard_note: migration_002_is_Postgres_only_and_remains separately covered_by_repository_policy
+  preserved_from_main: [Living_Route_UI, guided_demo, Vercel_config, judge_story, canonical_docs]
 
 current_gate:
-  name: NIMCARRY_SHARED_VERTICAL_INTEGRATION
-  status: SECURE_BACKEND_PORT_GREEN_BROWSER_SECURE_CONTRACT_WIRING_NEXT
-  next_actions:
-    - wire_web_runtime_to_route_view_capability
-    - persist_and_forward_view_token_for_nonpublic_reads_and_reconcile
-    - wire_broadcast_capability_from_pass_intent_to_broadcast
-    - ensure_browser_mutations_use_Idempotency_Key
-    - verify_frontend_HTTP_Postgres_bootstrap_and_single_writer_durability
-    - run_full_CI_and_vertical_harness
-    - merge_integration_branch_to_main
-    - update_canon_and_handover
-
-next_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: PREP_ALLOWED_EXECUTION_BLOCKED_UNTIL_SHARED_VERTICAL_INTEGRATION_MERGED
+  status: CODE_READY_RUNTIME_DEPLOYMENT_AND_REAL_NIMIQ_PAY_PROOF_NEXT
+  code_merge_prerequisite: COMPLETE
+  runtime_prerequisites:
+    - deploy_or_run_Node_Mission_HTTP_server
+    - configure_Postgres_single_writer_runtime
+    - set_target_encryption_and_HMAC_keys
+    - set_canonical_origin_and_testnet_RPC_endpoints
+    - keep_legacy_relay_mutations_disabled_in_production
+    - use_real_Nimiq_Pay_provider
   topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
-  target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
+  target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> INVITE -> ACCEPT -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
+  required_checks:
+    - exact_1_NIM_100000_Luna_each_hop
+    - requested_fee_0_and_wallet_network_behavior
+    - independent_FINAL_before_custody_move
+    - multi_account_wallet_selection
+    - native_invitation_deeplink
+    - iOS_cold_warm_background_resume
+    - real_Route_Receipt_matches_finalized_route
   never_claim_before_observed: real_testnet_FINAL_or_ARRIVED
 
 post_E2E_priority_order:
@@ -159,7 +162,8 @@ post_E2E_priority_order:
   - final_TRACE_visual_polish
 
 still_blocked:
-  - public_early_access_before_secure_vertical_flow
+  - claiming_real_testnet_FINAL_or_ARRIVED_before_observation
+  - public_early_access_before_real_secure_E2E
   - mainnet_cutover_and_funds
   - broad_marketing_launch_before_real_E2E
   - target_claiming_or_public_discovery
