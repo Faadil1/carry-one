@@ -5,7 +5,7 @@ import type { MissionRepository } from "../mission/repository.js";
 import { ReachMissionCoordinator } from "../mission/coordinator.js";
 import { ReachMissionService } from "../mission/service.js";
 import { normalizeNimiqAddress, TargetWalletProtector } from "../mission/target-wallet-crypto.js";
-import { MissionValidationError } from "../mission/types.js";
+import { MissionValidationError, type InvitationRecord } from "../mission/types.js";
 import { buildUsageEvidence } from "../mission/usage.js";
 import { NimiqWalletAuthorizer } from "../mission/wallet-auth.js";
 import { buildCarryOneInviteLinks } from "../mini-app/deeplink.js";
@@ -17,7 +17,12 @@ import {
   type BroadcastCapabilityStore,
 } from "./broadcast-capability.js";
 import type { CanonicalRelayService } from "./canonical-relay-service.js";
-import { handleRelayRequest } from "./http-server.js";
+import { handleRelayRequest, legacyRelayEnabledFromEnv } from "./http-server.js";
+import {
+  MemoryRouteViewCapabilityStore,
+  RouteViewCapabilityError,
+  type RouteViewCapabilityStore,
+} from "./route-view-capability.js";
 import {
   RequestValidationError,
   asAddress,
@@ -46,6 +51,7 @@ const MISSION_ACTIONS = [
   "WITHDRAW_INVITATION",
   "AUTHORIZE_PASS",
   "CANCEL_MISSION",
+  "VIEW_ROUTE",
 ] as const;
 
 export interface HttpLimits {
@@ -65,11 +71,20 @@ export interface MissionHttpDeps {
   idempotency: IdempotencyStore;
   limiter: RateLimiter;
   limits?: HttpLimits;
-  /** Optional injection point for tests. Defaults to a process-local, one-time store. */
+  /** Optional injection point for tests. Defaults to a process-local, short-lived store. */
   broadcastCapabilities?: BroadcastCapabilityStore;
+  /** Optional injection point for tests. Defaults to a process-local store. */
+  routeViewCapabilities?: RouteViewCapabilityStore;
+  /**
+   * Explicit legacy `/relay` mutation gate. Defaults to
+   * `CARRY_ONE_LEGACY_RELAY_ENABLED` (enabled outside production, disabled in
+   * production).
+   */
+  legacyRelayEnabled?: boolean;
 }
 
 const defaultCapabilityStores = new WeakMap<MissionHttpDeps, BroadcastCapabilityStore>();
+const defaultRouteViewCapabilityStores = new WeakMap<MissionHttpDeps, RouteViewCapabilityStore>();
 
 function capabilityStore(deps: MissionHttpDeps): BroadcastCapabilityStore {
   if (deps.broadcastCapabilities) return deps.broadcastCapabilities;
@@ -77,6 +92,16 @@ function capabilityStore(deps: MissionHttpDeps): BroadcastCapabilityStore {
   if (!store) {
     store = new MemoryBroadcastCapabilityStore();
     defaultCapabilityStores.set(deps, store);
+  }
+  return store;
+}
+
+function routeViewCapabilityStore(deps: MissionHttpDeps): RouteViewCapabilityStore {
+  if (deps.routeViewCapabilities) return deps.routeViewCapabilities;
+  let store = defaultRouteViewCapabilityStores.get(deps);
+  if (!store) {
+    store = new MemoryRouteViewCapabilityStore();
+    defaultRouteViewCapabilityStores.set(deps, store);
   }
   return store;
 }
@@ -100,9 +125,11 @@ function resolveLimits(deps: MissionHttpDeps): HttpLimits {
 }
 
 export function createMissionHttpServer(deps: MissionHttpDeps) {
-  // Materialize the per-server capability store once. Keeping it process-local
-  // means a restart invalidates bearer tokens without losing the durable pass intent.
+  // Materialize the per-server capability stores once. Keeping them process-local
+  // means a restart invalidates bearer tokens (route-view and broadcast) without
+  // losing the durable pass intent.
   capabilityStore(deps);
+  routeViewCapabilityStore(deps);
   return createServer((req, res) => {
     handleRequest(deps, req, res).catch((err) => sendError(res, err));
   });
@@ -116,7 +143,7 @@ async function handleRequest(deps: MissionHttpDeps, req: IncomingMessage, res: S
     return send(res, 200, { status: "ok" });
   }
   if (segments[0] === "relay") {
-    return handleRelayRequest(deps.relay, req, res);
+    return handleRelayRequest(deps.relay, req, res, { legacyRelayEnabled: deps.legacyRelayEnabled ?? legacyRelayEnabledFromEnv() });
   }
   if (segments[0] === "usage" && segments.length === 1) {
     if (req.method !== "GET") return notFound(req, res, url);
@@ -156,6 +183,9 @@ async function handleMission(deps: MissionHttpDeps, req: IncomingMessage, res: S
     if (!checkReadLimit(deps, req, res)) return;
     const view = await viewMission(deps, req, missionId);
     return send(res, 200, view.route);
+  }
+  if (req.method === "POST" && tail.length === 1 && tail[0] === "view") {
+    return sendMutation(deps, req, res, () => issueRouteViewCapability(deps, req, missionId));
   }
   if (req.method === "POST" && tail.length === 1 && tail[0] === "cancel") {
     return sendMutation(deps, req, res, () => cancelMission(deps, req, missionId));
@@ -213,7 +243,16 @@ async function createMission(deps: MissionHttpDeps, req: IncomingMessage): Promi
     creatorDisplayLabel,
     visibility,
   });
-  return { status: 201, body: await viewMission(deps, req, mission.id, normalizeNimiqAddress(auth.wallet)) };
+  const creatorWallet = normalizeNimiqAddress(auth.wallet);
+  const viewCapability = routeViewCapabilityStore(deps).issue({ missionId: mission.id, holderWallet: creatorWallet });
+  return {
+    status: 201,
+    body: {
+      ...(await viewMission(deps, req, mission.id, creatorWallet)),
+      view_token: viewCapability.token,
+      view_token_expires_at: new Date(viewCapability.expiresAt).toISOString(),
+    },
+  };
 }
 
 async function cancelMission(deps: MissionHttpDeps, req: IncomingMessage, missionId: string) {
@@ -341,8 +380,9 @@ async function handleInvitation(deps: MissionHttpDeps, req: IncomingMessage, res
 
   if (req.method === "GET" && !tail) {
     if (!checkReadLimit(deps, req, res)) return;
+    const invitationRecord = await deps.missions.getInvitationRecordByToken(token);
     const invitation = await deps.missions.getInvitationByToken(token);
-    const mission = await viewMission(deps, req, invitation.mission_id);
+    const mission = await viewInvitationMission(deps, invitationRecord);
     return send(res, 200, { invitation, mission });
   }
   if (req.method === "POST" && tail === "accept") {
@@ -486,6 +526,109 @@ async function sendRateLimited(
 
 async function viewMission(deps: MissionHttpDeps, req: IncomingMessage, missionId: string, signedWallet?: string): Promise<MissionView> {
   const record = await deps.missions.getMissionRecord(missionId);
+  let resolution: ViewerResolution;
+  if (signedWallet !== undefined) {
+    resolution = { viewer: normalizeNimiqAddress(signedWallet), authorized: true };
+  } else if (record.visibility !== "PUBLIC") {
+    resolution = await resolveViewer(deps, req, record.id);
+  } else {
+    resolution = { viewer: null, authorized: true };
+  }
+  return buildMissionView(deps, missionId, resolution);
+}
+
+/**
+ * Invitation view: the invite token is the bearer for the curated bridge
+ * landing page (`GET /i/:token`). Continued route access after accepting or
+ * declining requires a separate signed `VIEW_ROUTE` capability mint via
+ * `POST /missions/:id/view`.
+ */
+async function viewInvitationMission(deps: MissionHttpDeps, invitationRecord: InvitationRecord): Promise<MissionView> {
+  return buildMissionView(deps, invitationRecord.missionId, {
+    viewer: invitationRecord.candidateWalletNormalized,
+    authorized: true,
+  });
+}
+
+interface ViewerResolution {
+  viewer: string | null;
+  authorized: boolean;
+}
+
+/**
+ * Resolve a route-view request to an (optionally personalized) viewer identity.
+ *
+ * Bearer resolution goes through the route-view capability store — the minted
+ * view token. The legacy spoofable `X-Wallet` header is no longer read; a
+ * missing or invalid capability rejects with 401/403 before any unlisted mission
+ * data is produced.
+ */
+async function resolveViewer(
+  deps: MissionHttpDeps,
+  req: IncomingMessage,
+  missionId: string
+): Promise<ViewerResolution> {
+  const token = bearerToken(req);
+  if (!token) {
+    throw new MissionValidationError(
+      "ROUTE_VIEW_CAPABILITY_REQUIRED",
+      "This mission is not public. Route view requires a Bearer route view capability"
+    );
+  }
+  const capability = routeViewCapabilityStore(deps).verify(token, { missionId });
+  if (capability.holderWallet === null) {
+    throw new MissionValidationError(
+      "VIEWER_AUTH_REQUIRED",
+      "This route view capability does not bind a viewer identity"
+    );
+  }
+  return { viewer: capability.holderWallet, authorized: true };
+}
+
+function bearerToken(req: IncomingMessage): string | null {
+  const header = req.headers.authorization;
+  const text = typeof header === "string" ? header : Array.isArray(header) ? header[0] : undefined;
+  if (!text) return null;
+  const match = /^Bearer\s+([A-Za-z0-9_-]+)$/i.exec(text.trim());
+  return match ? match[1] : null;
+}
+
+/**
+ * Signed `VIEW_ROUTE` mint: mission participants (creator, current holder,
+ * invitee, active/accepted invitee, target, earlier bridges) may mint a
+ * route-view capability for their wallet; strangers may not. Read-only — minting
+ * exposes no mission data and grants no custody.
+ */
+async function issueRouteViewCapability(deps: MissionHttpDeps, req: IncomingMessage, missionId: string) {
+  const obj = await jsonBody(req);
+  const envelope = parseSignedEnvelope(obj);
+  rejectUnknownKeys(obj, ["challenge_id", "public_key", "signature"]);
+  const auth = await verifyEnvelope(deps, envelope);
+  if (auth.missionId !== undefined && auth.missionId !== missionId) {
+    throw new MissionValidationError("AUTH_MISSION_MISMATCH", "Authorization is bound to another mission");
+  }
+  const wallet = normalizeNimiqAddress(auth.wallet);
+  const record = await deps.missions.getMissionRecord(missionId);
+  const view = await buildMissionView(deps, missionId, { viewer: wallet, authorized: true });
+  if (view.viewer_role === "UNLISTED_VIEWER" && record.visibility !== "PUBLIC") {
+    throw new MissionValidationError(
+      "NOT_MISSION_PARTICIPANT",
+      "Only mission participants can mint a route view capability"
+    );
+  }
+  const issued = routeViewCapabilityStore(deps).issue({ missionId, holderWallet: wallet });
+  return {
+    status: 200,
+    body: { view_token: issued.token, view_token_expires_at: new Date(issued.expiresAt).toISOString() },
+  };
+}
+
+async function buildMissionView(
+  deps: MissionHttpDeps,
+  missionId: string,
+  resolution: ViewerResolution
+): Promise<MissionView> {
+  const record = await deps.missions.getMissionRecord(missionId);
   const invitation = await deps.repository.getOpenInvitation(missionId);
   const route = deps.relay.getHistory(missionId);
   return composeMissionView({
@@ -493,20 +636,9 @@ async function viewMission(deps: MissionHttpDeps, req: IncomingMessage, missionI
     invitation: invitation ?? null,
     route,
     protector: deps.protector,
-    viewer: signedWallet ?? viewerWalletFromHeaders(req),
+    viewer: resolution.viewer,
     hasActiveIntent: deps.relay.getActiveIntent(missionId) !== null,
   });
-}
-
-function viewerWalletFromHeaders(req: IncomingMessage): string | null {
-  const header = req.headers["x-wallet"];
-  const text = typeof header === "string" ? header : Array.isArray(header) ? header[0] : undefined;
-  if (!text) return null;
-  try {
-    return normalizeNimiqAddress(text);
-  } catch {
-    return null;
-  }
 }
 
 function toPassIntentPayload(intent: PassIntent, capability: { token: string; expiresAt: number }) {
@@ -590,9 +722,16 @@ const AUTH_REASONS = new Set([
   "AUTH_INVITATION_MISMATCH",
   "AUTH_SEQUENCE_MISMATCH",
   "AUTH_BINDING_MISMATCH",
+  "ROUTE_VIEW_CAPABILITY_REQUIRED",
+  "VIEWER_AUTH_REQUIRED",
 ]);
 const NOT_FOUND_REASONS = new Set(["MISSION_NOT_FOUND", "INVITATION_NOT_FOUND"]);
-const FORBIDDEN_REASONS = new Set(["WRONG_CURRENT_HOLDER", "NOT_MISSION_AUTHORITY", "WRONG_INVITEE_WALLET"]);
+const FORBIDDEN_REASONS = new Set([
+  "WRONG_CURRENT_HOLDER",
+  "NOT_MISSION_AUTHORITY",
+  "WRONG_INVITEE_WALLET",
+  "NOT_MISSION_PARTICIPANT",
+]);
 const BAD_REQUEST_REASONS = new Set([
   "TARGET_CONSENT_REQUIRED",
   "TARGET_IS_CREATOR",
@@ -608,6 +747,10 @@ function sendError(res: ServerResponse, err: unknown) {
   }
   if (err instanceof BroadcastCapabilityError) {
     const status = err.reason === "BROADCAST_CAPABILITY_BINDING_MISMATCH" ? 403 : 401;
+    return send(res, status, { error: err.reason, message: err.message });
+  }
+  if (err instanceof RouteViewCapabilityError) {
+    const status = err.reason === "ROUTE_VIEW_CAPABILITY_MISSION_MISMATCH" ? 403 : 401;
     return send(res, status, { error: err.reason, message: err.message });
   }
   if (err instanceof MissionValidationError) {

@@ -57,6 +57,22 @@ describe("CarryOneApiClient mutation transport", () => {
     expect(new Headers(calls[1].init?.headers).get("Idempotency-Key")).toBeNull();
   });
 
+  it("forwards the stored view token as Bearer authorization on reconcile", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    const client = new CarryOneApiClient({
+      fetchImpl: (async (input, init) => {
+        calls.push({ url: String(input), init });
+        return okJson({ mission: { status: "ACTIVE" } });
+      }) as typeof fetch,
+    });
+
+    const viewToken = "test-view-token-abcdefghijklmnopqrstuvwxyz01234567";
+    await client.reconcile("00000000-0000-4000-8000-000000000001", viewToken);
+
+    const headers = new Headers(calls[0].init?.headers);
+    expect(headers.get("Authorization")).toBe(`Bearer ${viewToken}`);
+  });
+
   it("transports the one-time broadcast capability and allows a stable retry key", async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     const client = new CarryOneApiClient({

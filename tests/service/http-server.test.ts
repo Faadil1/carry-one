@@ -6,7 +6,7 @@ import { ONE_NIM_IN_LUNA, type NimiqTxLookup } from "../../src/core/types.js";
 import { NIMIQ_POLICY } from "../../src/nimiq/policy.js";
 import type { NimiqRpcClient } from "../../src/nimiq/rpc-client.js";
 import { CanonicalRelayService } from "../../src/service/canonical-relay-service.js";
-import { createHttpServer } from "../../src/service/http-server.js";
+import { createHttpServer, legacyRelayEnabledFromEnv } from "../../src/service/http-server.js";
 
 class FakeRpcClient implements NimiqRpcClient {
   private txs = new Map<string, NimiqTxLookup>();
@@ -139,5 +139,55 @@ describe("HTTP surface over CanonicalRelayService", () => {
     expect(cancelRes.status).toBe(409);
     const body = await cancelRes.json();
     expect(body.error).toBe("CANNOT_CANCEL_BROADCAST");
+  });
+});
+
+describe("legacyRelayEnabledFromEnv", () => {
+  it("enables the legacy relay outside production unless explicitly disabled", () => {
+    expect(legacyRelayEnabledFromEnv({})).toBe(true);
+    expect(legacyRelayEnabledFromEnv({ NODE_ENV: "test" })).toBe(true);
+    expect(legacyRelayEnabledFromEnv({ CARRY_ONE_LEGACY_RELAY_ENABLED: "true" })).toBe(true);
+    expect(legacyRelayEnabledFromEnv({ CARRY_ONE_LEGACY_RELAY_ENABLED: "1", NODE_ENV: "production" })).toBe(true);
+    expect(legacyRelayEnabledFromEnv({ CARRY_ONE_LEGACY_RELAY_ENABLED: "yes" })).toBe(true);
+  });
+
+  it("disables the legacy relay in production unless explicitly enabled", () => {
+    expect(legacyRelayEnabledFromEnv({ NODE_ENV: "production" })).toBe(false);
+    expect(legacyRelayEnabledFromEnv({ NODE_ENV: "production", CARRY_ONE_LEGACY_RELAY_ENABLED: "false" })).toBe(false);
+    expect(legacyRelayEnabledFromEnv({ NODE_ENV: "production", CARRY_ONE_LEGACY_RELAY_ENABLED: "0" })).toBe(false);
+    expect(legacyRelayEnabledFromEnv({ NODE_ENV: "production", CARRY_ONE_LEGACY_RELAY_ENABLED: "no" })).toBe(false);
+  });
+});
+
+describe("gated legacy relay HTTP surface", () => {
+  let baseUrlGate: string;
+  let closeGate: () => Promise<void>;
+
+  beforeAll(async () => {
+    const service = new CanonicalRelayService(new RelayStore(), new FakeRpcClient());
+    const server = createHttpServer(service, { legacyRelayEnabled: false });
+    await new Promise<void>((resolve) => server.listen(0, resolve));
+    const { port } = server.address() as AddressInfo;
+    baseUrlGate = `http://127.0.0.1:${port}`;
+    closeGate = () => new Promise((resolve) => server.close(() => resolve()));
+  });
+
+  afterAll(() => closeGate());
+
+  it("rejects mutation endpoints with 403 LEGACY_RELAY_DISABLED and keeps reads working", async () => {
+    for (const action of ["intent", "broadcast", "cancel", "reconcile"]) {
+      const res = await fetch(`${baseUrlGate}/relay/gated/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentHolder: "W0", recipient: "W1" }),
+      });
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.error).toBe("LEGACY_RELAY_DISABLED");
+    }
+
+    const view = await fetch(`${baseUrlGate}/relay/gated`);
+    expect(view.status).toBe(200);
+    expect(await view.json()).toMatchObject({ baton_id: "gated", status: "READY" });
   });
 });

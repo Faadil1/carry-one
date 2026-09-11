@@ -142,7 +142,9 @@ describe("Reach Mission HTTP bindings", () => {
     expect(JSON.stringify(missionView)).not.toContain(target.address.replaceAll(" ", ""));
     const missionId = missionView.mission_id;
 
-    const viewRes = await request("GET", `/missions/${missionId}`, undefined, { "X-Wallet": creator.address });
+    const viewRes = await request("GET", `/missions/${missionId}`, undefined, {
+      Authorization: `Bearer ${missionView.view_token}`,
+    });
     expect(viewRes.status).toBe(200);
     expect(viewRes.body.current_holder.is_viewer).toBe(true);
 
@@ -163,6 +165,7 @@ describe("Reach Mission HTTP bindings", () => {
     const inviteViewRes = await request("GET", `/i/${token}`);
     expect(inviteViewRes.status).toBe(200);
     expect(inviteViewRes.body.invitation.status).toBe("INVITED");
+    expect(inviteViewRes.body.mission.invitation.candidate_label).toBe("Bridge");
 
     const acceptCh = await challenge(target.address, "ACCEPT_INVITATION", {
       mission_id: missionId,
@@ -224,13 +227,23 @@ describe("Reach Mission HTTP bindings", () => {
       recipientData: intent.recipient_data,
     };
 
-    const reconcileRes = await request("POST", `/missions/${missionId}/reconcile`, {}, { "Idempotency-Key": "reconcile-e2e" });
+    const reconcileRes = await request("POST", `/missions/${missionId}/reconcile`, {}, {
+      "Idempotency-Key": "reconcile-e2e",
+      Authorization: `Bearer ${missionView.view_token}`,
+    });
     expect(reconcileRes.status).toBe(200);
     expect(reconcileRes.body.mission.status).toBe("ARRIVED");
     expect(reconcileRes.body.mission.sequence).toBe(1);
     expect(reconcileRes.body.mission.finalized_hop_count).toBe(1);
 
-    const targetViewRes = await request("GET", `/missions/${missionId}`, undefined, { "X-Wallet": target.address });
+    const targetViewCh = await challenge(target.address, "VIEW_ROUTE", { mission_id: missionId });
+    const targetMintRes = await request("POST", `/missions/${missionId}/view`, envelope(targetViewCh, target), { "Idempotency-Key": "view-target-e2e" });
+    expect(targetMintRes.status).toBe(200);
+    expect(targetMintRes.body.view_token).toBeTruthy();
+
+    const targetViewRes = await request("GET", `/missions/${missionId}`, undefined, {
+      Authorization: `Bearer ${targetMintRes.body.view_token}`,
+    });
     expect(targetViewRes.status).toBe(200);
     expect(targetViewRes.body.viewer_role).toBe("TARGET");
     expect(targetViewRes.body.primary_action).toBe("START_NEW_ROUTE");
@@ -332,6 +345,288 @@ describe("Reach Mission HTTP bindings", () => {
     const declineRes = await request("POST", `/i/${inviteRes.body.invite_token}/decline`, {}, { "Idempotency-Key": "decline-1" });
     expect(declineRes.status).toBe(200);
     expect(declineRes.body.status).toBe("DECLINED");
+  });
+});
+
+describe("Reach Mission route-view privacy", () => {
+  beforeAll(async () => {
+    dir = mkdtempSync(join(tmpdir(), "carry-one-privacy-"));
+    rpc = new FakeRpcClient();
+    const missionPath = join(dir, "missions.json");
+    const relayPath = join(dir, "relay.json");
+    const repository = new FileMissionRepository(missionPath);
+    const missions = new ReachMissionService(repository, PROTECTOR);
+    const relay = new CanonicalRelayService(new FileRelayStore(relayPath), rpc);
+    const coordinator = new ReachMissionCoordinator(missions, repository, relay, PROTECTOR);
+    const authorizer = new NimiqWalletAuthorizer(repository, "https://carry.one");
+    const server = createMissionHttpServer({
+      coordinator,
+      missions,
+      repository,
+      authorizer,
+      relay,
+      protector: PROTECTOR,
+      canonicalOrigin: "https://carry.one",
+      idempotency: new MemoryIdempotencyStore(),
+      limiter: new MemoryRateLimiter(),
+    });
+    baseUrl = await listen(server);
+    close = () => new Promise((resolve) => server.close(() => resolve()));
+  });
+
+  afterAll(async () => {
+    await close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("requires a route view capability for unlisted missions and ignores the spoofable X-Wallet header", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "privacy-create");
+    expect(createRes.status).toBe(201);
+    const missionId = createRes.body.mission_id;
+
+    const anonymous = await request("GET", `/missions/${missionId}`);
+    expect(anonymous.status).toBe(401);
+    expect(anonymous.body.error).toBe("ROUTE_VIEW_CAPABILITY_REQUIRED");
+
+    const spoofed = await request("GET", `/missions/${missionId}`, undefined, { "X-Wallet": creator.address });
+    expect(spoofed.status).toBe(401);
+    expect(spoofed.body.error).toBe("ROUTE_VIEW_CAPABILITY_REQUIRED");
+
+    const garbage = await request("GET", `/missions/${missionId}`, undefined, { Authorization: "Bearer not-a-real-token" });
+    expect(garbage.status).toBe(401);
+    expect(garbage.body.error).toBe("ROUTE_VIEW_CAPABILITY_INVALID");
+
+    const valid = await request("GET", `/missions/${missionId}`, undefined, {
+      Authorization: `Bearer ${createRes.body.view_token}`,
+    });
+    expect(valid.status).toBe(200);
+    expect(valid.body.current_holder.is_viewer).toBe(true);
+  });
+
+  it("rejects a capability that is bound to another mission with 403", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const first = await createMissionViaApi(creator, target.address, "cap-a");
+    const second = await createMissionViaApi(creator, wallet().address, "cap-b");
+
+    const cross = await request("GET", `/missions/${second.body.mission_id}`, undefined, {
+      Authorization: `Bearer ${first.body.view_token}`,
+    });
+    expect(cross.status).toBe(403);
+    expect(cross.body.error).toBe("ROUTE_VIEW_CAPABILITY_MISSION_MISMATCH");
+  });
+
+  it("rejects strangers minting a route view capability on an unlisted mission", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "mint-stranger");
+    const missionId = createRes.body.mission_id;
+
+    const stranger = wallet();
+    const ch = await challenge(stranger.address, "VIEW_ROUTE", { mission_id: missionId });
+    const mintRes = await request("POST", `/missions/${missionId}/view`, envelope(ch, stranger), { "Idempotency-Key": "mint-stranger-1" });
+    expect(mintRes.status).toBe(403);
+    expect(mintRes.body.error).toBe("NOT_MISSION_PARTICIPANT");
+
+    const boundElsewhere = await challenge(stranger.address, "VIEW_ROUTE", {
+      mission_id: createRes.body.mission_id,
+    });
+    const otherMission = await createMissionViaApi(wallet(), wallet().address, "mint-other");
+    const mismatched = await request("POST", `/missions/${otherMission.body.mission_id}/view`, envelope(boundElsewhere, stranger), {
+      "Idempotency-Key": "mint-other-1",
+    });
+    expect(mismatched.status).toBe(401);
+    expect(["AUTH_MISSION_MISMATCH", "AUTH_BINDING_MISMATCH"]).toContain(mismatched.body.error);
+  });
+
+  it("lets participants mint a capability and sees the invitation context for their own role", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const candidate = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "role-create");
+    const missionId = createRes.body.mission_id;
+
+    const inviteCh = await challenge(creator.address, "CREATE_INVITATION", { mission_id: missionId, sequence: 1 });
+    const inviteRes = await request("POST", `/missions/${missionId}/invitations`, {
+      ...envelope(inviteCh, creator),
+      candidate_label: "Bridget",
+      candidate_wallet: candidate.address,
+      why_you: "You were closest to the destination last summer.",
+    }, { "Idempotency-Key": "role-invite" });
+    expect(inviteRes.status).toBe(201);
+
+    const candidateMint = await challenge(candidate.address, "VIEW_ROUTE", { mission_id: missionId });
+    const candidateCap = await request("POST", `/missions/${missionId}/view`, envelope(candidateMint, candidate), { "Idempotency-Key": "role-candidate-cap" });
+    expect(candidateCap.status).toBe(200);
+    const candidateView = await request("GET", `/missions/${missionId}`, undefined, { Authorization: `Bearer ${candidateCap.body.view_token}` });
+    expect(candidateView.status).toBe(200);
+    expect(candidateView.body.viewer_role).toBe("INVITEE");
+    expect(candidateView.body.invitation.candidate_label).toBe("Bridget");
+    expect(candidateView.body.invitation.why_you).toBe("You were closest to the destination last summer.");
+
+    const targetMint = await challenge(target.address, "VIEW_ROUTE", { mission_id: missionId });
+    const targetCap = await request("POST", `/missions/${missionId}/view`, envelope(targetMint, target), { "Idempotency-Key": "role-target-cap" });
+    expect(targetCap.status).toBe(200);
+    const targetView = await request("GET", `/missions/${missionId}`, undefined, { Authorization: `Bearer ${targetCap.body.view_token}` });
+    expect(targetView.status).toBe(200);
+    expect(targetView.body.viewer_role).toBe("TARGET");
+    expect(targetView.body.invitation.candidate_label).toBeNull();
+    expect(targetView.body.invitation.candidate_wallet_fingerprint).toBeNull();
+    expect(targetView.body.invitation.why_you).toBeNull();
+    expect(targetView.body.invitation.pass_deadline_at).toBeNull();
+    expect(targetView.body.invitation.status).toBe("INVITED");
+
+    const creatorView = await request("GET", `/missions/${missionId}`, undefined, {
+      Authorization: `Bearer ${createRes.body.view_token}`,
+    });
+    expect(creatorView.status).toBe(200);
+    expect(creatorView.body.invitation.candidate_label).toBe("Bridget");
+  });
+
+  it("keeps public missions readable but redacts invitation context for anonymous viewers", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const candidate = wallet();
+    const ch = await challenge(creator.address, "CREATE_MISSION");
+    const createRes = await request("POST", "/missions", {
+      ...envelope(ch, creator),
+      target_label: "Public route",
+      target_wallet: target.address,
+      target_consent_confirmed: true,
+      mission_note: "A public log everyone may follow.",
+      visibility: "PUBLIC",
+    }, { "Idempotency-Key": "public-create" });
+    expect(createRes.status).toBe(201);
+    const missionId = createRes.body.mission_id;
+
+    const inviteCh = await challenge(creator.address, "CREATE_INVITATION", { mission_id: missionId, sequence: 1 });
+    await request("POST", `/missions/${missionId}/invitations`, {
+      ...envelope(inviteCh, creator),
+      candidate_label: "Bridget",
+      candidate_wallet: candidate.address,
+      why_you: "Only the candidate should read this note.",
+    }, { "Idempotency-Key": "public-invite" });
+
+    const anonymous = await request("GET", `/missions/${missionId}`);
+    expect(anonymous.status).toBe(200);
+    expect(anonymous.body.viewer_role).toBe("UNLISTED_VIEWER");
+    expect(anonymous.body.invitation.candidate_label).toBeNull();
+    expect(anonymous.body.invitation.candidate_wallet_fingerprint).toBeNull();
+    expect(anonymous.body.invitation.why_you).toBeNull();
+    expect(anonymous.body.invitation.pass_deadline_at).toBeNull();
+    expect(anonymous.body.invitation.status).toBe("INVITED");
+  });
+
+  it("rejects anonymous reconcile on an unlisted mission without disclosing mission view details", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "reconcile-anon-create");
+    expect(createRes.status).toBe(201);
+    const missionId = createRes.body.mission_id;
+
+    const anonymous = await request("POST", `/missions/${missionId}/reconcile`, {}, { "Idempotency-Key": "reconcile-anon-1" });
+    expect(anonymous.status).toBe(401);
+    expect(anonymous.body.error).toBe("ROUTE_VIEW_CAPABILITY_REQUIRED");
+    expect(JSON.stringify(anonymous.body)).not.toContain("target_label");
+    expect(JSON.stringify(anonymous.body)).not.toContain("mission_note");
+    expect(anonymous.body).not.toHaveProperty("route");
+    expect(anonymous.body).not.toHaveProperty("current_holder");
+
+    const garbageToken = await request("POST", `/missions/${missionId}/reconcile`, {}, {
+      "Idempotency-Key": "reconcile-anon-2",
+      Authorization: "Bearer not-a-real-token",
+    });
+    expect(garbageToken.status).toBe(401);
+    expect(garbageToken.body.error).toBe("ROUTE_VIEW_CAPABILITY_INVALID");
+
+    const authorized = await request("POST", `/missions/${missionId}/reconcile`, {}, {
+      "Idempotency-Key": "reconcile-anon-3",
+      Authorization: `Bearer ${createRes.body.view_token}`,
+    });
+    expect(authorized.status).toBe(200);
+    expect(authorized.body.mission.status).toBe("ACTIVE");
+  });
+
+  it("does not treat an invitation token as a route view capability (token only opens the landing page)", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "invite-cap-create");
+    const missionId = createRes.body.mission_id;
+
+    const inviteCh = await challenge(creator.address, "CREATE_INVITATION", { mission_id: missionId, sequence: 1 });
+    const inviteRes = await request("POST", `/missions/${missionId}/invitations`, {
+      ...envelope(inviteCh, creator),
+      candidate_label: "Bridge",
+      candidate_wallet: target.address,
+    }, { "Idempotency-Key": "invite-cap-invite" });
+    expect(inviteRes.status).toBe(201);
+    const inviteToken = inviteRes.body.invite_token;
+
+    const landing = await request("GET", `/i/${inviteToken}`);
+    expect(landing.status).toBe(200);
+    expect(landing.body.invitation.status).toBe("INVITED");
+
+    const routeView = await request("GET", `/missions/${missionId}`, undefined, {
+      Authorization: `Bearer ${inviteToken}`,
+    });
+    expect(routeView.status).toBe(401);
+    expect(routeView.body.error).toBe("ROUTE_VIEW_CAPABILITY_INVALID");
+    expect(routeView.body).not.toHaveProperty("route");
+
+    const routeOnly = await request("GET", `/missions/${missionId}/route`, undefined, {
+      Authorization: `Bearer ${inviteToken}`,
+    });
+    expect(routeOnly.status).toBe(401);
+    expect(routeOnly.body.error).toBe("ROUTE_VIEW_CAPABILITY_INVALID");
+  });
+});
+
+describe("Reach Mission legacy /relay gate", () => {
+  let gateBaseUrl: string;
+  let gateClose: () => Promise<void>;
+
+  beforeAll(async () => {
+    const dir = mkdtempSync(join(tmpdir(), "carry-one-relay-gate-"));
+    const repository = new FileMissionRepository(join(dir, "missions.json"));
+    const missions = new ReachMissionService(repository, PROTECTOR);
+    const rpcClient = new FakeRpcClient();
+    const relay = new CanonicalRelayService(new FileRelayStore(join(dir, "relay.json")), rpcClient);
+    const coordinator = new ReachMissionCoordinator(missions, repository, relay, PROTECTOR);
+    const authorizer = new NimiqWalletAuthorizer(repository, "https://carry.one");
+    const server = createMissionHttpServer({
+      coordinator,
+      missions,
+      repository,
+      authorizer,
+      relay,
+      protector: PROTECTOR,
+      canonicalOrigin: "https://carry.one",
+      idempotency: new MemoryIdempotencyStore(),
+      limiter: new MemoryRateLimiter(),
+      legacyRelayEnabled: false,
+    });
+    gateBaseUrl = await listen(server);
+    gateClose = () => new Promise((resolve) => server.close(() => resolve()));
+  });
+
+  afterAll(() => gateClose());
+
+  it("rejects legacy /relay mutations with 403 while leaving the read surface open", async () => {
+    for (const action of ["intent", "broadcast", "cancel", "reconcile"]) {
+      const res = await fetch(`${gateBaseUrl}/relay/gated-baton/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.error).toBe("LEGACY_RELAY_DISABLED");
+    }
+
+    const history = await fetch(`${gateBaseUrl}/relay/gated-baton/history`);
+    expect(history.status).toBe(200);
   });
 });
 

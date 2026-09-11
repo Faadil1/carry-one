@@ -64,19 +64,42 @@ function toRouteEntry(hop: PublicHop, viewer: string | null, now: number): Route
   };
 }
 
-function toInvitationSummary(invitation: InvitationRecord): InvitationSummary {
+function toInvitationSummary(invitation: InvitationRecord, redacted: boolean): InvitationSummary {
   return {
     invitation_id: invitation.id,
     sequence: invitation.sequence,
-    candidate_label: invitation.candidateLabel,
-    candidate_wallet_fingerprint: invitation.candidateWalletNormalized
-      ? walletFingerprint(invitation.candidateWalletNormalized)
-      : null,
-    why_you: invitation.whyYou,
+    candidate_label: redacted ? null : invitation.candidateLabel,
+    candidate_wallet_fingerprint: redacted
+      ? null
+      : invitation.candidateWalletNormalized
+        ? walletFingerprint(invitation.candidateWalletNormalized)
+        : null,
+    why_you: redacted ? null : invitation.whyYou,
     status: invitation.status,
     expires_at: new Date(invitation.expiresAt).toISOString(),
-    pass_deadline_at: invitation.passDeadlineAt === null ? null : new Date(invitation.passDeadlineAt).toISOString(),
+    pass_deadline_at: redacted ? null : invitation.passDeadlineAt === null ? null : new Date(invitation.passDeadlineAt).toISOString(),
   };
+}
+
+/**
+ * Full invitation context (candidate label/wallet fingerprint, `why_you`, pass
+ * deadline) is private to the mission's creator, its current holder, and the
+ * intended recipient (the invitation's pre-bound candidate wallet). Every other
+ * viewer — including unlisted/route-follow viewers, the target, and earlier
+ * bridges — sees only the invitation's existence, sequence and status.
+ */
+function viewerSeesFullInvitation(mission: MissionRecord, invitation: InvitationRecord | null, viewer: string | null): boolean {
+  if (viewer === null) return false;
+  if (viewer === mission.creatorWalletNormalized) return true;
+  if (viewer === mission.currentHolderWalletNormalized) return true;
+  if (
+    invitation !== null &&
+    invitation.candidateWalletNormalized !== null &&
+    sameWallet(viewer, invitation.candidateWalletNormalized)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function currentHolderLabel(mission: MissionRecord): string | null {
@@ -145,7 +168,9 @@ export function composeMissionView(input: {
 }): MissionView {
   const now = input.now ?? Date.now();
   const activity = missionActivity(input.mission, now);
-  const invitation = input.invitation === null ? null : toInvitationSummary(input.invitation);
+  const invitation = input.invitation === null
+    ? null
+    : toInvitationSummary(input.invitation, !viewerSeesFullInvitation(input.mission, input.invitation, input.viewer));
   const viewerRole = deriveViewerRole(input.mission, input.invitation, input.route, input.protector, input.viewer);
   const viewerIsCurrentHolder = sameWallet(input.viewer, input.mission.currentHolderWalletNormalized);
   const primaryAction = derivePrimaryAction(

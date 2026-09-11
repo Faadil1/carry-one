@@ -115,10 +115,12 @@ export class CarryOneApiClient {
     );
   }
 
-  reconcile(missionId: string): Promise<unknown> {
+  reconcile(missionId: string, viewToken?: string): Promise<unknown> {
     // Reconcile is naturally idempotent and intentionally bypasses the replay
-    // cache server-side so each poll observes the latest finality state.
-    return this.request(`/missions/${encodeURIComponent(missionId)}/reconcile`, { method: "POST", body: {} });
+    // cache server-side so each poll observes the latest finality state. It
+    // enforces the same route-view Bearer capability as GET /missions/:id for
+    // non-public missions, so the caller forwards its stored view token.
+    return this.request(`/missions/${encodeURIComponent(missionId)}/reconcile`, { method: "POST", body: {}, viewToken });
   }
 
   private mutation<T = any>(path: string, body: unknown, idempotencyKey = this.idempotencyKeyFactory()): Promise<T> {
