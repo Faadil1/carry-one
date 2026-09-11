@@ -1,12 +1,12 @@
 # HANDOVER — NimCarry
 
-Date: 2026-09-10  
-Canonical version: **0.8.23**  
-State: `HTTP_SECURITY_REVIEW_PR23_CHANGES_REQUESTED_REPO_RENAMED_BROWSER_INTEGRATION_PENDING`
+Date: 2026-09-11  
+Canonical version: **0.8.24**  
+State: `HTTP_SECURITY_SPLIT_COMPLETE_SHARED_VERTICAL_INTEGRATION_NEXT`
 
 ## Read first
 
-`CANONICAL-STATE.yaml` is the current source of truth and overrides chat memory. Update both `CANONICAL-STATE.yaml` and `HANDOVER.md` after every meaningful milestone.
+`CANONICAL-STATE.yaml` is the source of truth and overrides chat memory. Update both `CANONICAL-STATE.yaml` and `HANDOVER.md` after every meaningful milestone.
 
 ## Product law — FROZEN
 
@@ -14,70 +14,114 @@ State: `HTTP_SECURITY_REVIEW_PR23_CHANGES_REQUESTED_REPO_RENAMED_BROWSER_INTEGRA
 
 Judge line: **NimCarry uses 1 NIM to make warm introductions verifiable.**
 
-## Repository naming — UPDATED
+## Winning Intelligence — COMPLETE
 
-The GitHub repository rename is now complete. Canonical repo is **`Faadil1/nimcarry`**. The old `Faadil1/carry-one` path redirects. Vercel public domain remains `https://carry-one-mu.vercel.app`; desired `https://nimcarry.vercel.app` alias is still pending.
+Seven full Otter Sip & Ship transcripts analyzed through Sep 9. Primary docs:
+- `docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md`
+- `docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md`
 
-## Winning Intelligence + UI — COMPLETE FOR CURRENT GATE
+Locked transfer patterns: problem-first; live proof > architecture; simplicity as implicit meta-rubric; persistent proof artifact; real-user behavior as PMF signal; natural invite loop; avoid crypto as front-door; deterministic demo; lifecycle closure; known-good judge-window runtime.
 
-Seven Sip & Ship calls analyzed. Hidden spots implemented. Living Route P0/P1 merged and observed in production. Provider-free guided demo passes the complete 1→5 story through ARRIVED/DEMO Route Receipt in ~54s fresh-start-to-climax in the latest user video. This is UI/story QA only, never testnet evidence.
+## UI / demo — GREEN
 
-## HTTP security — NEW STATE
+PR #19 hidden-spot layer and PR #21 Living Route UI are merged on `main`. Production Vercel has been observed Ready/Current at `https://carry-one-mu.vercel.app`.
 
-### Faadil side: PR #20 MERGED INTO THE SHARED BASE
+Provider-free guided demo:
+`https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1`
 
-PR **#20** `Secure broadcast claims and add client idempotency` is now merged into `feat/mission-http-bindings` at merge SHA `77c89bb9f289de1c00b5d22d6f8c7280dc223b01`.
+A user-supplied production recording verified the complete simulated 1→5 narrative through **ARRIVED + DEMO Route Receipt** in ~54 seconds from the fresh start. This remains UI/story evidence only and must never be presented as real testnet/on-chain proof.
 
-That means Faadil items are preserved in the base:
-- short-lived one-time broadcast capability after signed `AUTHORIZE_PASS`;
-- binding to mission + invitation + sequence + intent nonce + canonical holder wallet;
-- replay/expiry/mismatch rejection;
-- automatic mutation `Idempotency-Key` support and stable broadcast retry semantics.
+## Repository naming
 
-### Opeyemi side: PR #23 OPEN, CI GREEN, REVIEWED
+The GitHub repository is now actually renamed to:
+`Faadil1/nimcarry`
 
-Opeyemi opened **PR #23 `Feat/route privacy security`** from `feat/route-privacy-security` onto `feat/mission-http-bindings`.
+The old `Faadil1/carry-one` path redirects. Desired Vercel alias `https://nimcarry.vercel.app` is still pending; current observed production URL remains `https://carry-one-mu.vercel.app`.
 
-Observed:
-- base SHA: `77c89bb9f289de1c00b5d22d6f8c7280dc223b01` (already contains PR #20);
-- head SHA: `07745e6dd8cc60f309c576ec8125d6a609281097`;
-- CI run `34454548111`: **PASS**;
-- declared tests: **145/145**;
-- intended scope is present: route-view capability, invitation redaction, legacy `/relay` production gate.
+## HTTP security split — COMPLETE ON FEATURE BRANCH
 
-A Faadil review was submitted as **REQUEST_CHANGES** (review id `5166605684`) because two issues remain before merge:
+### Faadil #3/#4
 
-1. **Privacy bypass through reconcile:** `POST /missions/:id/reconcile` uses an open MissionView path for non-public missions when no Bearer token is supplied. That can disclose the same UNLISTED/PRIVATE mission data that protected GET route views now reject. Fix by requiring route-view capability for non-public reconcile responses, or return only minimal non-sensitive reconcile status and require an authorized GET for MissionView. Add regression test for anonymous reconcile.
+PR #20 `Secure broadcast claims and add client idempotency` is **MERGED** into `feat/mission-http-bindings` at merge SHA:
+`77c89bb9f289de1c00b5d22d6f8c7280dc223b01`
 
-2. **Invite-token capability claim mismatch:** PR/comments state invite tokens double as generic route-view capabilities, but `resolveViewer()` only verifies tokens from `RouteViewCapabilityStore`; it does not resolve invitation tokens. Either implement this safely with mission/expiry/status binding, or remove the claim and make the intended flow explicit: `/i/:token` for landing, then signed `VIEW_ROUTE` mint for continued route access.
+Implemented:
+- one-time short-lived broadcast capability issued after signed `AUTHORIZE_PASS`;
+- capability binding to mission + invitation + sequence + intent nonce + current holder;
+- replay/binding/expiry protection;
+- automatic TypeScript API-client `Idempotency-Key` support and stable broadcast retry key.
 
-Do **not** merge PR #23 until both review findings are closed and CI is green again.
+### Opeyemi #1/#2/#5
 
-## Current gate
+PR #23 `Feat/route privacy security` was re-reviewed after the first review found two holes. Opeyemi fixed both at head `4dfc6ac1fb2f65cc2879dfb48f76643c5cd9d964`.
 
-**`NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION`**
+Verified fixes:
+1. non-public reconcile responses now pass through the authorized route-view boundary and anonymous/invalid callers receive 401 without mission-view disclosure;
+2. the false claim that invite tokens double as route-view capabilities was removed — invite token is landing-page-only (`GET /i/:token`), while continued route access requires signed `VIEW_ROUTE` capability minting.
 
-Current status: **WAITING PR #23 REVIEW FIXES**, then:
-1. re-review PR #23;
-2. merge it into `feat/mission-http-bindings` only if both findings are closed;
-3. wire the browser to the secure view-token + broadcast-capability contract;
-4. run combined browser + HTTP + PostgreSQL harness;
+Regression coverage was added, TypeScript client now forwards the stored view token on reconcile, CI run `34578961361` = **PASS**, and Opeyemi reports **148/148 tests** passing.
+
+PR #23 was **APPROVED and MERGED** into `feat/mission-http-bindings` at:
+`76fe73efe0e397dbacc447f7a0ead8f75c9fbca8`
+
+The three Opeyemi-owned security items are now complete:
+- route-view capability replacing spoofable `X-Wallet`;
+- role-aware invitation privacy/redaction;
+- legacy `/relay` production mutation gate.
+
+**All five HTTP security blockers are now closed on `feat/mission-http-bindings`.**
+
+## Important branch state
+
+Do **not** force-update Opeyemi's branch.
+
+Current comparison against `main` after PR #23 merge:
+- feature branch is **22 commits ahead**;
+- feature branch is **100 commits behind** current `main`;
+- existing PR #14 (`feat/mission-http-bindings` → `main`) is open but currently **not mergeable**.
+
+This means the next task is not another security feature. It is reconciliation onto latest main while preserving Living Route UI, guided demo isolation, Vercel configuration, and the canonical state files.
+
+## CURRENT GATE — SHARED VERTICAL INTEGRATION
+
+Gate: **`NIMCARRY_SHARED_VERTICAL_INTEGRATION`**
+
+Next exact actions:
+1. branch from latest `main` for shared integration;
+2. port/reconcile the secure HTTP surface from `feat/mission-http-bindings` without overwriting the current UI/demo work;
+3. wire browser runtime to the secure route-view capability + broadcast-capability contracts;
+4. verify frontend + HTTP + PostgreSQL bootstrap/durability together;
 5. full CI green;
-6. merge secure vertical slice to `main`;
-7. update canon/handover.
+6. merge to `main`;
+7. update canon + handover again.
 
-## Next real proof gate
+## NEXT REAL PROOF GATE
 
-After secure merge, run real Wallet A creator/holder → Wallet B bridge → Wallet C destination, two physical devices preferred:
+After shared integration is merged:
+Wallet A creator/holder → Wallet B bridge → Wallet C destination, 3 testnet wallets, preferably 2 physical devices.
 
+Target proof:
 `CREATE → INVITE → ACCEPT → AUTHORIZE → A sends exactly 1 NIM to B → FINAL → B holder → AUTHORIZE → B sends exactly 1 NIM to C → FINAL → ARRIVED → Verified Route Receipt`
 
-Also prove multi-account behavior, fee-0 exact 1-NIM forwarding, native invite deep link and iOS cold/warm/background/resume lifecycle.
+Also validate:
+- exact 1 NIM / fee-0 forwarding;
+- multi-account behavior;
+- native invitation deep link;
+- iOS cold/warm/background/resume behavior;
+- real Route Receipt against the real finalized route.
+
+Never claim real testnet `FINAL` or `ARRIVED` before observed evidence exists.
 
 ## Score-floor after real E2E
 
 Builder Promotion = Skool 2 + public social 3 = **5/5**. Real Usage = `0–3:0`, `4–10:6`, `11–24:10`, `25+:15`. Promotion + 4 genuine users = **11 points**, +11 users = **15**, +25 users = **20/20** outside the 80-point core. No bots/artificial wallets/gaming.
 
-## Do not reopen now
+## Post-E2E order
 
-No new feature expansion, gamification, rewards, marketplace, target discovery, autonomous routing, or mainnet. UI/demo is frozen except evidence-driven fixes. Real testnet FINAL/ARRIVED must not be claimed until observed.
+1. verify real Route Receipt;
+2. run first 5 observed cold-start tests under 60s;
+3. publish genuine Skool + public social posts for 5/5 promotion;
+4. reach 4+, 11+, then 25+ legitimate unique wallet opens;
+5. submit once genuinely usable;
+6. Sep 16 Sip & Show only if runtime is green;
+7. judge-window monitoring/rollback + final TRACE/demo packaging.
