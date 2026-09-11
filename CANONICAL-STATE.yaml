@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.26
+state_version: 0.8.27
 date: 2026-09-11
-phase: SHARED_VERTICAL_INTEGRATION_MERGED_MAIN_CI_GREEN_TESTNET_RUNTIME_NEXT
+phase: REAL_TESTNET_E2E_RUNTIME_TOPOLOGY_LOCKED_INFRA_PROVISIONING_NEXT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -128,16 +128,43 @@ shared_vertical_integration:
     production_concurrency_guard_note: migration_002_is_Postgres_only_and_remains separately covered_by_repository_policy
   preserved_from_main: [Living_Route_UI, guided_demo, Vercel_config, judge_story, canonical_docs]
 
+runtime_readiness_pack:
+  status: TOPOLOGY_LOCKED_EXTERNAL_INFRA_NOT_YET_PROVISIONED
+  runbook: docs/REAL-TESTNET-E2E-RUNBOOK-2026-09-11.md
+  frontend_surface: existing_Vercel_static_Mini_App
+  backend_shape: long_lived_single_process_Node_runtime
+  database_shape: dedicated_Postgres
+  network: Nimiq_testnet_only
+  browser_boundary: same_origin_proxy_or_rewrite_preferred
+  capability_store_constraint: route_view_and_broadcast_capabilities_are_process_local_short_lived_stores
+  deployment_rule: DO_NOT_USE_MULTI_INSTANCE_OR_SERVERLESS_BACKEND_FOR_REAL_E2E_UNLESS_CAPABILITY_STORES_BECOME_SHARED_DURABLE
+  reason: sequential_browser_requests_must_reach_the_same_capability_store_during_the_proof_run
+  runtime_health_endpoint: /health
+  migrations_required: [001_reach_mission_foundation.sql, 002_postgres_concurrency_guards.sql]
+  external_observations:
+    vercel_connector_projects_visible: 0
+    dedicated_NimCarry_Supabase_project_visible: false
+  external_blockers:
+    - provision_dedicated_NimCarry_Postgres
+    - provision_or_connect_single_process_Node_runtime
+    - connect_correct_frontend_hosting_project_or_configure_same_origin_proxy
+    - install_runtime_secrets_without_committing_them
+  proof_status: NOT_STARTED
+  real_FINAL_observed: false
+  real_ARRIVED_observed: false
+
 current_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: CODE_READY_RUNTIME_DEPLOYMENT_AND_REAL_NIMIQ_PAY_PROOF_NEXT
+  status: RUNTIME_TOPOLOGY_LOCKED_INFRA_PROVISIONING_AND_REAL_NIMIQ_PAY_PROOF_NEXT
   code_merge_prerequisite: COMPLETE
   runtime_prerequisites:
-    - deploy_or_run_Node_Mission_HTTP_server
-    - configure_Postgres_single_writer_runtime
+    - deploy_or_run_single_process_Node_Mission_HTTP_server
+    - configure_dedicated_Postgres_single_writer_runtime
+    - apply_migrations_001_and_002
     - set_target_encryption_and_HMAC_keys
     - set_canonical_origin_and_testnet_RPC_endpoints
     - keep_legacy_relay_mutations_disabled_in_production
+    - expose_frontend_to_backend_through_same_origin_proxy_or_equivalent_strict_boundary
     - use_real_Nimiq_Pay_provider
   topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> INVITE -> ACCEPT -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
@@ -145,6 +172,7 @@ current_gate:
     - exact_1_NIM_100000_Luna_each_hop
     - requested_fee_0_and_wallet_network_behavior
     - independent_FINAL_before_custody_move
+    - durable_Postgres_state_after_each_FINAL
     - multi_account_wallet_selection
     - native_invitation_deeplink
     - iOS_cold_warm_background_resume
