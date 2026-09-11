@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.32
+state_version: 0.8.33
 date: 2026-09-11
-phase: CLOUDFLARE_PRODUCTION_DEPLOYED_HEALTH_GREEN_RUNTIME_VERIFICATION_NEXT
+phase: CLOUDFLARE_DEEP_RUNTIME_SMOKE_PASS_NIMIQ_PAY_PROVIDER_NEXT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -80,7 +80,7 @@ guided_demo_tour:
   previous_clean_start_link: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
   fresh_start_to_arrived_seconds_approx: 54
   verdict: PASS_WITH_MINOR_POLISH_APPLIED
-  cloudflare_revalidation: PENDING_RUNTIME_SMOKE_AND_REAL_E2E
+  cloudflare_revalidation: RUNTIME_SMOKE_PASS_REAL_E2E_PENDING
   evidence_boundary: NEVER_USE_GUIDED_DEMO_AS_REAL_TESTNET_OR_ONCHAIN_PROOF
 
 http_security:
@@ -129,7 +129,7 @@ shared_vertical_integration:
     production_concurrency_guard_note: migration_002_is_Postgres_only_and_remains separately covered_by_repository_policy
 
 cloudflare_runtime:
-  status: PRODUCTION_DEPLOYED_HEALTH_GREEN_RUNTIME_VERIFICATION_PENDING
+  status: PRODUCTION_DEPLOYED_DEEP_RUNTIME_SMOKE_PASS
   source_branch: ops/real-testnet-e2e-runtime
   pull_request: 25
   pr_final_head_sha: 011a24ec34562a99fe1746365ea8088dcd8165ba
@@ -138,6 +138,13 @@ cloudflare_runtime:
   pr_ci: PASS
   post_merge_main_ci_run: 34601571626
   post_merge_main_ci: PASS
+  observability_config_commit: 48679a3cc4b6681a6f6dca923dc06006e1cee788
+  runtime_config_hardening_commit: 1189cc6096b96c21827be9350ae90a814e85e45f
+  runtime_config_hardening_ci_run: 34646840377
+  runtime_config_hardening_ci: PASS
+  deep_runtime_smoke_commit: 0ff137d5287fec484cb2fa7e132e1c88758e6e0b
+  deep_runtime_smoke_ci_run: 34649046241
+  deep_runtime_smoke_ci: PASS
   runbook: docs/REAL-TESTNET-E2E-RUNBOOK-2026-09-11.md
   files:
     - cloudflare/worker.mjs
@@ -167,13 +174,30 @@ cloudflare_runtime:
   preview_workers_dev_enabled: false
   cloudflare_origin: https://nimcarry.faadil-casecraft.workers.dev
   runtime_secrets_status: CONFIGURED_AT_WORKER_RUNTIME_VALUES_NOT_COMMITTED
-  required_runtime_secret_names_present: [CARRY_ONE_DATABASE_URL, CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL, CARRY_ONE_TARGET_HMAC_KEY_B64URL, CARRY_ONE_CANONICAL_ORIGIN]
+  required_runtime_secret_names_present: [CARRY_ONE_DATABASE_URL, CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL, CARRY_ONE_TARGET_HMAC_KEY_B64URL]
+  canonical_origin_source_of_truth: WRANGLER_VAR
+  required_secret_guard: WRANGLER_SECRETS_REQUIRED
   health_check: PASS_200_STATUS_OK
   health_observed_at: https://nimcarry.faadil-casecraft.workers.dev/health
-  startup_log_repository_mode_verification: PENDING
-  same_origin_routing_verification: PENDING
-  legacy_relay_403_verification: PENDING
+  observability: ENABLED
+  static_asset_same_origin_check: PASS_304_NIMCARRY_MARK_SVG
+  deep_runtime_smoke_endpoint: https://nimcarry.faadil-casecraft.workers.dev/health?deep=1
+  deep_runtime_smoke:
+    verdict: PASS
+    backend_http_status: 200
+    repository_mode: postgres
+    mission_http_bindings: enabled
+    canonical_origin: https://nimcarry.faadil-casecraft.workers.dev
+    container_identity: nimcarry-primary
+    max_instances_for_proof_gate: 1
+    legacy_relay_gate_pass: true
+    legacy_relay_gate_status: 403
+    legacy_relay_gate_error: LEGACY_RELAY_DISABLED
+  startup_log_repository_mode_verification: PASS_VIA_DETERMINISTIC_DEEP_RUNTIME_SMOKE
+  same_origin_routing_verification: PASS_STATIC_AND_BACKEND_HEALTH
+  legacy_relay_403_verification: PASS
   duplicate_build_scoped_secret_cleanup: PENDING_IF_STILL_PRESENT
+  build_watch_paths_hardening: PENDING_USER_DASHBOARD_CONFIRMATION
 
 postgres_runtime:
   adapter_owner: opeyemi
@@ -197,13 +221,13 @@ postgres_runtime:
   migrations_applied: [001_reach_mission_foundation.sql, 002_postgres_concurrency_guards.sql]
   production_schema_verification: PASS_7_TABLES_3_CONCURRENCY_TRIGGERS
   connection_string_status: INSTALLED_AS_CLOUDFLARE_RUNTIME_SECRET_NOT_COMMITTED
-  runtime_boot_indirect_db_evidence: HEALTH_GREEN_AFTER_POSTGRES_BACKEND_STARTUP
-  startup_log_repository_mode_verification: PENDING
+  runtime_boot_indirect_db_evidence: DEEP_RUNTIME_SMOKE_REPOSITORY_MODE_POSTGRES_PASS
+  startup_log_repository_mode_verification: PASS_VIA_DETERMINISTIC_DEEP_RUNTIME_SMOKE
   rule: USE_DEDICATED_NEON_POSTGRES_FOR_NIMCARRY_AND_KEEP_CREDENTIALS_OUT_OF_GIT
 
 current_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: CLOUDFLARE_HEALTH_GREEN_RUNTIME_SMOKE_THEN_REAL_PROOF
+  status: RUNTIME_SMOKE_PASS_NIMIQ_PAY_PROVIDER_THEN_REAL_PROOF
   code_merge_prerequisite: COMPLETE
   cloudflare_scaffold_merge_prerequisite: COMPLETE
   database_duplicate_check: COMPLETE_NONE_EXISTS
@@ -213,10 +237,13 @@ current_gate:
   cloudflare_production_deployment: COMPLETE
   cloudflare_runtime_secrets: COMPLETE
   cloudflare_health: PASS_200_STATUS_OK
+  cloudflare_deep_runtime_smoke: PASS
+  repository_mode_postgres: PASS
+  mission_http_bindings: PASS
+  legacy_relay_403: PASS
+  same_origin_static_and_backend: PASS
   next_exact_actions:
-    - verify_Cloudflare_container_startup_logs_show_Repository_mode_postgres_and_Reach_Mission_HTTP_bindings_enabled_PostgreSQL
-    - verify_same_origin_static_SPA_and_JSON_API_routing_on_production_origin
-    - verify_legacy_relay_POST_mutations_return_403_LEGACY_RELAY_DISABLED
+    - harden_Cloudflare_build_watch_paths_so_documentation_only_commits_do_not_redeploy_production
     - remove_duplicate_build_scoped_secret_entries_if_they_still_exist
     - confirm_Nimiq_Pay_provider_available_on_production_origin
     - execute_real_Nimiq_Pay_A_to_B_to_C_testnet_proof
