@@ -33,6 +33,12 @@ jobs:
       - name: Cloudflare runtime syntax and config
         run: node --check cloudflare/worker.mjs && node -e "JSON.parse(require('fs').readFileSync('cloudflare/wrangler.jsonc','utf8'))"
 
+      - name: Install pinned Cloudflare deployment toolchain
+        run: npm install --prefix cloudflare --no-audit --no-fund
+
+      - name: Cloudflare Wrangler dry run
+        run: npm --prefix cloudflare run deploy:dry-run
+
       - name: Typecheck
         run: npm run typecheck
 
