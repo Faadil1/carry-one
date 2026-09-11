@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.23
-date: 2026-09-10
-phase: HTTP_SECURITY_REVIEW_PR23_CHANGES_REQUESTED_REPO_RENAMED_BROWSER_INTEGRATION_PENDING
+state_version: 0.8.24
+date: 2026-09-11
+phase: HTTP_SECURITY_SPLIT_COMPLETE_SHARED_VERTICAL_INTEGRATION_NEXT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -21,12 +21,11 @@ brand_identity:
   status: LOCKED
   tagline: One NIM. One bridge at a time.
   promise: Get this to someone you cannot reach directly — one human bridge at a time.
-  desired_repository_slug: Faadil1/nimcarry
-  current_repository_slug: Faadil1/nimcarry
+  repository_slug: Faadil1/nimcarry
   repository_rename_status: COMPLETE
   desired_demo_alias: https://nimcarry.vercel.app
   current_observed_production_domain: https://carry-one-mu.vercel.app
-  external_identifier_migration_status: REPOSITORY_RENAME_COMPLETE_VERCEL_ALIAS_PENDING
+  alias_migration_status: PENDING
 
 core_product_laws:
   baton: THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT, WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
@@ -61,7 +60,17 @@ winning_intelligence:
   seven_call_otter_corpus: COMPLETE_7_OF_7_THROUGH_2026_09_09
   definitive_audit: docs/SIP-SHIP-7-CALL-WINNING-INTELLIGENCE-2026-09-09.md
   score_delta: docs/SIP-SHIP-HIDDEN-SPOT-DELTA-AND-SCORE-CAPTURE-2026-09-09.md
-  locked_patterns: [problem_first_storytelling, live_proof_beats_architecture, simplicity_is_implicit_meta_rubric, persistent_visible_proof_artifact, real_user_behavior_as_PMF_signal, natural_invite_share_loop, avoid_crypto_as_front_door, deterministic_demo_not_dependent_on_judge, freeze_known_good_build_for_random_judge_window, capture_easy_builder_promotion_points]
+  locked_patterns:
+    - problem_first_storytelling
+    - live_proof_beats_architecture
+    - simplicity_is_implicit_meta_rubric
+    - persistent_visible_proof_artifact
+    - real_user_behavior_as_PMF_signal
+    - natural_invite_share_loop
+    - avoid_crypto_as_front_door
+    - deterministic_demo_not_dependent_on_judge
+    - freeze_known_good_build_for_random_judge_window
+    - capture_easy_builder_promotion_points
 
 score_capture_strategy:
   builder_promotion: { skool_post_points: 2, public_social_post_points: 3, target_total: 5 }
@@ -90,85 +99,61 @@ vercel_deployment:
 guided_demo_tour:
   purpose: provider_free_end_to_end_UI_and_story_test_only
   clean_start_link: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
+  implementation_file: web/demo-tour.js
   second_video_qa_doc: docs/GUIDED-DEMO-SECOND-VIDEO-QA-2026-09-10.md
-  second_video_qa:
-    fresh_start_to_arrived_seconds_approx: 54
-    verdict: PASS_WITH_MINOR_POLISH_APPLIED
-    observed_pass: [home_problem_first_surface, create, first_bridge_invite, browser_only_demo_invite, accept_no_funds, first_simulated_FINAL, custody_moves_to_Bridge_B, second_bridge_cycle_auto_continues, second_simulated_FINAL, ARRIVED, DEMO_Route_Receipt_with_two_finalized_hops, start_new_mission_after_arrival]
-  minor_polish:
-    commit: 61a64e530b74f1f3c0300fc1387694c6ef6218af
-    ci_run: 34441565599
-    ci: PASS
+  fresh_start_to_arrived_seconds_approx: 54
+  verdict: PASS_WITH_MINOR_POLISH_APPLIED
+  latest_polish_commit: 61a64e530b74f1f3c0300fc1387694c6ef6218af
   evidence_boundary: NEVER_USE_GUIDED_DEMO_AS_REAL_TESTNET_OR_ONCHAIN_PROOF
 
-http_parallel_work:
-  opeyemi_base_branch: feat/mission-http-bindings
-  latest_observed_base_head_sha: 77c89bb9f289de1c00b5d22d6f8c7280dc223b01
-  preserve_collaborator_branches_without_force_update: true
+http_security:
+  base_branch: feat/mission-http-bindings
   split:
-    opeyemi: [route_view_capability, invitation_privacy_redaction, legacy_relay_dev_gate]
+    opeyemi: [route_view_capability, invitation_privacy_redaction, legacy_relay_production_gate]
     faadil: [secure_tx_hash_broadcast_capability, typescript_api_client_Idempotency_Key]
     shared: [browser_secure_contract_wiring, frontend_HTTP_Postgres_integration, real_testnet_E2E]
-  blockers:
-    route_view_capability: IMPLEMENTED_IN_PR23_REVIEW_FIXES_REQUIRED
-    invitation_privacy_redaction: IMPLEMENTED_IN_PR23_REVIEW_FIXES_REQUIRED
-    legacy_relay_dev_gate: IMPLEMENTED_IN_PR23_REVIEW_FIXES_REQUIRED
-    broadcast_capability: PR20_MERGED_INTO_BASE_BRANCH
-    typescript_client_idempotency: PR20_MERGED_INTO_BASE_BRANCH
-    browser_secure_contract_wiring: PENDING_SHARED_INTEGRATION
-    combined_frontend_HTTP_Postgres: PENDING_SHARED_INTEGRATION
-
-faadil_http_security:
-  pull_request: 20
-  url: https://github.com/Faadil1/nimcarry/pull/20
-  branch: feat/faadil-http-security
-  head_sha: 2588021ea45c806ec9588c24b00ce209f67ddbfe
-  merge_sha_into_feat_mission_http_bindings: 77c89bb9f289de1c00b5d22d6f8c7280dc223b01
-  ci_run: 34416146070
-  ci: PASS
-  status: MERGED_INTO_FEAT_MISSION_HTTP_BINDINGS
-
-opeyemi_security:
-  pull_request: 23
-  url: https://github.com/Faadil1/nimcarry/pull/23
-  author: opeblow
-  branch: feat/route-privacy-security
-  base_branch: feat/mission-http-bindings
-  base_sha: 77c89bb9f289de1c00b5d22d6f8c7280dc223b01
-  head_sha: 07745e6dd8cc60f309c576ec8125d6a609281097
-  ci_run: 34454548111
-  ci: PASS
-  declared_tests: 145_of_145
-  review_status: CHANGES_REQUESTED_BY_FAADIL
-  review_id: 5166605684
-  confirmed_good_scope:
-    - spoofable_X_Wallet_route_auth_removed
-    - signed_VIEW_ROUTE_capability_mint_added
-    - invitation_summary_server_redaction_added
-    - legacy_relay_mutation_gate_added
-  required_review_fixes:
-    - anonymous_POST_reconcile_must_not_bypass_UNLISTED_or_PRIVATE_route_view_privacy
-    - invite_token_claim_as_generic_route_view_capability_must_be_implemented_safely_or_removed_and_replaced_with_explicit_signed_VIEW_ROUTE_flow
-  merge_authorized: false
+  faadil_pr20:
+    status: MERGED_TO_FEAT_MISSION_HTTP_BINDINGS
+    merge_sha: 77c89bb9f289de1c00b5d22d6f8c7280dc223b01
+    features: [one_time_scoped_broadcast_capability, automatic_TS_client_idempotency]
+  opeyemi_pr23:
+    status: REVIEW_FIXES_VERIFIED_APPROVED_AND_MERGED_TO_FEAT_MISSION_HTTP_BINDINGS
+    head_sha_reviewed: 4dfc6ac1fb2f65cc2879dfb48f76643c5cd9d964
+    merge_sha: 76fe73efe0e397dbacc447f7a0ead8f75c9fbca8
+    ci_run: 34578961361
+    ci: PASS
+    tests: 148
+    features:
+      - route_view_capability_replaces_spoofable_X_Wallet
+      - invitation_sensitive_fields_redacted_by_viewer_role
+      - production_legacy_relay_mutation_gate
+      - nonpublic_reconcile_response_requires_route_view_capability
+      - invite_token_is_landing_only_not_route_view_capability
+    review_fixes:
+      reconcile_data_bypass: CLOSED
+      false_invite_token_route_capability_claim: CLOSED
+  all_five_security_blockers: CLOSED_ON_FEATURE_BRANCH
+  branch_divergence_against_main:
+    feature_ahead_by_commits: 22
+    feature_behind_main_by_commits: 100
+    existing_pr14_to_main: OPEN_NOT_MERGEABLE
+    rule: DO_NOT_FORCE_UPDATE_OPEYEMI_BRANCH
 
 current_gate:
-  name: NIMCARRY_HTTP_SECURITY_AND_VERTICAL_INTEGRATION
-  status: WAITING_PR23_REVIEW_FIXES_THEN_MERGE_TO_BASE_AND_SHARED_BROWSER_INTEGRATION
-  exit_criteria:
-    - PR23_two_review_findings_closed
-    - route_view_capability_closed
-    - invitation_privacy_redaction_closed
-    - legacy_relay_dev_gate_closed
-    - PR20_security_preserved
-    - browser_view_token_and_broadcast_capability_contract_wired
-    - frontend_HTTP_Postgres_combined_harness_green
+  name: NIMCARRY_SHARED_VERTICAL_INTEGRATION
+  status: READY_TO_RECONCILE_SECURE_BACKEND_WITH_LATEST_MAIN
+  next_actions:
+    - create_latest_main_based_integration_branch
+    - port_secure_HTTP_surface_without_overwriting_Living_Route_UI
+    - wire_browser_to_secure_route_view_and_broadcast_contract
+    - verify_Postgres_bootstrap_and_single_writer_durability
     - full_CI_green
-    - merged_to_main
-    - canonical_and_handover_updated
+    - merge_to_main
+    - update_canon_and_handover
 
 next_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: PREP_ALLOWED_EXECUTION_BLOCKED_UNTIL_SECURE_HTTP_MERGE
+  status: PREP_ALLOWED_EXECUTION_BLOCKED_UNTIL_SHARED_VERTICAL_INTEGRATION_MERGED
   topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
   never_claim_before_observed: real_testnet_FINAL_or_ARRIVED
