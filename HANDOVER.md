@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-11  
-Canonical version: **0.8.28**  
-State: `CLOUDFLARE_RUNTIME_PREPARED_SUPABASE_CONFIRMATION_AND_DEPLOYMENT_NEXT`
+Canonical version: **0.8.29**  
+State: `CLOUDFLARE_RUNTIME_SCAFFOLD_MERGED_MAIN_CI_GREEN_DATABASE_CONFIRMATION_NEXT`
 
 ## Read first
 
@@ -27,60 +27,65 @@ PR #24 — **Integrate secure vertical slice on latest main** — merged to `mai
 
 Post-merge CI `34598905774` = **PASS**.
 
-The merged stack includes:
-- signed route-view capabilities; no spoofable `X-Wallet` authorization;
-- invitation privacy/redaction;
-- production gate on legacy `/relay` mutations;
-- protected reconcile;
-- separate signed `VIEW_ROUTE` mint after acceptance;
-- one-time broadcast capability after `AUTHORIZE_PASS`;
-- browser + TS idempotency;
-- normalized `invitation_id`;
-- secure browser → HTTP → PostgreSQL vertical harness;
-- durable DB assertion before a FINAL handoff is accepted by the harness.
+The merged stack includes signed route-view capabilities, invitation privacy/redaction, production gating for legacy `/relay`, protected reconcile, a separate signed `VIEW_ROUTE` mint after acceptance, one-time broadcast capability after `AUTHORIZE_PASS`, browser/TS idempotency, normalized `invitation_id`, and the secure browser → HTTP → PostgreSQL vertical harness with durable DB assertion before a FINAL handoff is accepted by the harness.
 
 No real Nimiq testnet FINAL/ARRIVED has yet been claimed.
 
-## Cloudflare runtime — PREPARED, NOT DEPLOYED
+## Cloudflare runtime scaffold — MERGED TO MAIN + CI GREEN
 
-Active branch:
-`ops/real-testnet-e2e-runtime`
+PR #25 — **Prepare Cloudflare runtime for real testnet E2E** — merged to `main` at:
+`aed163d0335b5fc68317ec4cb325a56739cf54b8`
 
-Runbook:
-`docs/REAL-TESTNET-E2E-RUNBOOK-2026-09-11.md`
+Final PR head:
+`011a24ec34562a99fe1746365ea8088dcd8165ba`
 
-Deployment scaffolding now exists:
+Verification:
+- PR CI `34601474683` = **PASS**
+- post-merge main CI `34601571626` = **PASS**
+- public-repo secret scan = PASS
+- Cloudflare runtime syntax/config = PASS
+- pinned Cloudflare toolchain install = PASS
+- Wrangler `deploy --dry-run` = PASS
+- TypeScript typecheck/build = PASS
+- complete suite = **156/156 tests PASS**
+- Cloudflare container Docker image build = PASS
+
+Deployment scaffolding now on `main`:
 - `cloudflare/worker.mjs`
 - `cloudflare/wrangler.jsonc`
 - `cloudflare/package.json`
 - `Dockerfile.cloudflare`
 - `.dockerignore`
+- `docs/REAL-TESTNET-E2E-RUNBOOK-2026-09-11.md`
+
+Pinned toolchain:
+- `@cloudflare/containers` = `0.3.7`
+- Wrangler = `4.131.0`
 
 Architecture:
 - one Cloudflare Worker serves `web/` as Workers Static Assets;
 - JSON/mutation API traffic is forwarded to the canonical Node runtime inside a Cloudflare Container;
-- backend is addressed with stable container identity `nimcarry-primary`;
-- `max_instances: 1` for the real proof gate;
+- backend uses stable container identity `nimcarry-primary`;
+- `max_instances: 1` for the proof gate;
 - frontend and API stay on the same Cloudflare origin;
-- `/mission/*` and browser navigation to `/i/*` remain SPA routes;
-- JSON API calls to `/missions/*` and `/i/*` are sent to the Node backend;
-- Node container runs on port 8787 with `NODE_ENV=production`, Postgres mode, and legacy relay writes disabled.
+- browser `/mission/*` and `/i/*` navigation remains SPA navigation while JSON API requests reach the Node backend;
+- Node container uses production mode, Postgres repository mode, port 8787, and disabled legacy relay mutations.
 
-Why singleton routing matters: route-view and broadcast capabilities are still short-lived process-local stores. A multi-instance backend could split sequential requests across stores and break the secure flow. Cloudflare Containers allow requests to be routed to a stable named instance. Cloudflare can still restart a container; if that happens during the proof and a capability is lost, **fail closed and restart the proof run**. Do not manufacture recovery evidence.
+Why singleton routing matters: route-view and broadcast capabilities are still short-lived process-local stores. If Cloudflare restarts the container during an active proof and one of these capabilities is lost, **fail closed and restart the proof run**. Never manufacture recovery evidence.
 
-Cloudflare Containers currently require Workers Paid; the documented floor is USD 5/month. No paid Cloudflare action has been executed by this branch alone.
+Cloudflare Containers require Workers Paid; the documented floor at this gate is USD 5/month. **The runtime is not deployed yet.** No Cloudflare public origin or live runtime evidence exists yet.
 
 ## PostgreSQL / possible Supabase project
 
-Opeyemi built the generic PostgreSQL adapter. The repo contains no Supabase URL/project ID/configuration and no Supabase-specific branch.
+Opeyemi built the generic PostgreSQL adapter. The repository contains no Supabase URL, project ID, Supabase config, or Supabase-specific branch.
 
-Faadil's currently connected Supabase account shows no dedicated NimCarry project. It is still possible Opeyemi created a database under his own Supabase account/organization; this is **UNCONFIRMED**.
+Faadil's currently connected Supabase account shows no dedicated NimCarry project. It remains possible Opeyemi created the intended database under his own Supabase account/organization; this is **UNCONFIRMED**.
 
 Do not create a duplicate database until that is confirmed or ruled out.
 
 If Opeyemi already created it, obtain project access / the Postgres connection string securely. Do not commit it or paste it into issues/PRs.
 
-If no existing project exists, create a dedicated NimCarry Postgres database and apply:
+If no existing project exists, provision a dedicated NimCarry Postgres database and apply:
 - `migrations/001_reach_mission_foundation.sql`
 - `migrations/002_postgres_concurrency_guards.sql`
 
@@ -102,7 +107,7 @@ The encryption and HMAC keys must be independently generated different 32-byte b
 ## CURRENT GATE — REAL NIMIQ PAY TESTNET E2E
 
 Current status:
-`CLOUDFLARE_SCAFFOLD_READY_CONFIRM_DATABASE_THEN_DEPLOY_AND_RUN_REAL_PROOF`
+`CLOUDFLARE_RUNTIME_MERGED_CONFIRM_DATABASE_THEN_DEPLOY_AND_RUN_REAL_PROOF`
 
 Next exact actions:
 1. confirm with Opeyemi whether the NimCarry Supabase/Postgres project already exists;
@@ -123,15 +128,7 @@ Target topology:
 Target proof:
 `CREATE → INVITE → ACCEPT → AUTHORIZE → A sends exactly 1 NIM to B → FINAL → B becomes holder → INVITE C → ACCEPT → AUTHORIZE → B sends exactly 1 NIM to C → FINAL → ARRIVED → Verified Route Receipt`
 
-Also validate:
-- exactly `100000 Luna` per hop;
-- requested fee `0` and actual wallet/network behavior;
-- custody never moves before independent FINAL;
-- durable Postgres state after each FINAL;
-- multi-account wallet selection;
-- native invitation deep link;
-- iOS cold/warm/background/resume;
-- Route Receipt matches the finalized route.
+Also validate exactly `100000 Luna` per hop, requested fee `0` plus actual wallet/network behavior, no custody movement before independent FINAL, durable Postgres state after each FINAL, multi-account wallet selection, native invitation deep link, iOS cold/warm/background/resume, and a Route Receipt matching the finalized route.
 
 **Never claim real testnet `FINAL` or `ARRIVED` before observed evidence exists.**
 
