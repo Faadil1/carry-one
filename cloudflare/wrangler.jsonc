@@ -7,6 +7,16 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
+  "vars": {
+    "CARRY_ONE_CANONICAL_ORIGIN": "https://nimcarry.faadil-casecraft.workers.dev"
+  },
+  "secrets": {
+    "required": [
+      "CARRY_ONE_DATABASE_URL",
+      "CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL",
+      "CARRY_ONE_TARGET_HMAC_KEY_B64URL"
+    ]
+  },
   "assets": {
     "directory": "../web",
     "binding": "ASSETS",
