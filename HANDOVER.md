@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-11  
-Canonical version: **0.8.31**  
-State: `NEON_PROVISIONED_MIGRATIONS_APPLIED_CLOUDFLARE_SECRETS_DEPLOYMENT_NEXT`
+Canonical version: **0.8.32**  
+State: `CLOUDFLARE_PRODUCTION_DEPLOYED_HEALTH_GREEN_RUNTIME_VERIFICATION_NEXT`
 
 ## Read first
 
@@ -18,7 +18,7 @@ Judge line: **NimCarry uses 1 NIM to make warm introductions verifiable.**
 
 Living Route UI and guided demo were previously observed on Vercel at `https://carry-one-mu.vercel.app`. The guided demo reaches simulated ARRIVED + DEMO Route Receipt in ~54s from fresh start. That remains presentation evidence only and must never be presented as real testnet proof.
 
-The active deployment direction is now **Cloudflare**, not Vercel.
+The active production runtime is now **Cloudflare**, not Vercel.
 
 ## Shared secure vertical — COMPLETE ON MAIN
 
@@ -31,7 +31,7 @@ The merged stack includes signed route-view capabilities, invitation privacy/red
 
 No real Nimiq testnet FINAL/ARRIVED has yet been claimed.
 
-## Cloudflare runtime scaffold — MERGED TO MAIN + CI GREEN
+## Cloudflare runtime — PRODUCTION DEPLOYED + HEALTH GREEN
 
 PR #25 — **Prepare Cloudflare runtime for real testnet E2E** — merged to `main` at:
 `aed163d0335b5fc68317ec4cb325a56739cf54b8`
@@ -39,7 +39,7 @@ PR #25 — **Prepare Cloudflare runtime for real testnet E2E** — merged to `ma
 Final PR head:
 `011a24ec34562a99fe1746365ea8088dcd8165ba`
 
-Verification:
+Build verification remains green:
 - PR CI `34601474683` = **PASS**
 - post-merge main CI `34601571626` = **PASS**
 - public-repo secret scan = PASS
@@ -50,7 +50,7 @@ Verification:
 - complete suite = **156/156 tests PASS**
 - Cloudflare container Docker image build = PASS
 
-Deployment scaffolding now on `main`:
+Deployment scaffolding on `main`:
 - `cloudflare/worker.mjs`
 - `cloudflare/wrangler.jsonc`
 - `cloudflare/package.json`
@@ -69,17 +69,38 @@ Architecture:
 - `max_instances: 1` for the proof gate;
 - frontend and API stay on the same Cloudflare origin;
 - browser `/mission/*` and `/i/*` navigation remains SPA navigation while JSON API requests reach the Node backend;
-- Node container uses production mode, Postgres repository mode, port 8787, and disabled legacy relay mutations.
+- Node container is configured for production mode, Postgres repository mode, port 8787, and disabled legacy relay mutations.
+
+Cloudflare account/runtime work completed on 2026-09-11:
+- Workers Paid enabled so Containers can deploy;
+- production `workers.dev` enabled; preview intentionally left disabled for the proof gate;
+- Worker + Container production deployment succeeded;
+- production origin is `https://nimcarry.faadil-casecraft.workers.dev`;
+- required runtime secrets were installed in the Worker runtime scope, not Git;
+- `CARRY_ONE_DATABASE_URL` now points securely to the dedicated Neon project;
+- target encryption and HMAC keys are distinct random 32-byte base64url runtime secrets;
+- `CARRY_ONE_CANONICAL_ORIGIN` is set to the exact production origin;
+- `GET /health` at `https://nimcarry.faadil-casecraft.workers.dev/health` returned **200** with `{"status":"ok"}`.
+
+The initial attempt placed the values in Cloudflare **Build variables**, which did not expose them to the Worker runtime. That was corrected by installing them in runtime Variables and Secrets. If duplicate build-scoped secret entries still exist, remove them after the runtime smoke checks are complete.
 
 Why singleton routing matters: route-view and broadcast capabilities are still short-lived process-local stores. If Cloudflare restarts the container during an active proof and one of these capabilities is lost, **fail closed and restart the proof run**. Never manufacture recovery evidence.
 
-Cloudflare Containers require Workers Paid; the documented floor at this gate is USD 5/month. **The runtime is not deployed yet.** No Cloudflare public origin or live runtime evidence exists yet.
+### Runtime verification still pending
+
+Before real wallet proof, confirm:
+- Cloudflare startup logs show `Repository mode: postgres`;
+- startup logs show `Reach Mission HTTP bindings enabled (PostgreSQL, ...)`;
+- same-origin static SPA + JSON API routing works on the production origin;
+- production legacy `/relay/*` POST mutations return `403 LEGACY_RELAY_DISABLED`;
+- the production page opens correctly outside demo mode;
+- the Nimiq Pay provider is available from the production origin.
 
 ## Database — NEON PROVISIONED + PRODUCTION MIGRATIONS APPLIED
 
 Opeyemi confirmed on 2026-09-11 that he never created or connected any persistent NimCarry database, so duplicate-database risk is closed.
 
-A dedicated **Neon PostgreSQL** project is now provisioned:
+A dedicated **Neon PostgreSQL** project is provisioned:
 - project: `nimcarry`
 - project id: `late-credit-21248077`
 - branch: `main`
@@ -97,36 +118,23 @@ Production database work completed:
   - `carry_one_invitation_accept_guard`
   - `carry_one_participant_reentry_guard`
 
-The Neon PostgreSQL connection string was obtained securely for the runtime. **Do not write it into Git, issues, PRs, logs, screenshots, or public evidence.** It still needs to be installed into Cloudflare as `CARRY_ONE_DATABASE_URL`.
+The Neon PostgreSQL connection string is installed as the Cloudflare runtime secret `CARRY_ONE_DATABASE_URL`. **Do not write it into Git, issues, PRs, logs, screenshots, or public evidence.**
 
-## Cloudflare secrets required before deployment
-
-Set in Cloudflare Worker Secrets, not Git:
-
-- `CARRY_ONE_DATABASE_URL` — use the already-obtained Neon connection string
-- `CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL`
-- `CARRY_ONE_TARGET_HMAC_KEY_B64URL`
-- `CARRY_ONE_CANONICAL_ORIGIN`
-
-Optional:
-- `NIMIQ_RPC_URL`
-- `NIMIQ_RPC_URLS`
-
-The encryption and HMAC keys must be independently generated different 32-byte base64url values.
+The green `/health` response is meaningful because the Node process starts only after `createRepositoryStores()` completes, and Postgres mode loads the relay store through the configured PostgreSQL pool. Still capture the startup log explicitly before declaring the runtime verification gate complete.
 
 ## CURRENT GATE — REAL NIMIQ PAY TESTNET E2E
 
 Current status:
-`NEON_READY_CLOUDFLARE_SECRETS_DEPLOY_THEN_REAL_PROOF`
+`CLOUDFLARE_HEALTH_GREEN_RUNTIME_SMOKE_THEN_REAL_PROOF`
 
 Next exact actions:
-1. enable/confirm Cloudflare Workers Paid for Containers;
-2. install the already-obtained Neon URL as Cloudflare secret `CARRY_ONE_DATABASE_URL`;
-3. generate and install two distinct random 32-byte base64url values for target encryption + HMAC;
-4. deploy Worker Static Assets + singleton Container;
-5. set/confirm `CARRY_ONE_CANONICAL_ORIGIN` to the actual public Cloudflare origin and redeploy if needed;
-6. verify `/health`, `Repository mode: postgres`, same-origin routing, and legacy relay `403`;
-7. execute the real A → B → C Nimiq Pay testnet proof.
+1. inspect Cloudflare runtime/container logs and confirm `Repository mode: postgres` plus PostgreSQL Mission HTTP bindings;
+2. verify production same-origin routing for the SPA and JSON API;
+3. verify legacy `/relay/*` POST mutations return `403 LEGACY_RELAY_DISABLED`;
+4. remove duplicate Build-variable copies of secrets if they still exist;
+5. open the production Mini App in Nimiq Pay and confirm the injected provider is available;
+6. execute the real A → B → C Nimiq Pay testnet proof;
+7. after each real FINAL, query Neon and capture durable state evidence before advancing custody.
 
 Target topology:
 - Wallet A = creator / initial holder
@@ -143,7 +151,7 @@ Also validate exactly `100000 Luna` per hop, requested fee `0` plus actual walle
 
 ## Tooling boundary for next conversation
 
-Neon is connected and manageable directly from ChatGPT. No Cloudflare management plugin was discoverable in the current ChatGPT plugin directory, so the remaining Cloudflare account mutation/authentication step may require either the user's authenticated Cloudflare dashboard/CLI or ChatGPT Work/Cloud Browser. Do not expose the Neon database credential while bridging this step.
+Neon is connected and manageable directly from ChatGPT. Cloudflare account configuration has been completed manually through the authenticated Cloudflare dashboard because no Cloudflare management plugin was available in this chat. Do not expose the Neon database credential or the runtime encryption/HMAC keys while continuing the gate.
 
 ## Post-E2E order
 
