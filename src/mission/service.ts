@@ -214,9 +214,12 @@ export class ReachMissionService {
   }
 
   async getInvitationByToken(token: string): Promise<PublicInvitation> {
-    const record = await this.repository.getInvitationByTokenHash(hashToken(token));
-    if (!record) throw new MissionValidationError("INVITATION_NOT_FOUND", "Invite link is invalid or no longer recognized");
-    return toPublicInvitation(record);
+    return toPublicInvitation(await this.requireInvitationToken(token));
+  }
+
+  /** Server-side private record for a token. Lets the HTTP layer scope route-view access to the invitation's candidate. */
+  async getInvitationRecordByToken(token: string): Promise<InvitationRecord> {
+    return this.requireInvitationToken(token);
   }
 
   async getInvitationRecord(id: string): Promise<InvitationRecord> {
