@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-11  
-Canonical version: **0.8.26**  
-State: `SHARED_VERTICAL_INTEGRATION_MERGED_MAIN_CI_GREEN_TESTNET_RUNTIME_NEXT`
+Canonical version: **0.8.27**  
+State: `REAL_TESTNET_E2E_RUNTIME_TOPOLOGY_LOCKED_INFRA_PROVISIONING_NEXT`
 
 ## Read first
 
@@ -42,9 +42,6 @@ Opeyemi PR #23 supplied:
 The stale old PR #14 is closed as **superseded / not merged**. Do not reopen it and do not force-update Opeyemi's old feature branch.
 
 ## SHARED VERTICAL INTEGRATION — MERGED TO MAIN
-
-Active integration branch was:
-`integration/secure-vertical-slice`
 
 Important commits:
 - secure backend port onto latest-main base: `372cb8a1bbd3d09a561476f56c50fd3208185018`
@@ -88,19 +85,46 @@ It exercises the shared stack against the Postgres adapter (`pg-mem` with the fo
 
 The test verifies the FINAL hop and mission sequence/finalized-hop count are present in the database before success is accepted.
 
-Production Postgres concurrency hardening remains governed by migration `002_postgres_concurrency_guards.sql` and the single-writer deployment policy; the hermetic vertical harness is not itself a claim of production Postgres or live Nimiq evidence.
+Production Postgres concurrency hardening remains governed by migration `002_postgres_concurrency_guards.sql`; the hermetic vertical harness is not itself a claim of production Postgres or live Nimiq evidence.
+
+## REAL TESTNET RUNTIME TOPOLOGY — LOCKED
+
+Runbook:
+`docs/REAL-TESTNET-E2E-RUNBOOK-2026-09-11.md`
+
+For this gate use:
+- existing Vercel Mini App as the frontend surface;
+- **one long-lived Node backend process** running the canonical `src/index.ts` application;
+- a **dedicated Postgres database** with migrations `001` and `002` applied;
+- Nimiq **testnet only**;
+- same-origin proxy/rewrite between frontend and backend when possible;
+- real Nimiq Pay injected provider for wallet selection, signatures and transaction approval.
+
+Important deployment constraint: route-view and broadcast capabilities are process-local short-lived stores today. Do **not** deploy the real proof backend as multi-instance/serverless unless those stores are first made shared/durable. Sequential requests in the proof run must reach the same backend capability store.
+
+External state observed on 2026-09-11:
+- the Vercel connector available in this conversation exposes zero projects, so it cannot currently manage the existing `carry-one-mu.vercel.app` project;
+- no dedicated NimCarry Supabase/Postgres project exists among the connected database projects;
+- unrelated existing databases must **not** be repurposed for this proof.
+
+Therefore the gate has advanced from “decide how to run it” to **external infrastructure provisioning**. No real FINAL/ARRIVED is claimed.
 
 ## CURRENT GATE — REAL NIMIQ PAY TESTNET E2E
 
+Current status:
+`RUNTIME_TOPOLOGY_LOCKED_INFRA_PROVISIONING_AND_REAL_NIMIQ_PAY_PROOF_NEXT`
+
 Code-level shared vertical integration is complete. Do **not** add new product scope now.
 
-Before executing the real run, stand up/configure the actual Mission HTTP runtime:
-- Node Mission HTTP server reachable by the Mini App;
-- Postgres runtime using the single-writer policy;
-- target-wallet encryption and HMAC keys;
-- canonical origin and testnet RPC endpoints;
-- legacy `/relay` mutations disabled in production;
-- real Nimiq Pay provider.
+Before executing the real run:
+- provision a dedicated NimCarry Postgres database;
+- apply `001_reach_mission_foundation.sql` and `002_postgres_concurrency_guards.sql`;
+- provision/connect a single-process long-lived Node runtime;
+- install target-wallet encryption + HMAC secrets in deployment secret storage;
+- configure canonical origin + Nimiq testnet RPC read endpoint(s);
+- keep `CARRY_ONE_LEGACY_RELAY_ENABLED=false` in production;
+- make the Mission HTTP runtime reachable from the Mini App without weakening the browser boundary;
+- verify `/health` and `Repository mode: postgres` before touching wallets.
 
 Target topology:
 - Wallet A = creator / initial holder
@@ -115,6 +139,7 @@ Also validate:
 - exact 1 NIM = 100,000 Luna per hop;
 - requested fee 0 and actual wallet/network behavior;
 - custody never moves before independent FINAL;
+- finalized state is durable in Postgres after each hop;
 - multi-account wallet selection;
 - native invitation deep link;
 - iOS cold/warm/background/resume behavior;
