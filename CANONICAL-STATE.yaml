@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.29
+state_version: 0.8.30
 date: 2026-09-11
-phase: CLOUDFLARE_RUNTIME_SCAFFOLD_MERGED_MAIN_CI_GREEN_DATABASE_CONFIRMATION_NEXT
+phase: DATABASE_PROVIDER_LOCKED_NEON_PROVISIONING_NEXT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -170,21 +170,26 @@ postgres_runtime:
   migrations_required: [001_reach_mission_foundation.sql, 002_postgres_concurrency_guards.sql]
   repository_contains_Supabase_project_reference: false
   faadil_connected_Supabase_has_dedicated_NimCarry_project: false
-  possible_opeyemi_owned_Supabase_project: UNCONFIRMED
-  rule: DO_NOT_CREATE_DUPLICATE_DATABASE_UNTIL_OPEYEMI_EXISTING_PROJECT_IS_CONFIRMED_OR_RULED_OUT
+  opeyemi_existing_persistent_database: NONE_CONFIRMED
+  opeyemi_confirmation_date: 2026-09-11
+  opeyemi_confirmation: never_set_up_or_connected_any_persistent_database_for_NimCarry_and_authorized_new_provider_provisioning
+  database_provider_decision: Neon
+  database_provider_status: LOCKED
+  neon_project_status: PENDING_PROVISIONING
+  rule: USE_DEDICATED_NEON_POSTGRES_FOR_NIMCARRY_AND_KEEP_CREDENTIALS_OUT_OF_GIT
 
 current_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: CLOUDFLARE_RUNTIME_MERGED_CONFIRM_DATABASE_THEN_DEPLOY_AND_RUN_REAL_PROOF
+  status: DATABASE_PROVIDER_LOCKED_NEON_PROVISION_APPLY_MIGRATIONS_THEN_DEPLOY
   code_merge_prerequisite: COMPLETE
   cloudflare_scaffold_merge_prerequisite: COMPLETE
+  database_duplicate_check: COMPLETE_NONE_EXISTS
   next_exact_actions:
-    - confirm_with_opeyemi_whether_NimCarry_Supabase_or_Postgres_project_already_exists
-    - if_existing_obtain_project_access_and_connection_string_securely
-    - otherwise_provision_dedicated_NimCarry_Postgres
+    - provision_dedicated_NimCarry_Neon_Postgres
     - apply_migrations_001_and_002
+    - obtain_database_connection_string_securely_and_set_CARRY_ONE_DATABASE_URL
     - enable_or_confirm_Cloudflare_Workers_Paid_for_Containers
-    - configure_Cloudflare_worker_secrets
+    - configure_remaining_Cloudflare_worker_secrets
     - deploy_Cloudflare_Worker_Static_Assets_plus_singleton_Container
     - verify_health_postgres_mode_same_origin_routing_and_legacy_relay_403
     - execute_real_Nimiq_Pay_A_to_B_to_C_testnet_proof
