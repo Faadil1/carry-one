@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.27
+state_version: 0.8.28
 date: 2026-09-11
-phase: REAL_TESTNET_E2E_RUNTIME_TOPOLOGY_LOCKED_INFRA_PROVISIONING_NEXT
+phase: CLOUDFLARE_RUNTIME_PREPARED_SUPABASE_CONFIRMATION_AND_DEPLOYMENT_NEXT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -23,9 +23,9 @@ brand_identity:
   promise: Get this to someone you cannot reach directly — one human bridge at a time.
   repository_slug: Faadil1/nimcarry
   repository_rename_status: COMPLETE
-  desired_demo_alias: https://nimcarry.vercel.app
-  current_observed_production_domain: https://carry-one-mu.vercel.app
-  alias_migration_status: PENDING
+  previous_demo_domain: https://carry-one-mu.vercel.app
+  target_runtime_platform: Cloudflare
+  cloudflare_public_origin: PENDING_DEPLOYMENT
 
 core_product_laws:
   baton: THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT, WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
@@ -69,7 +69,7 @@ score_capture_strategy:
   bots_artificial_wallets_or_gaming: forbidden
 
 living_route_ui:
-  status: MERGED_TO_MAIN_AND_OBSERVED_IN_PRODUCTION
+  status: MERGED_TO_MAIN_AND_OBSERVED_IN_PREVIOUS_VERCEL_PRODUCTION
   pull_request: 21
   merge_sha: 08b3ce1d3662e78a40c5c43e647a6940900e92bc
   ci: PASS
@@ -77,9 +77,10 @@ living_route_ui:
   proof_rule: presentation_layer_does_not_create_transaction_FINAL_custody_or_ARRIVED_state
 
 guided_demo_tour:
-  clean_start_link: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
+  previous_clean_start_link: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
   fresh_start_to_arrived_seconds_approx: 54
   verdict: PASS_WITH_MINOR_POLISH_APPLIED
+  cloudflare_revalidation: PENDING_DEPLOYMENT
   evidence_boundary: NEVER_USE_GUIDED_DEMO_AS_REAL_TESTNET_OR_ONCHAIN_PROOF
 
 http_security:
@@ -126,46 +127,54 @@ shared_vertical_integration:
     proves: signed_create_invite_accept_VIEW_ROUTE_authorize_broadcast_reconcile_FINAL_holder_projection_and_durable_DB_state
     database_test_mode: pg_mem_foundation_schema
     production_concurrency_guard_note: migration_002_is_Postgres_only_and_remains separately covered_by_repository_policy
-  preserved_from_main: [Living_Route_UI, guided_demo, Vercel_config, judge_story, canonical_docs]
 
-runtime_readiness_pack:
-  status: TOPOLOGY_LOCKED_EXTERNAL_INFRA_NOT_YET_PROVISIONED
+cloudflare_runtime:
+  status: DEPLOYMENT_SCAFFOLD_PREPARED_NOT_YET_DEPLOYED
+  branch: ops/real-testnet-e2e-runtime
   runbook: docs/REAL-TESTNET-E2E-RUNBOOK-2026-09-11.md
-  frontend_surface: existing_Vercel_static_Mini_App
-  backend_shape: long_lived_single_process_Node_runtime
-  database_shape: dedicated_Postgres
-  network: Nimiq_testnet_only
-  browser_boundary: same_origin_proxy_or_rewrite_preferred
-  capability_store_constraint: route_view_and_broadcast_capabilities_are_process_local_short_lived_stores
-  deployment_rule: DO_NOT_USE_MULTI_INSTANCE_OR_SERVERLESS_BACKEND_FOR_REAL_E2E_UNLESS_CAPABILITY_STORES_BECOME_SHARED_DURABLE
-  reason: sequential_browser_requests_must_reach_the_same_capability_store_during_the_proof_run
-  runtime_health_endpoint: /health
+  files:
+    - cloudflare/worker.mjs
+    - cloudflare/wrangler.jsonc
+    - cloudflare/package.json
+    - Dockerfile.cloudflare
+    - .dockerignore
+  frontend: Workers_Static_Assets_from_web_directory
+  backend: canonical_Node_runtime_inside_Cloudflare_Container
+  backend_port: 8787
+  stable_container_identity: nimcarry-primary
+  max_instances_for_proof_gate: 1
+  same_origin_frontend_and_api: true
+  api_router_rule: JSON_or_mutation_requests_to_auth_missions_i_usage_relay_health_go_to_container
+  spa_router_rule: browser_navigation_to_mission_and_i_routes_goes_to_static_SPA_shell
+  capability_store_constraint: route_view_and_broadcast_capabilities_remain_process_local
+  restart_rule: container_restart_during_proof_invalidates_process_local_capabilities_and_requires_fail_closed_restart_of_proof_run
+  paid_plan_required: Workers_Paid_5_USD_monthly_floor_as_of_2026_09_11
+  deployment_executed: false
+  cloudflare_origin: null
+
+postgres_runtime:
+  adapter_owner: opeyemi
+  adapter_type: generic_PostgreSQL_not_Supabase_specific
   migrations_required: [001_reach_mission_foundation.sql, 002_postgres_concurrency_guards.sql]
-  external_observations:
-    vercel_connector_projects_visible: 0
-    dedicated_NimCarry_Supabase_project_visible: false
-  external_blockers:
-    - provision_dedicated_NimCarry_Postgres
-    - provision_or_connect_single_process_Node_runtime
-    - connect_correct_frontend_hosting_project_or_configure_same_origin_proxy
-    - install_runtime_secrets_without_committing_them
-  proof_status: NOT_STARTED
-  real_FINAL_observed: false
-  real_ARRIVED_observed: false
+  repository_contains_Supabase_project_reference: false
+  faadil_connected_Supabase_has_dedicated_NimCarry_project: false
+  possible_opeyemi_owned_Supabase_project: UNCONFIRMED
+  rule: DO_NOT_CREATE_DUPLICATE_DATABASE_UNTIL_OPEYEMI_EXISTING_PROJECT_IS_CONFIRMED_OR_RULED_OUT
 
 current_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: RUNTIME_TOPOLOGY_LOCKED_INFRA_PROVISIONING_AND_REAL_NIMIQ_PAY_PROOF_NEXT
+  status: CLOUDFLARE_SCAFFOLD_READY_CONFIRM_DATABASE_THEN_DEPLOY_AND_RUN_REAL_PROOF
   code_merge_prerequisite: COMPLETE
-  runtime_prerequisites:
-    - deploy_or_run_single_process_Node_Mission_HTTP_server
-    - configure_dedicated_Postgres_single_writer_runtime
+  next_exact_actions:
+    - confirm_with_opeyemi_whether_NimCarry_Supabase_or_Postgres_project_already_exists
+    - if_existing_obtain_project_access_and_connection_string_securely
+    - otherwise_provision_dedicated_NimCarry_Postgres
     - apply_migrations_001_and_002
-    - set_target_encryption_and_HMAC_keys
-    - set_canonical_origin_and_testnet_RPC_endpoints
-    - keep_legacy_relay_mutations_disabled_in_production
-    - expose_frontend_to_backend_through_same_origin_proxy_or_equivalent_strict_boundary
-    - use_real_Nimiq_Pay_provider
+    - enable_or_confirm_Cloudflare_Workers_Paid_for_Containers
+    - configure_Cloudflare_worker_secrets
+    - deploy_Cloudflare_Worker_Static_Assets_plus_singleton_Container
+    - verify_health_postgres_mode_same_origin_routing_and_legacy_relay_403
+    - execute_real_Nimiq_Pay_A_to_B_to_C_testnet_proof
   topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> INVITE -> ACCEPT -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
   required_checks:
@@ -177,6 +186,9 @@ current_gate:
     - native_invitation_deeplink
     - iOS_cold_warm_background_resume
     - real_Route_Receipt_matches_finalized_route
+  proof_status: NOT_STARTED
+  real_FINAL_observed: false
+  real_ARRIVED_observed: false
   never_claim_before_observed: real_testnet_FINAL_or_ARRIVED
 
 post_E2E_priority_order:
