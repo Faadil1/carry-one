@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-11  
-Canonical version: **0.8.30**  
-State: `DATABASE_PROVIDER_LOCKED_NEON_PROVISIONING_NEXT`
+Canonical version: **0.8.31**  
+State: `NEON_PROVISIONED_MIGRATIONS_APPLIED_CLOUDFLARE_SECRETS_DEPLOYMENT_NEXT`
 
 ## Read first
 
@@ -75,30 +75,35 @@ Why singleton routing matters: route-view and broadcast capabilities are still s
 
 Cloudflare Containers require Workers Paid; the documented floor at this gate is USD 5/month. **The runtime is not deployed yet.** No Cloudflare public origin or live runtime evidence exists yet.
 
-## Database decision — NEON LOCKED
+## Database — NEON PROVISIONED + PRODUCTION MIGRATIONS APPLIED
 
-Opeyemi confirmed on 2026-09-11 that he **never set up or connected any persistent database for NimCarry** and explicitly said to provision whichever provider works best. The duplicate-database check is therefore complete.
+Opeyemi confirmed on 2026-09-11 that he never created or connected any persistent NimCarry database, so duplicate-database risk is closed.
 
-The database provider is now locked to **Neon PostgreSQL**.
+A dedicated **Neon PostgreSQL** project is now provisioned:
+- project: `nimcarry`
+- project id: `late-credit-21248077`
+- branch: `main`
+- database: `nimcarry`
+- region: `aws-us-east-1`
+- PostgreSQL: 18
 
-Current database status:
-- existing persistent database: **NONE CONFIRMED**;
-- provider: **Neon**;
-- Neon project: **PENDING PROVISIONING**;
-- Opeyemi's repository adapter remains the canonical generic PostgreSQL adapter;
-- credentials must never be committed to Git or pasted into issues/PRs.
+Production database work completed:
+- `migrations/001_reach_mission_foundation.sql` applied to Neon `main`;
+- `migrations/002_postgres_concurrency_guards.sql` applied to Neon `main` in one transaction after explicit user approval;
+- final schema verification = **PASS**;
+- 7 canonical tables are present: `missions`, `invitations`, `pass_intents`, `hops`, `participants`, `auth_challenges`, `audit_events`;
+- all 3 production concurrency triggers are present:
+  - `carry_one_invitation_insert_guard`
+  - `carry_one_invitation_accept_guard`
+  - `carry_one_participant_reentry_guard`
 
-Provision a dedicated NimCarry Neon database and apply, in order:
-- `migrations/001_reach_mission_foundation.sql`
-- `migrations/002_postgres_concurrency_guards.sql`
-
-Then set the resulting connection string securely as `CARRY_ONE_DATABASE_URL` in Cloudflare.
+The Neon PostgreSQL connection string was obtained securely for the runtime. **Do not write it into Git, issues, PRs, logs, screenshots, or public evidence.** It still needs to be installed into Cloudflare as `CARRY_ONE_DATABASE_URL`.
 
 ## Cloudflare secrets required before deployment
 
 Set in Cloudflare Worker Secrets, not Git:
 
-- `CARRY_ONE_DATABASE_URL`
+- `CARRY_ONE_DATABASE_URL` — use the already-obtained Neon connection string
 - `CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL`
 - `CARRY_ONE_TARGET_HMAC_KEY_B64URL`
 - `CARRY_ONE_CANONICAL_ORIGIN`
@@ -112,17 +117,16 @@ The encryption and HMAC keys must be independently generated different 32-byte b
 ## CURRENT GATE — REAL NIMIQ PAY TESTNET E2E
 
 Current status:
-`DATABASE_PROVIDER_LOCKED_NEON_PROVISION_APPLY_MIGRATIONS_THEN_DEPLOY`
+`NEON_READY_CLOUDFLARE_SECRETS_DEPLOY_THEN_REAL_PROOF`
 
 Next exact actions:
-1. provision the dedicated NimCarry Neon PostgreSQL project;
-2. apply migrations `001` + `002`;
-3. obtain the connection string securely and set `CARRY_ONE_DATABASE_URL`;
-4. enable/confirm Cloudflare Workers Paid for Containers;
-5. configure remaining Cloudflare secrets;
-6. deploy Worker Static Assets + singleton Container;
-7. verify `/health`, Postgres mode, same-origin routing, and legacy relay `403`;
-8. execute the real A → B → C Nimiq Pay testnet proof.
+1. enable/confirm Cloudflare Workers Paid for Containers;
+2. install the already-obtained Neon URL as Cloudflare secret `CARRY_ONE_DATABASE_URL`;
+3. generate and install two distinct random 32-byte base64url values for target encryption + HMAC;
+4. deploy Worker Static Assets + singleton Container;
+5. set/confirm `CARRY_ONE_CANONICAL_ORIGIN` to the actual public Cloudflare origin and redeploy if needed;
+6. verify `/health`, `Repository mode: postgres`, same-origin routing, and legacy relay `403`;
+7. execute the real A → B → C Nimiq Pay testnet proof.
 
 Target topology:
 - Wallet A = creator / initial holder
@@ -133,9 +137,13 @@ Target topology:
 Target proof:
 `CREATE → INVITE → ACCEPT → AUTHORIZE → A sends exactly 1 NIM to B → FINAL → B becomes holder → INVITE C → ACCEPT → AUTHORIZE → B sends exactly 1 NIM to C → FINAL → ARRIVED → Verified Route Receipt`
 
-Also validate exactly `100000 Luna` per hop, requested fee `0` plus actual wallet/network behavior, no custody movement before independent FINAL, durable Postgres state after each FINAL, multi-account wallet selection, native invitation deep link, iOS cold/warm/background/resume, and a Route Receipt matching the finalized route.
+Also validate exactly `100000 Luna` per hop, requested fee `0` plus actual wallet/network behavior, no custody movement before independent FINAL, durable Neon state after each FINAL, multi-account wallet selection, native invitation deep link, iOS cold/warm/background/resume, and a Route Receipt matching the finalized route.
 
 **Never claim real testnet `FINAL` or `ARRIVED` before observed evidence exists.**
+
+## Tooling boundary for next conversation
+
+Neon is connected and manageable directly from ChatGPT. No Cloudflare management plugin was discoverable in the current ChatGPT plugin directory, so the remaining Cloudflare account mutation/authentication step may require either the user's authenticated Cloudflare dashboard/CLI or ChatGPT Work/Cloud Browser. Do not expose the Neon database credential while bridging this step.
 
 ## Post-E2E order
 
