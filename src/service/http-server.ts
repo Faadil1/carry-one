@@ -3,13 +3,44 @@ import { RelayValidationError } from "../core/relay.js";
 import { RpcVerificationDelayedError } from "../nimiq/resilient-rpc-client.js";
 import type { CanonicalRelayService } from "./canonical-relay-service.js";
 
-export function createHttpServer(service: CanonicalRelayService) {
+export interface LegacyRelayOptions {
+  /**
+   * When false, legacy `/relay` mutation endpoints (intent/broadcast/cancel/
+   * reconcile) are rejected 403 so the authenticated Reach Mission HTTP surface
+   * cannot be bypassed. Defaults to `CARRY_ONE_LEGACY_RELAY_ENABLED` (false in
+   * production).
+   */
+  legacyRelayEnabled?: boolean;
+}
+
+/**
+ * Resolve the legacy `/relay` mutation gate. Explicit opt-in wins; otherwise the
+ * legacy mutation surface is enabled outside production (dev/test/CI) and
+ * disabled inside production.
+ */
+export function legacyRelayEnabledFromEnv(env: NodeJS.ProcessEnv = process.env): boolean {
+  const raw = env.CARRY_ONE_LEGACY_RELAY_ENABLED;
+  if (raw !== undefined && raw.trim() !== "") {
+    const normalized = raw.trim().toLowerCase();
+    if (["true", "1", "yes"].includes(normalized)) return true;
+    if (["false", "0", "no"].includes(normalized)) return false;
+  }
+  return env.NODE_ENV !== "production";
+}
+
+export function createHttpServer(service: CanonicalRelayService, options: LegacyRelayOptions = {}) {
   return createServer((req, res) => {
-    handle(service, req, res).catch((err) => sendError(res, err));
+    handleRelayRequest(service, req, res, options).catch((err) => sendError(res, err));
   });
 }
 
-async function handle(service: CanonicalRelayService, req: IncomingMessage, res: ServerResponse) {
+/** Relay route handler, exported so the mission/application server can mount it as its /relay prefix. */
+export async function handleRelayRequest(
+  service: CanonicalRelayService,
+  req: IncomingMessage,
+  res: ServerResponse,
+  options: LegacyRelayOptions = {}
+) {
   const url = new URL(req.url ?? "/", "http://localhost");
   const segments = url.pathname.split("/").filter(Boolean);
   if (segments[0] !== "relay" || !segments[1]) {
@@ -17,6 +48,14 @@ async function handle(service: CanonicalRelayService, req: IncomingMessage, res:
   }
   const batonId = decodeURIComponent(segments[1]);
   const tail = segments[2];
+
+  const legacyRelayEnabled = options.legacyRelayEnabled ?? legacyRelayEnabledFromEnv();
+  if (req.method === "POST" && !legacyRelayEnabled) {
+    return send(res, 403, {
+      error: "LEGACY_RELAY_DISABLED",
+      message: "Legacy /relay mutation endpoints are disabled; use the Reach Mission HTTP surface",
+    });
+  }
 
   if (req.method === "GET" && !tail) return send(res, 200, service.getPublicView(batonId));
   if (req.method === "GET" && tail === "history") return send(res, 200, service.getHistory(batonId));
