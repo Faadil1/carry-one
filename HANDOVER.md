@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-11  
-Canonical version: **0.8.33**  
-State: `CLOUDFLARE_DEEP_RUNTIME_SMOKE_PASS_NIMIQ_PAY_PROVIDER_NEXT`
+Canonical version: **0.8.36**
+State: `PROVIDER_PREFLIGHT_WIRED_OPERATOR_CHECKLIST_READY`
 
 ## Read first
 
@@ -82,9 +82,9 @@ Observed production proof:
 
 This deterministic endpoint supersedes the need to manually hunt startup console lines for the runtime gate. Runtime smoke is now considered **PASS**.
 
-Important remaining Cloudflare housekeeping:
-- harden Build watch paths so documentation-only commits such as `CANONICAL-STATE.yaml` / `HANDOVER.md` do not redeploy production;
-- remove duplicate Build-variable copies of secrets if they still exist.
+Cloudflare Builds housekeeping is complete. Production trigger `b060a3f1-7490-46ef-9ea7-8f997d8f7884` for Worker tag `79cd9d3ec2814fc8a565a2b1c75dc6c3` now includes only deploy-relevant paths (`cloudflare/**`, `Dockerfile.cloudflare`, `.dockerignore`, root package manifests, `src/**`, `migrations/**`, and `web/**`) and excludes `docs/**`, `CANONICAL-STATE.yaml`, `HANDOVER.md`, and repository-only documentation. Documentation-only commits therefore do not deploy production.
+
+The Build-scoped variable list is empty after removing all four duplicate runtime-config copies. Worker runtime secrets were preserved under their original names: `CARRY_ONE_DATABASE_URL`, `CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL`, and `CARRY_ONE_TARGET_HMAC_KEY_B64URL`. Reverification returned `GET /health?deep=1` = `200`, `status: ok`, Postgres mode, and `LEGACY_RELAY_DISABLED` at `403`.
 
 Why singleton routing matters: route-view and broadcast capabilities remain process-local. If the Container restarts during an active proof, fail closed and restart the proof. Never manufacture recovery evidence.
 
@@ -94,8 +94,8 @@ Current status:
 `RUNTIME_SMOKE_PASS_NIMIQ_PAY_PROVIDER_THEN_REAL_PROOF`
 
 Next exact actions:
-1. harden Cloudflare Build watch paths;
-2. remove duplicate Build-variable secrets if still present;
+1. open the production Mini App in Nimiq Pay and confirm the injected provider is available;
+2. execute the real A-to-B-to-C Nimiq Pay testnet proof;
 3. open the production Mini App in Nimiq Pay and confirm the injected provider is available;
 4. execute the real A → B → C Nimiq Pay testnet proof;
 5. after each real `FINAL`, query Neon and capture durable state evidence before advancing custody.
@@ -134,3 +134,21 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 5. submit once genuinely usable;
 6. Sep 16 Sip & Show only if runtime remains green;
 7. judge-window monitoring/rollback + final TRACE/demo packaging.
+
+
+## Milestone — provider preflight + operator readiness (2026-09-11)
+
+- Live production frontend pass flow now checks the server-authorized `expected_sender` against the explicitly selected Nimiq Pay account before invoking `sendBasicTransactionWithData`.
+- Canonical guards remain enforced: exactly `100000` Luna, fee `0`, and `co:v1:` opaque commitment; demo mode remains isolated.
+- Verification: full suite **156/156 PASS** across 24 files; TypeScript build **PASS**.
+- Operator checklist: `docs/REAL-TESTNET-OPERATOR-CHECKLIST-2026-09-11.md`.
+- Cloudflare Workers Builds watch-path and Build-variable secret cleanup are complete via the official API; no Worker runtime secrets were changed.
+- Next stop: open the production origin inside Nimiq Pay, confirm `listAccounts()` and account selection. Stop before any send until the user explicitly approves each wallet transaction.
+
+
+## Cloudflare Builds Gate A milestone (2026-09-11)
+
+- `npx wrangler whoami` now succeeds for the authenticated account.
+- Official Workers Builds API inspection and update succeeded with the active API token.
+- Trigger path filters now exclude documentation-only commits; Build-scoped variables are empty.
+- Worker runtime secret names remain present and production deep runtime smoke remains PASS.
