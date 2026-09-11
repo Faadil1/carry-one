@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-11  
-Canonical version: **0.8.29**  
-State: `CLOUDFLARE_RUNTIME_SCAFFOLD_MERGED_MAIN_CI_GREEN_DATABASE_CONFIRMATION_NEXT`
+Canonical version: **0.8.30**  
+State: `DATABASE_PROVIDER_LOCKED_NEON_PROVISIONING_NEXT`
 
 ## Read first
 
@@ -75,19 +75,24 @@ Why singleton routing matters: route-view and broadcast capabilities are still s
 
 Cloudflare Containers require Workers Paid; the documented floor at this gate is USD 5/month. **The runtime is not deployed yet.** No Cloudflare public origin or live runtime evidence exists yet.
 
-## PostgreSQL / possible Supabase project
+## Database decision — NEON LOCKED
 
-Opeyemi built the generic PostgreSQL adapter. The repository contains no Supabase URL, project ID, Supabase config, or Supabase-specific branch.
+Opeyemi confirmed on 2026-09-11 that he **never set up or connected any persistent database for NimCarry** and explicitly said to provision whichever provider works best. The duplicate-database check is therefore complete.
 
-Faadil's currently connected Supabase account shows no dedicated NimCarry project. It remains possible Opeyemi created the intended database under his own Supabase account/organization; this is **UNCONFIRMED**.
+The database provider is now locked to **Neon PostgreSQL**.
 
-Do not create a duplicate database until that is confirmed or ruled out.
+Current database status:
+- existing persistent database: **NONE CONFIRMED**;
+- provider: **Neon**;
+- Neon project: **PENDING PROVISIONING**;
+- Opeyemi's repository adapter remains the canonical generic PostgreSQL adapter;
+- credentials must never be committed to Git or pasted into issues/PRs.
 
-If Opeyemi already created it, obtain project access / the Postgres connection string securely. Do not commit it or paste it into issues/PRs.
-
-If no existing project exists, provision a dedicated NimCarry Postgres database and apply:
+Provision a dedicated NimCarry Neon database and apply, in order:
 - `migrations/001_reach_mission_foundation.sql`
 - `migrations/002_postgres_concurrency_guards.sql`
+
+Then set the resulting connection string securely as `CARRY_ONE_DATABASE_URL` in Cloudflare.
 
 ## Cloudflare secrets required before deployment
 
@@ -107,14 +112,14 @@ The encryption and HMAC keys must be independently generated different 32-byte b
 ## CURRENT GATE — REAL NIMIQ PAY TESTNET E2E
 
 Current status:
-`CLOUDFLARE_RUNTIME_MERGED_CONFIRM_DATABASE_THEN_DEPLOY_AND_RUN_REAL_PROOF`
+`DATABASE_PROVIDER_LOCKED_NEON_PROVISION_APPLY_MIGRATIONS_THEN_DEPLOY`
 
 Next exact actions:
-1. confirm with Opeyemi whether the NimCarry Supabase/Postgres project already exists;
-2. use it if valid, otherwise provision a dedicated Postgres database;
-3. apply migrations `001` + `002`;
+1. provision the dedicated NimCarry Neon PostgreSQL project;
+2. apply migrations `001` + `002`;
+3. obtain the connection string securely and set `CARRY_ONE_DATABASE_URL`;
 4. enable/confirm Cloudflare Workers Paid for Containers;
-5. configure Cloudflare secrets;
+5. configure remaining Cloudflare secrets;
 6. deploy Worker Static Assets + singleton Container;
 7. verify `/health`, Postgres mode, same-origin routing, and legacy relay `403`;
 8. execute the real A → B → C Nimiq Pay testnet proof.
