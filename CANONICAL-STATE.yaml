@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.31
+state_version: 0.8.32
 date: 2026-09-11
-phase: NEON_PROVISIONED_MIGRATIONS_APPLIED_CLOUDFLARE_SECRETS_DEPLOYMENT_NEXT
+phase: CLOUDFLARE_PRODUCTION_DEPLOYED_HEALTH_GREEN_RUNTIME_VERIFICATION_NEXT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -25,7 +25,7 @@ brand_identity:
   repository_rename_status: COMPLETE
   previous_demo_domain: https://carry-one-mu.vercel.app
   target_runtime_platform: Cloudflare
-  cloudflare_public_origin: PENDING_DEPLOYMENT
+  cloudflare_public_origin: https://nimcarry.faadil-casecraft.workers.dev
 
 core_product_laws:
   baton: THE BATON IS A VERIFIED 1-NIM HANDOFF — NOT AN INVESTMENT, WAGER, PRIZE POOL OR UNIQUE-HUMAN PROOF.
@@ -80,7 +80,7 @@ guided_demo_tour:
   previous_clean_start_link: https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1
   fresh_start_to_arrived_seconds_approx: 54
   verdict: PASS_WITH_MINOR_POLISH_APPLIED
-  cloudflare_revalidation: PENDING_DEPLOYMENT
+  cloudflare_revalidation: PENDING_RUNTIME_SMOKE_AND_REAL_E2E
   evidence_boundary: NEVER_USE_GUIDED_DEMO_AS_REAL_TESTNET_OR_ONCHAIN_PROOF
 
 http_security:
@@ -129,7 +129,7 @@ shared_vertical_integration:
     production_concurrency_guard_note: migration_002_is_Postgres_only_and_remains separately covered_by_repository_policy
 
 cloudflare_runtime:
-  status: MERGED_TO_MAIN_CI_GREEN_NOT_YET_DEPLOYED
+  status: PRODUCTION_DEPLOYED_HEALTH_GREEN_RUNTIME_VERIFICATION_PENDING
   source_branch: ops/real-testnet-e2e-runtime
   pull_request: 25
   pr_final_head_sha: 011a24ec34562a99fe1746365ea8088dcd8165ba
@@ -161,8 +161,19 @@ cloudflare_runtime:
   capability_store_constraint: route_view_and_broadcast_capabilities_remain_process_local
   restart_rule: container_restart_during_proof_invalidates_process_local_capabilities_and_requires_fail_closed_restart_of_proof_run
   paid_plan_required: Workers_Paid_5_USD_monthly_floor_as_of_2026_09_11
-  deployment_executed: false
-  cloudflare_origin: null
+  workers_paid_enabled: true
+  deployment_executed: true
+  production_workers_dev_enabled: true
+  preview_workers_dev_enabled: false
+  cloudflare_origin: https://nimcarry.faadil-casecraft.workers.dev
+  runtime_secrets_status: CONFIGURED_AT_WORKER_RUNTIME_VALUES_NOT_COMMITTED
+  required_runtime_secret_names_present: [CARRY_ONE_DATABASE_URL, CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL, CARRY_ONE_TARGET_HMAC_KEY_B64URL, CARRY_ONE_CANONICAL_ORIGIN]
+  health_check: PASS_200_STATUS_OK
+  health_observed_at: https://nimcarry.faadil-casecraft.workers.dev/health
+  startup_log_repository_mode_verification: PENDING
+  same_origin_routing_verification: PENDING
+  legacy_relay_403_verification: PENDING
+  duplicate_build_scoped_secret_cleanup: PENDING_IF_STILL_PRESENT
 
 postgres_runtime:
   adapter_owner: opeyemi
@@ -185,25 +196,31 @@ postgres_runtime:
   neon_postgres_version: 18
   migrations_applied: [001_reach_mission_foundation.sql, 002_postgres_concurrency_guards.sql]
   production_schema_verification: PASS_7_TABLES_3_CONCURRENCY_TRIGGERS
-  connection_string_status: OBTAINED_SECURELY_NOT_COMMITTED
+  connection_string_status: INSTALLED_AS_CLOUDFLARE_RUNTIME_SECRET_NOT_COMMITTED
+  runtime_boot_indirect_db_evidence: HEALTH_GREEN_AFTER_POSTGRES_BACKEND_STARTUP
+  startup_log_repository_mode_verification: PENDING
   rule: USE_DEDICATED_NEON_POSTGRES_FOR_NIMCARRY_AND_KEEP_CREDENTIALS_OUT_OF_GIT
 
 current_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: NEON_READY_CLOUDFLARE_SECRETS_DEPLOY_THEN_REAL_PROOF
+  status: CLOUDFLARE_HEALTH_GREEN_RUNTIME_SMOKE_THEN_REAL_PROOF
   code_merge_prerequisite: COMPLETE
   cloudflare_scaffold_merge_prerequisite: COMPLETE
   database_duplicate_check: COMPLETE_NONE_EXISTS
   neon_provisioning: COMPLETE
   production_migrations: COMPLETE
+  cloudflare_workers_paid: COMPLETE
+  cloudflare_production_deployment: COMPLETE
+  cloudflare_runtime_secrets: COMPLETE
+  cloudflare_health: PASS_200_STATUS_OK
   next_exact_actions:
-    - enable_or_confirm_Cloudflare_Workers_Paid_for_Containers
-    - configure_CARRY_ONE_DATABASE_URL_from_Neon_as_Cloudflare_secret_without_committing_it
-    - generate_and_configure_distinct_32_byte_encryption_and_HMAC_secrets
-    - configure_CARRY_ONE_CANONICAL_ORIGIN_after_public_origin_is_known
-    - deploy_Cloudflare_Worker_Static_Assets_plus_singleton_Container
-    - verify_health_postgres_mode_same_origin_routing_and_legacy_relay_403
+    - verify_Cloudflare_container_startup_logs_show_Repository_mode_postgres_and_Reach_Mission_HTTP_bindings_enabled_PostgreSQL
+    - verify_same_origin_static_SPA_and_JSON_API_routing_on_production_origin
+    - verify_legacy_relay_POST_mutations_return_403_LEGACY_RELAY_DISABLED
+    - remove_duplicate_build_scoped_secret_entries_if_they_still_exist
+    - confirm_Nimiq_Pay_provider_available_on_production_origin
     - execute_real_Nimiq_Pay_A_to_B_to_C_testnet_proof
+    - query_Neon_after_each_real_FINAL_for_durable_state_evidence
   topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> INVITE -> ACCEPT -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
   required_checks:
