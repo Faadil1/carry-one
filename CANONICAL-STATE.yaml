@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.28
+state_version: 0.8.29
 date: 2026-09-11
-phase: CLOUDFLARE_RUNTIME_PREPARED_SUPABASE_CONFIRMATION_AND_DEPLOYMENT_NEXT
+phase: CLOUDFLARE_RUNTIME_SCAFFOLD_MERGED_MAIN_CI_GREEN_DATABASE_CONFIRMATION_NEXT
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -129,8 +129,15 @@ shared_vertical_integration:
     production_concurrency_guard_note: migration_002_is_Postgres_only_and_remains separately covered_by_repository_policy
 
 cloudflare_runtime:
-  status: DEPLOYMENT_SCAFFOLD_PREPARED_NOT_YET_DEPLOYED
-  branch: ops/real-testnet-e2e-runtime
+  status: MERGED_TO_MAIN_CI_GREEN_NOT_YET_DEPLOYED
+  source_branch: ops/real-testnet-e2e-runtime
+  pull_request: 25
+  pr_final_head_sha: 011a24ec34562a99fe1746365ea8088dcd8165ba
+  main_merge_sha: aed163d0335b5fc68317ec4cb325a56739cf54b8
+  pr_ci_run: 34601474683
+  pr_ci: PASS
+  post_merge_main_ci_run: 34601571626
+  post_merge_main_ci: PASS
   runbook: docs/REAL-TESTNET-E2E-RUNBOOK-2026-09-11.md
   files:
     - cloudflare/worker.mjs
@@ -138,6 +145,11 @@ cloudflare_runtime:
     - cloudflare/package.json
     - Dockerfile.cloudflare
     - .dockerignore
+  toolchain:
+    cloudflare_containers: 0.3.7
+    wrangler: 4.131.0
+    wrangler_deploy_dry_run: PASS
+    docker_container_image_build: PASS
   frontend: Workers_Static_Assets_from_web_directory
   backend: canonical_Node_runtime_inside_Cloudflare_Container
   backend_port: 8787
@@ -163,8 +175,9 @@ postgres_runtime:
 
 current_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: CLOUDFLARE_SCAFFOLD_READY_CONFIRM_DATABASE_THEN_DEPLOY_AND_RUN_REAL_PROOF
+  status: CLOUDFLARE_RUNTIME_MERGED_CONFIRM_DATABASE_THEN_DEPLOY_AND_RUN_REAL_PROOF
   code_merge_prerequisite: COMPLETE
+  cloudflare_scaffold_merge_prerequisite: COMPLETE
   next_exact_actions:
     - confirm_with_opeyemi_whether_NimCarry_Supabase_or_Postgres_project_already_exists
     - if_existing_obtain_project_access_and_connection_string_securely
