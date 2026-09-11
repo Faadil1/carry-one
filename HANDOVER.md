@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
 Date: 2026-09-11  
-Canonical version: **0.8.26**  
-State: `SHARED_VERTICAL_INTEGRATION_MERGED_MAIN_CI_GREEN_TESTNET_RUNTIME_NEXT`
+Canonical version: **0.8.28**  
+State: `CLOUDFLARE_RUNTIME_PREPARED_SUPABASE_CONFIRMATION_AND_DEPLOYMENT_NEXT`
 
 ## Read first
 
@@ -14,93 +14,105 @@ State: `SHARED_VERTICAL_INTEGRATION_MERGED_MAIN_CI_GREEN_TESTNET_RUNTIME_NEXT`
 
 Judge line: **NimCarry uses 1 NIM to make warm introductions verifiable.**
 
-## Winning Intelligence / UI — GREEN
+## Previous UI / demo state
 
-Seven full Sip & Ship transcripts were analyzed. Hidden spots are implemented. Living Route UI is on `main`, and production Vercel was observed Ready/Current at:
-`https://carry-one-mu.vercel.app`
+Living Route UI and guided demo were previously observed on Vercel at `https://carry-one-mu.vercel.app`. The guided demo reaches simulated ARRIVED + DEMO Route Receipt in ~54s from fresh start. That remains presentation evidence only and must never be presented as real testnet proof.
 
-Provider-free guided demo:
-`https://carry-one-mu.vercel.app/?demo=1&tour=1&reset=1`
+The active deployment direction is now **Cloudflare**, not Vercel.
 
-The guided demo reaches simulated **ARRIVED + DEMO Route Receipt** in ~54s from fresh start. It is UI/story evidence only, never real testnet proof.
+## Shared secure vertical — COMPLETE ON MAIN
 
-## HTTP security — COMPLETE AND NOW ON MAIN
-
-Faadil PR #20 supplied:
-- one-time scoped broadcast capability after signed `AUTHORIZE_PASS`;
-- mission + invitation + sequence + intent nonce + holder binding;
-- replay/expiry/binding protection;
-- automatic TypeScript client idempotency and stable broadcast retry key.
-
-Opeyemi PR #23 supplied:
-- route-view capability replacing spoofable `X-Wallet` authorization;
-- viewer-role invitation privacy/redaction;
-- legacy `/relay` production mutation gate;
-- protected non-public reconcile responses;
-- invite token limited to the landing page; continued route access requires signed `VIEW_ROUTE` capability.
-
-The stale old PR #14 is closed as **superseded / not merged**. Do not reopen it and do not force-update Opeyemi's old feature branch.
-
-## SHARED VERTICAL INTEGRATION — MERGED TO MAIN
-
-Active integration branch was:
-`integration/secure-vertical-slice`
-
-Important commits:
-- secure backend port onto latest-main base: `372cb8a1bbd3d09a561476f56c50fd3208185018`
-- secure browser transport wiring: `f0f4da99821d472df93dcb9370d3a2b0929eba74`
-- browser contract regression tests: `4c27998f91d1120aa4fbd8da8d429116602251dc`
-- browser → HTTP → PostgreSQL vertical harness: `8c73c5a4a43142765b239ff4bbae022ab4440dfa`
-
-PR #24 — **Integrate secure vertical slice on latest main** — was merged into `main` at:
+PR #24 — **Integrate secure vertical slice on latest main** — merged to `main` at:
 `449f1d3b942b8593596ea2e637033444f41f0bc9`
 
-Verification:
-- branch CI `34598755496` = **PASS**
-- PR CI `34598845208` = **PASS**
-- post-merge main CI `34598905774` = **PASS**
+Post-merge CI `34598905774` = **PASS**.
 
-The post-merge CI passed secret scan, browser JavaScript syntax, typecheck, complete tests, and build.
+The merged stack includes:
+- signed route-view capabilities; no spoofable `X-Wallet` authorization;
+- invitation privacy/redaction;
+- production gate on legacy `/relay` mutations;
+- protected reconcile;
+- separate signed `VIEW_ROUTE` mint after acceptance;
+- one-time broadcast capability after `AUTHORIZE_PASS`;
+- browser + TS idempotency;
+- normalized `invitation_id`;
+- secure browser → HTTP → PostgreSQL vertical harness;
+- durable DB assertion before a FINAL handoff is accepted by the harness.
 
-## Browser secure contract now on main
+No real Nimiq testnet FINAL/ARRIVED has yet been claimed.
 
-The real browser transport now:
-- stores route-view capabilities in session storage;
-- attaches Bearer route-view capability to non-public mission reads and reconcile;
-- does **not** use `X-Wallet` as authorization;
-- after a signed invitation acceptance, separately mints a signed `VIEW_ROUTE` capability for the accepted participant before route following;
-- gives browser mutations `Idempotency-Key` automatically, excluding challenge/reconcile where intentional;
-- carries the one-time `broadcast_capability` from authorized pass intent into `/missions/:id/broadcast`;
-- uses a stable idempotency key for retries of the same broadcast claim;
-- normalizes backend invitation `id` into the browser `invitation_id` contract;
-- fails closed when required security artifacts are missing.
+## Cloudflare runtime — PREPARED, NOT DEPLOYED
 
-Guided/demo mode remains separate and cannot create real wallet/network authority, `FINAL`, custody transfer, or real `ARRIVED` evidence.
+Active branch:
+`ops/real-testnet-e2e-runtime`
 
-## Combined vertical harness — GREEN
+Runbook:
+`docs/REAL-TESTNET-E2E-RUNBOOK-2026-09-11.md`
 
-File:
-`tests/integration/secure-vertical-slice.test.ts`
+Deployment scaffolding now exists:
+- `cloudflare/worker.mjs`
+- `cloudflare/wrangler.jsonc`
+- `cloudflare/package.json`
+- `Dockerfile.cloudflare`
+- `.dockerignore`
 
-It exercises the shared stack against the Postgres adapter (`pg-mem` with the foundation schema):
+Architecture:
+- one Cloudflare Worker serves `web/` as Workers Static Assets;
+- JSON/mutation API traffic is forwarded to the canonical Node runtime inside a Cloudflare Container;
+- backend is addressed with stable container identity `nimcarry-primary`;
+- `max_instances: 1` for the real proof gate;
+- frontend and API stay on the same Cloudflare origin;
+- `/mission/*` and browser navigation to `/i/*` remain SPA routes;
+- JSON API calls to `/missions/*` and `/i/*` are sent to the Node backend;
+- Node container runs on port 8787 with `NODE_ENV=production`, Postgres mode, and legacy relay writes disabled.
 
-`browser security contract → signed create → invite → accept → signed VIEW_ROUTE mint → AUTHORIZE_PASS → capability-bound broadcast → independent FINAL observation → reconcile → holder projection → durable PostgreSQL mission/hop state`
+Why singleton routing matters: route-view and broadcast capabilities are still short-lived process-local stores. A multi-instance backend could split sequential requests across stores and break the secure flow. Cloudflare Containers allow requests to be routed to a stable named instance. Cloudflare can still restart a container; if that happens during the proof and a capability is lost, **fail closed and restart the proof run**. Do not manufacture recovery evidence.
 
-The test verifies the FINAL hop and mission sequence/finalized-hop count are present in the database before success is accepted.
+Cloudflare Containers currently require Workers Paid; the documented floor is USD 5/month. No paid Cloudflare action has been executed by this branch alone.
 
-Production Postgres concurrency hardening remains governed by migration `002_postgres_concurrency_guards.sql` and the single-writer deployment policy; the hermetic vertical harness is not itself a claim of production Postgres or live Nimiq evidence.
+## PostgreSQL / possible Supabase project
+
+Opeyemi built the generic PostgreSQL adapter. The repo contains no Supabase URL/project ID/configuration and no Supabase-specific branch.
+
+Faadil's currently connected Supabase account shows no dedicated NimCarry project. It is still possible Opeyemi created a database under his own Supabase account/organization; this is **UNCONFIRMED**.
+
+Do not create a duplicate database until that is confirmed or ruled out.
+
+If Opeyemi already created it, obtain project access / the Postgres connection string securely. Do not commit it or paste it into issues/PRs.
+
+If no existing project exists, create a dedicated NimCarry Postgres database and apply:
+- `migrations/001_reach_mission_foundation.sql`
+- `migrations/002_postgres_concurrency_guards.sql`
+
+## Cloudflare secrets required before deployment
+
+Set in Cloudflare Worker Secrets, not Git:
+
+- `CARRY_ONE_DATABASE_URL`
+- `CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL`
+- `CARRY_ONE_TARGET_HMAC_KEY_B64URL`
+- `CARRY_ONE_CANONICAL_ORIGIN`
+
+Optional:
+- `NIMIQ_RPC_URL`
+- `NIMIQ_RPC_URLS`
+
+The encryption and HMAC keys must be independently generated different 32-byte base64url values.
 
 ## CURRENT GATE — REAL NIMIQ PAY TESTNET E2E
 
-Code-level shared vertical integration is complete. Do **not** add new product scope now.
+Current status:
+`CLOUDFLARE_SCAFFOLD_READY_CONFIRM_DATABASE_THEN_DEPLOY_AND_RUN_REAL_PROOF`
 
-Before executing the real run, stand up/configure the actual Mission HTTP runtime:
-- Node Mission HTTP server reachable by the Mini App;
-- Postgres runtime using the single-writer policy;
-- target-wallet encryption and HMAC keys;
-- canonical origin and testnet RPC endpoints;
-- legacy `/relay` mutations disabled in production;
-- real Nimiq Pay provider.
+Next exact actions:
+1. confirm with Opeyemi whether the NimCarry Supabase/Postgres project already exists;
+2. use it if valid, otherwise provision a dedicated Postgres database;
+3. apply migrations `001` + `002`;
+4. enable/confirm Cloudflare Workers Paid for Containers;
+5. configure Cloudflare secrets;
+6. deploy Worker Static Assets + singleton Container;
+7. verify `/health`, Postgres mode, same-origin routing, and legacy relay `403`;
+8. execute the real A → B → C Nimiq Pay testnet proof.
 
 Target topology:
 - Wallet A = creator / initial holder
@@ -112,19 +124,16 @@ Target proof:
 `CREATE → INVITE → ACCEPT → AUTHORIZE → A sends exactly 1 NIM to B → FINAL → B becomes holder → INVITE C → ACCEPT → AUTHORIZE → B sends exactly 1 NIM to C → FINAL → ARRIVED → Verified Route Receipt`
 
 Also validate:
-- exact 1 NIM = 100,000 Luna per hop;
-- requested fee 0 and actual wallet/network behavior;
+- exactly `100000 Luna` per hop;
+- requested fee `0` and actual wallet/network behavior;
 - custody never moves before independent FINAL;
+- durable Postgres state after each FINAL;
 - multi-account wallet selection;
 - native invitation deep link;
-- iOS cold/warm/background/resume behavior;
-- real Route Receipt matches the finalized route.
+- iOS cold/warm/background/resume;
+- Route Receipt matches the finalized route.
 
 **Never claim real testnet `FINAL` or `ARRIVED` before observed evidence exists.**
-
-## Score-floor after real E2E
-
-Builder Promotion = Skool 2 + public social 3 = **5/5**. Real Usage = `0–3:0`, `4–10:6`, `11–24:10`, `25+:15`. Promotion + 4 genuine users = **11 points**, +11 users = **15**, +25 users = **20/20** outside the 80-point core. No bots/artificial wallets/gaming.
 
 ## Post-E2E order
 
@@ -133,5 +142,5 @@ Builder Promotion = Skool 2 + public social 3 = **5/5**. Real Usage = `0–3:0`,
 3. publish genuine Skool + public social posts for 5/5 promotion;
 4. reach 4+, 11+, then 25+ legitimate unique wallet opens;
 5. submit once genuinely usable;
-6. Sep 16 Sip & Show only if the runtime is green;
+6. Sep 16 Sip & Show only if runtime is green;
 7. judge-window monitoring/rollback + final TRACE/demo packaging.

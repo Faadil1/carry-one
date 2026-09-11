@@ -1,0 +1,16 @@
+{
+  "name": "nimcarry-cloudflare-runtime",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy --config wrangler.jsonc",
+    "deploy:dry-run": "wrangler deploy --config wrangler.jsonc --dry-run --outdir .wrangler-dry-run",
+    "dev": "wrangler dev --config wrangler.jsonc"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "0.3.7"
+  },
+  "devDependencies": {
+    "wrangler": "4.131.0"
+  }
+}

@@ -30,6 +30,15 @@ jobs:
       - name: Browser JavaScript syntax
         run: node --check web/app.js && node --check web/http-compat.js && node --check web/winning-intelligence.js && node --check web/living-route.js && node --check web/route-shell-polish.js && node --check web/demo-ux.js && node --check web/demo-tour.js
 
+      - name: Cloudflare runtime syntax and config
+        run: node --check cloudflare/worker.mjs && node -e "JSON.parse(require('fs').readFileSync('cloudflare/wrangler.jsonc','utf8'))"
+
+      - name: Install pinned Cloudflare deployment toolchain
+        run: npm install --prefix cloudflare --no-audit --no-fund
+
+      - name: Cloudflare Wrangler dry run
+        run: npm --prefix cloudflare run deploy:dry-run
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -38,3 +47,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Cloudflare container image build
+        run: docker build -f Dockerfile.cloudflare -t nimcarry-cloudflare-ci .
