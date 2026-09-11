@@ -2,7 +2,7 @@
 
 Date: 2026-09-11
 Gate: `NIMCARRY_REAL_TESTNET_E2E_PROOF`
-Status: **Cloudflare runtime topology prepared; real FINAL/ARRIVED not yet observed**
+Status: **Neon production database ready; Cloudflare deployment + real FINAL/ARRIVED still pending**
 
 ## 0. Non-negotiable evidence boundary
 
@@ -56,29 +56,44 @@ Cloudflare Containers requires Workers Paid. The current documented plan floor i
 
 No Cloudflare account mutation or paid deployment has been executed by this repository preparation alone.
 
-## 3. PostgreSQL / Supabase status
+## 3. PostgreSQL status — NEON READY
 
-The repository contains Opeyemi's generic PostgreSQL adapter and migrations, but there is no committed Supabase project reference, Supabase URL, or Supabase-specific branch/configuration.
+Opeyemi confirmed on 2026-09-11 that he never set up or connected any persistent database for NimCarry. The duplicate-database check is complete.
 
-The Supabase projects visible through Faadil's currently connected Supabase account do not include a dedicated NimCarry project. If Opeyemi provisioned one, it is not discoverable from the repository or Faadil's connected Supabase account and may live under Opeyemi's account/organization.
+A dedicated Neon PostgreSQL project is now provisioned:
 
-Before creating a new database, confirm with Opeyemi whether a NimCarry/Postgres project already exists and, if so, obtain only the connection details/access needed for this project. Never paste credentials into GitHub issues, PRs, chat-visible code, or tracked files.
+- project: `nimcarry`
+- project id: `late-credit-21248077`
+- branch: `main`
+- database: `nimcarry`
+- region: `aws-us-east-1`
+- PostgreSQL: 18
+
+Both production migrations have been applied:
+
+- `migrations/001_reach_mission_foundation.sql`
+- `migrations/002_postgres_concurrency_guards.sql`
+
+Verification after application:
+
+- 7 canonical tables present: `missions`, `invitations`, `pass_intents`, `hops`, `participants`, `auth_challenges`, `audit_events`;
+- 3 production concurrency triggers present: `carry_one_invitation_insert_guard`, `carry_one_invitation_accept_guard`, `carry_one_participant_reentry_guard`;
+- the database connection string has been obtained securely and must never be committed or pasted into public evidence.
+
+The remaining database task is only runtime wiring: install that connection string into Cloudflare as the secret `CARRY_ONE_DATABASE_URL`.
 
 ## 4. External infrastructure prerequisites
 
-Before starting the real wallet run:
+Database provisioning and migrations are complete. Before starting the real wallet run:
 
-1. Confirm whether Opeyemi already created the intended NimCarry Postgres/Supabase database.
-2. If none exists, provision a dedicated Postgres database for NimCarry.
-3. Apply both migrations in order:
-   - `migrations/001_reach_mission_foundation.sql`
-   - `migrations/002_postgres_concurrency_guards.sql`
-4. Enable Workers Paid / Containers in the Cloudflare account.
-5. Connect the repository to Cloudflare Workers Builds or deploy with Wrangler.
-6. Configure the exact Cloudflare Worker secrets below.
-7. Deploy the Worker + singleton container.
-8. Confirm `/health` returns `{ "status": "ok" }` from the Mission HTTP server.
-9. Open the deployed Mini App inside Nimiq Pay and confirm the injected provider is available.
+1. Enable/confirm Workers Paid / Containers in the Cloudflare account.
+2. Connect the repository to Cloudflare Workers Builds or deploy with Wrangler.
+3. Configure the exact Cloudflare Worker secrets below, including the already-obtained Neon URL.
+4. Deploy the Worker + singleton container.
+5. Set/confirm `CARRY_ONE_CANONICAL_ORIGIN` to the actual public Cloudflare origin and redeploy if necessary.
+6. Confirm `/health` returns `{ "status": "ok" }` from the Mission HTTP server.
+7. Confirm startup/runtime evidence shows PostgreSQL repository mode.
+8. Open the deployed Mini App inside Nimiq Pay and confirm the injected provider is available.
 
 ## 5. Cloudflare deployment contract
 
@@ -134,29 +149,21 @@ The two values must be different.
 
 Do **not** set or expose private wallet keys in the deployed runtime. Nimiq Pay remains the user-controlled signing and transaction surface.
 
-## 7. Database migration gate
+## 7. Database migration gate — PASS
 
-Use the repository migration runner or apply the SQL files directly against the dedicated database.
+The production database migration gate is complete on the dedicated Neon database.
 
-Repository runner:
+Pass criteria already observed:
 
-```bash
-CARRY_ONE_DATABASE_URL='postgres://...' npx tsx scripts/migrate.ts
-```
+- both migrations succeeded;
+- canonical production tables exist;
+- PostgreSQL concurrency guards/triggers exist.
 
-Direct SQL alternative:
+Still to verify after Cloudflare deployment:
 
-```bash
-psql "$CARRY_ONE_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_reach_mission_foundation.sql
-psql "$CARRY_ONE_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/002_postgres_concurrency_guards.sql
-```
-
-Pass criteria:
-
-- both migrations succeed;
-- the production runtime starts in `postgres` mode;
+- production runtime starts in `postgres` mode;
 - no fallback to file/in-memory mission persistence occurs;
-- restart preserves mission/hop state in Postgres.
+- restart preserves mission/hop state in Neon.
 
 ## 8. Runtime preflight
 
