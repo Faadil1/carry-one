@@ -36,6 +36,8 @@ describe("static Mini App skeleton", () => {
     expect(js).toContain('sessionStorage.setItem(`carryone.view.${missionId}`, fromUrl)');
     expect(js).toContain('url.searchParams.delete("view")');
     expect(js).toContain('headers.Authorization = `Bearer ${viewToken}`');
+    expect(compat).toContain('sessionStorage.setItem(viewStorageKey(missionId), token)');
+    expect(compat).toContain('headers.set("Authorization", `Bearer ${token}`)');
   });
   it("adapts nested UI signatures to the active flat Mission HTTP envelope", () => {
     expect(compat).toContain("challenge_id: auth.challenge_id");
@@ -43,10 +45,29 @@ describe("static Mini App skeleton", () => {
     expect(compat).toContain("signature: auth.signature");
     expect(compat).not.toContain("challenge_id: auth.wallet");
   });
-  it("adapts broadcast claims to the active invitation-bound endpoint", () => {
+  it("uses the hardened route-view capability boundary and never restores X-Wallet spoofing", () => {
+    expect(compat).toContain('action: "VIEW_ROUTE"');
+    expect(compat).toContain('/view`, requestUrl.origin');
+    expect(compat).toContain("mintRouteViewAfterAcceptance");
+    expect(compat).not.toContain('headers.set("X-Wallet"');
+    expect(compat).not.toContain("X-Wallet only");
+  });
+  it("adapts broadcast claims to the capability-bound endpoint", () => {
     expect(compat).toContain('path = `/missions/${encodeURIComponent(missionId)}/broadcast`');
     expect(compat).toContain("invitation_id: pass.invitationId");
+    expect(compat).toContain("broadcast_capability: pass.broadcastCapability");
+    expect(compat).toContain("BROADCAST_CAPABILITY_MISSING");
     expect(compat).toContain('hop: { status: "FINAL", sequence: expected }');
+  });
+  it("adds Idempotency-Key to browser mutations and keeps broadcast retries stable", () => {
+    expect(compat).toContain('headers.set("Idempotency-Key", randomToken("browser"))');
+    expect(compat).toContain('headers.set("Idempotency-Key", pass.broadcastRetryKey)');
+    expect(compat).toContain('broadcastRetryKey: randomToken("broadcast")');
+    expect(compat).toContain('if (path === "/auth/challenge") return false');
+    expect(compat).toContain('/reconcile$/.test(path)');
+  });
+  it("normalizes invitation ids so real acceptance uses the canonical invitation binding", () => {
+    expect(compat).toContain("invitation_id: invitation.invitation_id || invitation.id");
   });
   it("keeps demo mode explicit and visually distinct from real mode", () => {
     expect(html).toContain("DEMO MODE — no wallet or network writes");
