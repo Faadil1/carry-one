@@ -73,7 +73,7 @@ export interface MissionHttpDeps {
   limits?: HttpLimits;
   /** Optional injection point for tests. Defaults to a process-local, short-lived store. */
   broadcastCapabilities?: BroadcastCapabilityStore;
-  /** Optional injection point for tests. Defaults to a process-local store; invite tokens always double as capabilities. */
+  /** Optional injection point for tests. Defaults to a process-local store. */
   routeViewCapabilities?: RouteViewCapabilityStore;
   /**
    * Explicit legacy `/relay` mutation gate. Defaults to
@@ -358,7 +358,7 @@ async function reconcileMission(deps: MissionHttpDeps, req: IncomingMessage, mis
   const obj = await jsonBody(req);
   rejectUnknownKeys(obj, []);
   await deps.coordinator.reconcile(missionId);
-  return { status: 200, body: { mission: await viewMissionOpen(deps, req, missionId) } };
+  return { status: 200, body: { mission: await viewMission(deps, req, missionId) } };
 }
 
 async function withdrawInvitation(deps: MissionHttpDeps, req: IncomingMessage, missionId: string, invitationId: string) {
@@ -530,7 +530,7 @@ async function viewMission(deps: MissionHttpDeps, req: IncomingMessage, missionI
   if (signedWallet !== undefined) {
     resolution = { viewer: normalizeNimiqAddress(signedWallet), authorized: true };
   } else if (record.visibility !== "PUBLIC") {
-    resolution = await resolveViewer(deps, req, record.id, { permitOpen: false });
+    resolution = await resolveViewer(deps, req, record.id);
   } else {
     resolution = { viewer: null, authorized: true };
   }
@@ -538,23 +538,10 @@ async function viewMission(deps: MissionHttpDeps, req: IncomingMessage, missionI
 }
 
 /**
- * Open variant used by `/missions/:id/reconcile`: anonymous reconcile should be
- * able to surface the up-to-date mission wherever the calling app already holds
- * a verifiable handle (it still pays the mutation rate limit). New route-view
- * polls still require a capability.
- */
-async function viewMissionOpen(deps: MissionHttpDeps, req: IncomingMessage, missionId: string): Promise<MissionView> {
-  const record = await deps.missions.getMissionRecord(missionId);
-  const resolution = record.visibility === "PUBLIC"
-    ? { viewer: null, authorized: true }
-    : await resolveViewer(deps, req, record.id, { permitOpen: true });
-  return buildMissionView(deps, missionId, resolution);
-}
-
-/**
- * Invitation view: the invite token is itself the scope, and the viewer is the
- * invitation's candidate wallet. This is the curated bridge landing surface
- * (the token is the bearer), so no separate route-view capability is required.
+ * Invitation view: the invite token is the bearer for the curated bridge
+ * landing page (`GET /i/:token`). Continued route access after accepting or
+ * declining requires a separate signed `VIEW_ROUTE` capability mint via
+ * `POST /missions/:id/view`.
  */
 async function viewInvitationMission(deps: MissionHttpDeps, invitationRecord: InvitationRecord): Promise<MissionView> {
   return buildMissionView(deps, invitationRecord.missionId, {
@@ -572,28 +559,24 @@ interface ViewerResolution {
  * Resolve a route-view request to an (optionally personalized) viewer identity.
  *
  * Bearer resolution goes through the route-view capability store — the minted
- * view token or, implicitly, the invitation's token scoped to its candidate.
- * The legacy spoofable `X-Wallet` header is no longer read; a missing or
- * invalid capability rejects with 401/403 before any unlisted mission data is
- * produced. `permitOpen` downgrades a *missing* capability to an anonymous
- * viewer for the curated open flows; it never downgrades an *invalid* one.
+ * view token. The legacy spoofable `X-Wallet` header is no longer read; a
+ * missing or invalid capability rejects with 401/403 before any unlisted mission
+ * data is produced.
  */
 async function resolveViewer(
   deps: MissionHttpDeps,
   req: IncomingMessage,
-  missionId: string,
-  options: { permitOpen: boolean }
+  missionId: string
 ): Promise<ViewerResolution> {
   const token = bearerToken(req);
   if (!token) {
-    if (options.permitOpen) return { viewer: null, authorized: false };
     throw new MissionValidationError(
       "ROUTE_VIEW_CAPABILITY_REQUIRED",
       "This mission is not public. Route view requires a Bearer route view capability"
     );
   }
   const capability = routeViewCapabilityStore(deps).verify(token, { missionId });
-  if (!options.permitOpen && capability.holderWallet === null) {
+  if (capability.holderWallet === null) {
     throw new MissionValidationError(
       "VIEWER_AUTH_REQUIRED",
       "This route view capability does not bind a viewer identity"

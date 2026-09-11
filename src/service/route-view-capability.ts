@@ -40,9 +40,10 @@ export interface RouteViewCapabilityStore {
  * The capability is intentionally process-local: a server restart invalidates
  * outstanding route-view tokens. This is safe because read access is derived
  * from role, never custody, and stakeholders can mint a fresh capability with a
- * signed `VIEW_ROUTE` wallet authorization. The invite token itself doubles as
- * a capability for its mission (scoped to the invitation's candidate wallet),
- * so bridges never need a second token to follow the route they were handed.
+ * signed `VIEW_ROUTE` wallet authorization. Invitation tokens are only valid
+ * for the invite landing page (`GET /i/:token`); they do not double as
+ * route-view capabilities. Continued route access requires a separate signed
+ * `VIEW_ROUTE` capability mint via `POST /missions/:id/view`.
  */
 export class MemoryRouteViewCapabilityStore implements RouteViewCapabilityStore {
   private readonly records = new Map<string, RouteViewCapabilityRecord>();

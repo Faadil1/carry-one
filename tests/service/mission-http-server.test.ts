@@ -227,7 +227,10 @@ describe("Reach Mission HTTP bindings", () => {
       recipientData: intent.recipient_data,
     };
 
-    const reconcileRes = await request("POST", `/missions/${missionId}/reconcile`, {}, { "Idempotency-Key": "reconcile-e2e" });
+    const reconcileRes = await request("POST", `/missions/${missionId}/reconcile`, {}, {
+      "Idempotency-Key": "reconcile-e2e",
+      Authorization: `Bearer ${missionView.view_token}`,
+    });
     expect(reconcileRes.status).toBe(200);
     expect(reconcileRes.body.mission.status).toBe("ARRIVED");
     expect(reconcileRes.body.mission.sequence).toBe(1);
@@ -514,6 +517,69 @@ describe("Reach Mission route-view privacy", () => {
     expect(anonymous.body.invitation.why_you).toBeNull();
     expect(anonymous.body.invitation.pass_deadline_at).toBeNull();
     expect(anonymous.body.invitation.status).toBe("INVITED");
+  });
+
+  it("rejects anonymous reconcile on an unlisted mission without disclosing mission view details", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "reconcile-anon-create");
+    expect(createRes.status).toBe(201);
+    const missionId = createRes.body.mission_id;
+
+    const anonymous = await request("POST", `/missions/${missionId}/reconcile`, {}, { "Idempotency-Key": "reconcile-anon-1" });
+    expect(anonymous.status).toBe(401);
+    expect(anonymous.body.error).toBe("ROUTE_VIEW_CAPABILITY_REQUIRED");
+    expect(JSON.stringify(anonymous.body)).not.toContain("target_label");
+    expect(JSON.stringify(anonymous.body)).not.toContain("mission_note");
+    expect(anonymous.body).not.toHaveProperty("route");
+    expect(anonymous.body).not.toHaveProperty("current_holder");
+
+    const garbageToken = await request("POST", `/missions/${missionId}/reconcile`, {}, {
+      "Idempotency-Key": "reconcile-anon-2",
+      Authorization: "Bearer not-a-real-token",
+    });
+    expect(garbageToken.status).toBe(401);
+    expect(garbageToken.body.error).toBe("ROUTE_VIEW_CAPABILITY_INVALID");
+
+    const authorized = await request("POST", `/missions/${missionId}/reconcile`, {}, {
+      "Idempotency-Key": "reconcile-anon-3",
+      Authorization: `Bearer ${createRes.body.view_token}`,
+    });
+    expect(authorized.status).toBe(200);
+    expect(authorized.body.mission.status).toBe("ACTIVE");
+  });
+
+  it("does not treat an invitation token as a route view capability (token only opens the landing page)", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "invite-cap-create");
+    const missionId = createRes.body.mission_id;
+
+    const inviteCh = await challenge(creator.address, "CREATE_INVITATION", { mission_id: missionId, sequence: 1 });
+    const inviteRes = await request("POST", `/missions/${missionId}/invitations`, {
+      ...envelope(inviteCh, creator),
+      candidate_label: "Bridge",
+      candidate_wallet: target.address,
+    }, { "Idempotency-Key": "invite-cap-invite" });
+    expect(inviteRes.status).toBe(201);
+    const inviteToken = inviteRes.body.invite_token;
+
+    const landing = await request("GET", `/i/${inviteToken}`);
+    expect(landing.status).toBe(200);
+    expect(landing.body.invitation.status).toBe("INVITED");
+
+    const routeView = await request("GET", `/missions/${missionId}`, undefined, {
+      Authorization: `Bearer ${inviteToken}`,
+    });
+    expect(routeView.status).toBe(401);
+    expect(routeView.body.error).toBe("ROUTE_VIEW_CAPABILITY_INVALID");
+    expect(routeView.body).not.toHaveProperty("route");
+
+    const routeOnly = await request("GET", `/missions/${missionId}/route`, undefined, {
+      Authorization: `Bearer ${inviteToken}`,
+    });
+    expect(routeOnly.status).toBe(401);
+    expect(routeOnly.body.error).toBe("ROUTE_VIEW_CAPABILITY_INVALID");
   });
 });
 
