@@ -380,3 +380,13 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Neon remains: mission `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`, invitation sequence `1` `ACCEPTED`, `tx_hash=null`, and `hop_count=0`.
 - No broadcast, `FINAL`, or `ARRIVED` occurred. This is a continuity-only update; no runtime change and no wallet send occurred.
 - Next exact action: `RECOVER_A_ROUTE_VIEW_THEN_REOPEN_PASS`.
+
+## Live reissued-B acceptance milestone (2026-09-12)
+
+- Canonical version: `0.8.58`.
+- The previous invitation expired and was successfully reissued; B accepted the newly reissued TESTNET invitation.
+- Mission remains `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`; invitation sequence `1` is `ACCEPTED`.
+- `accepted_at`: `2026-09-12T16:09:23.851Z`; fresh `pass_deadline_at`: `2026-09-12T17:09:23.851Z`.
+- Existing pass intent sequence `1` remains stale with `tx_hash=null`; `hop_count=0`.
+- No chain broadcast, `FINAL`, or `ARRIVED` occurred. This is a continuity-only update; no runtime change and no wallet send occurred.
+- Next exact action: `RECOVER_A_ROUTE_VIEW_AND_OPEN_VALID_PASS_SCREEN`.
