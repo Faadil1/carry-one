@@ -181,3 +181,13 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Provider-readiness gate: **CLOSED / PASS**. Next exact gate: execute the real Nimiq testnet `A → B → C` proof.
 - `wallet_send_initiated: false`; `real_FINAL_observed: false`; `real_ARRIVED_observed: false`.
 - No wallet send was initiated by this continuity-only update.
+
+## Operator boundary before real proof (2026-09-12)
+
+- Canonical version: `0.8.38`.
+- Provider readiness remains **PASS**; real proof is **NOT STARTED**.
+- The only blocker is that live A/B/C testnet wallet-role mapping is not yet established in the operator environment.
+- Exact state: no mission, invitation, wallet signature, send, `FINAL`, or `ARRIVED` occurred.
+- `wallet_send_initiated: false`; `real_FINAL_observed: false`; `real_ARRIVED_observed: false`.
+- Next exact action: `ESTABLISH_A_B_C_TESTNET_WALLET_MAPPING`.
+- This milestone changes continuity only; runtime code and wallet state were not touched.
