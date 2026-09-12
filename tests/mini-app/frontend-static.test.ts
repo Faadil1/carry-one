@@ -123,6 +123,10 @@ describe("static Mini App skeleton", () => {
     expect(js).toContain('invitationId: recoveringExpiredCurrentSequence ? invitationId : undefined');
     expect(js).not.toContain('sendBasicTransactionWithData({ recipient: candidateWallet');
   });
+  it("keeps the UI lifecycle contract aligned with the mission primary action", () => {
+    expect(js).toContain('existingInvitation?.status === "EXPIRED"');
+    expect(js).toContain('const path = recoveringExpiredCurrentSequence');
+  });
   it("keeps demo mode explicit and visually distinct from real mode", () => {
     expect(html).toContain("DEMO MODE — no wallet or network writes");
     expect(js).toContain('query.get("demo") === "1"');

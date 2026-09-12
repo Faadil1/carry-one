@@ -503,6 +503,7 @@ describe("Reach Mission route-view privacy", () => {
     expect(creatorView.status).toBe(200);
     expect(creatorView.body.invitation).toMatchObject({ invitation_id: inviteRes.body.invitation.id, sequence: 1, status: "EXPIRED" });
     expect(creatorView.body.invitation.candidate_label).toBe("Bridge B");
+    expect(creatorView.body.primary_action).toBe("CREATE_INVITATION");
 
     const targetMint = await challenge(target.address, "VIEW_ROUTE", { mission_id: missionId });
     const targetCap = await request("POST", `/missions/${missionId}/view`, envelope(targetMint, target), { "Idempotency-Key": "expired-recovery-target" });
@@ -510,6 +511,7 @@ describe("Reach Mission route-view privacy", () => {
     const targetView = await request("GET", `/missions/${missionId}`, undefined, { Authorization: `Bearer ${targetCap.body.view_token}` });
     expect(targetView.status).toBe(200);
     expect(targetView.body.invitation).toBeNull();
+    expect(targetView.body.primary_action).not.toBe("CREATE_INVITATION");
   });
 
   it("keeps public missions readable but redacts invitation context for anonymous viewers", async () => {

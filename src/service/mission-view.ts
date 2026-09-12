@@ -136,6 +136,7 @@ function derivePrimaryAction(
   activity: MissionActivity,
   viewerRole: ViewerRole,
   invitation: InvitationSummary | null,
+  currentSequence: number,
   viewerIsCurrentHolder: boolean,
   hasActiveIntent: boolean
 ): PrimaryAction | null {
@@ -148,6 +149,7 @@ function derivePrimaryAction(
   }
   if (viewerIsCurrentHolder) {
     if (!invitation) return "CREATE_INVITATION";
+    if (invitation.status === "EXPIRED" && invitation.sequence === currentSequence + 1) return "CREATE_INVITATION";
     if (invitation.status === "ACCEPTED" && !hasActiveIntent) return "PASS_1_NIM";
     return "WAIT";
   }
@@ -178,6 +180,7 @@ export function composeMissionView(input: {
     activity,
     viewerRole,
     invitation,
+    input.mission.currentSequence,
     viewerIsCurrentHolder,
     input.hasActiveIntent
   );
