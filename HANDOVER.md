@@ -360,3 +360,14 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - No hop, chain broadcast, `FINAL`, or `ARRIVED` exists. Do not retry the wallet send yet.
 - Blocker/next exact action: `RENEW_STALE_UNBROADCAST_A_TO_B_PASS_INTENT`.
 - This is a continuity-only update; runtime code and wallet state were not changed.
+
+## Stale unbroadcast pass-intent renewal deployed (2026-09-12)
+
+- Canonical version: `0.8.56`.
+- Matching active pass intents that are still valid continue to be reused. A matching stale intent is renewed only when no broadcast/transaction hash exists: the old intent is cancelled and a fresh opaque-commitment intent is created for the same mission, sequence, current holder, and recipient.
+- Any stale intent with broadcast evidence is refused; wrong-recipient or other conflicting active intents fail closed. Accepted invitation binding and pass-deadline validation remain enforced.
+- Deterministic verification: full suite **169/169 PASS** across 24 files; TypeScript `--noEmit`: **PASS**. Tests cover valid reuse, stale-unbroadcast renewal, stale-broadcast refusal, wrong-recipient conflict, and durable relay restart behavior.
+- Official Workers Build `2f656021-d04e-4a6c-92b2-e3655bc7aa20` for commit `e0de513d196afd707525b7b85cf0b7ef4abc6c13`: **SUCCESS**; container image digest `sha256:124cbbd0df04922fcdf05b0ade6aa3baa5bcbe5413b80aaf9e156907a41a726f`; Worker version `c744a29b-630a-4174-bd06-0626a8efdc49`.
+- Production `/health`: **200**. `/health?deep=1`: **200**, Postgres, backend HTTP 200, `nimcarry-primary`, `max_instances_for_proof_gate: 1`, legacy relay PASS/403. CI: **PASS** (`34702440284`).
+- No wallet retry occurred. No broadcast, `FINAL`, or `ARRIVED` is claimed.
+- Next exact action: `PREPARE_CONTROLLED_A_TO_B_RETRY`. Stop before executing the wallet retry.
