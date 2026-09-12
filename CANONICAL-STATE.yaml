@@ -3,7 +3,7 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.40
+state_version: 0.8.41
 date: 2026-09-12
 phase: REAL_TESTNET_PROOF_OPERATOR_MAPPING_BLOCKED
 problem_locked: true
@@ -241,6 +241,9 @@ cloudflare_runtime:
   real_proof_ui_state: WAITING_FOR_RESPONSE
   real_proof_current_holder: A_FAADIL
   real_proof_finalized_hops: 0
+  creator_session_recovery_implementation: DEPLOYED_VIEW_ROUTE_ONLY
+  creator_session_recovery_live_observed: false
+  creator_session_recovery_blocker: MISSION_ID_AND_ACTIVE_PHONE_A_SESSION_NOT_AVAILABLE_IN_OPERATOR_ENVIRONMENT
 
 postgres_runtime:
   adapter_owner: opeyemi
@@ -288,7 +291,7 @@ current_gate:
   legacy_relay_403: PASS
   same_origin_static_and_backend: PASS
   next_exact_actions:
-    - B_OPEN_PRIVATE_INVITE_AND_ACCEPT
+    - CREATOR_RECOVER_EXISTING_MISSION_WITH_A_VIEW_ROUTE
     - query_Neon_after_each_real_FINAL_for_durable_state_evidence
   topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> INVITE -> ACCEPT -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT

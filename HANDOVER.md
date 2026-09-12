@@ -211,3 +211,12 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - No `AUTHORIZE_PASS`, NimCarry send, `FINAL`, or `ARRIVED` occurred.
 - Next exact action: `B_OPEN_PRIVATE_INVITE_AND_ACCEPT`.
 - This is a continuity-only milestone; no wallet send was initiated.
+
+## Creator-session recovery path deployed (2026-09-12)
+
+- Canonical version: `0.8.41`.
+- Added and deployed a narrow recovery path for the existing mission: SDK provider → require A by short fingerprint → signed `VIEW_ROUTE` challenge → `POST /missions/:id/view` → store `carryone.view.<missionId>` → navigate to the mission.
+- Production `/health` and `/health?deep=1`: **200**; deployed bundle contains the recovery path and wrong-wallet fail-closed guard. Frontend-only deployment version: `11f1f888-3c8b-4ab1-a749-77d443815e61`.
+- Live recovery was **not observed** because the existing mission ID and active phone-A Nimiq Pay session were unavailable in the operator environment. A has not been claimed to see the mission.
+- No new mission, invitation, `AUTHORIZE_PASS`, send, `FINAL`, `ARRIVED`, or custody change occurred.
+- Next exact action: `CREATOR_RECOVER_EXISTING_MISSION_WITH_A`.

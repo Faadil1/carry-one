@@ -61,6 +61,22 @@ describe("static Mini App skeleton", () => {
     expect(compat).not.toContain("window.nimiq.sign");
     expect(sdk).toContain("function init(options)");
   });
+  it("ships creator-session recovery without opening create, invite, pass, or send paths", () => {
+    expect(js).toContain('query.get("recover-mission")');
+    expect(js).toContain('query.get("recover-wallet")');
+    expect(js).toContain('action: "VIEW_ROUTE"');
+    expect(js).toContain("/missions/${encodeURIComponent(missionId)}/view");
+    expect(js).toContain("sessionStorage.setItem(`carryone.view.${missionId}`, view.view_token)");
+    expect(js).toContain("RECOVERY_WRONG_WALLET");
+    expect(js).toContain("navigate(`/mission/${encodeURIComponent(missionId)}`)");
+    const recoveryStart = js.indexOf("async function recoverCreatorSession");
+    const recoveryEnd = js.indexOf("\n  }", recoveryStart);
+    const recovery = recoveryStart >= 0 && recoveryEnd >= 0 ? js.slice(recoveryStart, recoveryEnd) : "";
+    expect(recovery).not.toContain("CREATE_MISSION");
+    expect(recovery).not.toContain("CREATE_INVITATION");
+    expect(recovery).not.toContain("AUTHORIZE_PASS");
+    expect(recovery).not.toContain("sendBasicTransactionWithData");
+  });
   it("stores route-following capabilities in session storage and strips view tokens from the URL", () => {
     expect(js).toContain('sessionStorage.setItem(`carryone.view.${missionId}`, fromUrl)');
     expect(js).toContain('url.searchParams.delete("view")');

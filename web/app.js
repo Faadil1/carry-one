@@ -86,6 +86,26 @@ import { getNimiqProvider } from "/nimiq-provider.js";
     return nimiq;
   }
 
+  async function recoverCreatorSession(missionId, expectedFingerprint) {
+    if (!missionId || !expectedFingerprint) throw new Error("RECOVERY_INPUT_REQUIRED: existing mission and A fingerprint are required.");
+    const nimiq = await provider();
+    const accounts = await nimiq.listAccounts();
+    if (!Array.isArray(accounts) || accounts.length === 0) throw new Error("RECOVERY_NO_ACCOUNTS: Nimiq Pay shared no accounts.");
+    const normalizedExpected = expectedFingerprint.replace(/\s+/g, "").toUpperCase();
+    const wallet = accounts.find((account) => short(account).replace(/\s+/g, "").toUpperCase() === normalizedExpected);
+    if (!wallet) throw new Error("RECOVERY_WRONG_WALLET: the selected Nimiq Pay session does not contain creator wallet A.");
+    const challenge = await api("/auth/challenge", { method: "POST", body: { wallet, action: "VIEW_ROUTE", mission_id: missionId } });
+    const challengeId = challenge?.challenge_id || challenge?.id;
+    const message = challenge?.canonical_message || challenge?.message;
+    if (!challengeId || !message) throw new Error("VIEW_ROUTE_CHALLENGE_CONTRACT_MISMATCH");
+    const signed = await nimiq.sign(message);
+    if (!signed?.publicKey || !signed?.signature) throw new Error("VIEW_ROUTE_SIGNATURE_CONTRACT_MISMATCH");
+    const view = await api(`/missions/${encodeURIComponent(missionId)}/view`, { method: "POST", body: { challenge_id: challengeId, public_key: signed.publicKey, signature: signed.signature } });
+    if (!view?.view_token) throw new Error("VIEW_ROUTE_CAPABILITY_CONTRACT_MISMATCH");
+    sessionStorage.setItem(`carryone.view.${missionId}`, view.view_token);
+    navigate(`/mission/${encodeURIComponent(missionId)}`);
+  }
+
   async function chooseWallet() {
     const nimiq = await provider();
     const accounts = await nimiq.listAccounts();
@@ -160,6 +180,14 @@ import { getNimiqProvider } from "/nimiq-provider.js";
 
   if (query.get("provider-check") === "1") {
     runProviderDiagnostic();
+    return;
+  }
+
+  const recoveryMissionId = query.get("recover-mission");
+  if (recoveryMissionId) {
+    els.screen.innerHTML = '<section class="card"><div class="kicker">Creator session recovery</div><h1>Restoring mission access…</h1><p id="recovery-status" role="status" aria-live="polite">Checking creator wallet A in Nimiq Pay.</p></section>';
+    recoverCreatorSession(recoveryMissionId, query.get("recover-wallet"))
+      .catch((error) => { const status = document.querySelector("#recovery-status"); status.textContent = `Recovery error: ${error?.message || String(error)}`; status.classList.add("error"); });
     return;
   }
 
