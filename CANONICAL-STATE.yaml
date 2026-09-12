@@ -3,9 +3,9 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.36
-date: 2026-09-11
-phase: PROVIDER_PREFLIGHT_WIRED_OPERATOR_CHECKLIST_READY
+state_version: 0.8.37
+date: 2026-09-12
+phase: PROVIDER_PREFLIGHT_DEPLOYED_PRODUCTION_READY
 problem_locked: true
 public_early_access_authorized: false
 mainnet_cutover_authorized: false
@@ -205,6 +205,14 @@ cloudflare_runtime:
   build_scoped_variables_observed: []
   worker_runtime_secret_names_preserved: [CARRY_ONE_DATABASE_URL, CARRY_ONE_TARGET_ENCRYPTION_KEY_B64URL, CARRY_ONE_TARGET_HMAC_KEY_B64URL]
   production_reverification: PASS_DEEP_RUNTIME_SMOKE
+  provider_preflight_commit: 3a40c8593d4e99f85339b720c407dedca3dfef2b
+  provider_preflight_ci_run: 34676115077
+  provider_preflight_ci: PASS_156_OF_156
+  provider_preflight_workers_build_uuid: bd31e1e8-def9-48aa-bbf8-8a9554c2af5c
+  provider_preflight_workers_build: PASS
+  deployed_spa_provider_preflight: PASS_EXPECTED_SENDER_WRONG_WALLET_SELECTION
+  live_nimiq_pay_session_check: NOT_RUN
+  wallet_send_initiated: false
 
 postgres_runtime:
   adapter_owner: opeyemi
@@ -245,6 +253,7 @@ current_gate:
   cloudflare_runtime_secrets: COMPLETE
   cloudflare_health: PASS_200_STATUS_OK
   cloudflare_deep_runtime_smoke: PASS
+  provider_preflight_deployed_production: PASS
   repository_mode_postgres: PASS
   mission_http_bindings: PASS
   legacy_relay_403: PASS

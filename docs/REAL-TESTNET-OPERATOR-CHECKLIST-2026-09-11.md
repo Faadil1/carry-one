@@ -55,6 +55,8 @@ Network: Nimiq testnet only
 
 ## Current status
 - Cloudflare deep smoke: PASS.
-- Provider live-path preflight wiring: PASS in code/tests; live Nimiq Pay session check: NOT RUN.
-- Cloudflare Build watch paths and duplicate Build-scoped secret cleanup: pending authenticated Cloudflare session.
+- Provider live-path preflight wiring: PASS in deployed production code and 156-test suite; live Nimiq Pay session check: NOT RUN.
+- Cloudflare Build watch paths and duplicate Build-scoped secret cleanup: PASS and reverified through the official Workers Builds API.
+- Production `/health`, `/health?deep=1`, SPA, and deployed `/app.js`: PASS.
+- No wallet send initiated.
 - Real `FINAL` / `ARRIVED`: NOT OBSERVED; do not claim.

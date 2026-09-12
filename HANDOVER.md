@@ -1,8 +1,8 @@
 # HANDOVER — NimCarry
 
-Date: 2026-09-11  
-Canonical version: **0.8.36**
-State: `PROVIDER_PREFLIGHT_WIRED_OPERATOR_CHECKLIST_READY`
+Date: 2026-09-12  
+Canonical version: **0.8.37**
+State: `PROVIDER_PREFLIGHT_DEPLOYED_PRODUCTION_READY`
 
 ## Read first
 
@@ -152,3 +152,14 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Official Workers Builds API inspection and update succeeded with the active API token.
 - Trigger path filters now exclude documentation-only commits; Build-scoped variables are empty.
 - Worker runtime secret names remain present and production deep runtime smoke remains PASS.
+
+## Gate B provider-preflight deployment verification (2026-09-12)
+
+- Commit `3a40c8593d4e99f85339b720c407dedca3dfef2b` pushed to `main`.
+- Full suite: **156/156 PASS** across 24 files; TypeScript `--noEmit`: **PASS**.
+- GitHub CI: run `34676115077`, **PASS**.
+- Workers Build: `bd31e1e8-def9-48aa-bbf8-8a9554c2af5c`, **PASS**.
+- Production `/health`: **200**, `status: ok`.
+- Production `/health?deep=1`: **200**, Postgres mode, backend HTTP 200, and legacy relay disabled with 403.
+- Production SPA and deployed `/app.js`: **PASS**; bundle contains the `expected_sender` account guard and `WRONG_WALLET_SELECTION` fail-closed path before `sendBasicTransactionWithData`.
+- Provider readiness is limited to deployed production code verification. A live Nimiq Pay session check has **not** been run; no wallet send was initiated; real `FINAL` / `ARRIVED` remain unobserved.
