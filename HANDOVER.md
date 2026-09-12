@@ -390,3 +390,12 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Existing pass intent sequence `1` remains stale with `tx_hash=null`; `hop_count=0`.
 - No chain broadcast, `FINAL`, or `ARRIVED` occurred. This is a continuity-only update; no runtime change and no wallet send occurred.
 - Next exact action: `RECOVER_A_ROUTE_VIEW_AND_OPEN_VALID_PASS_SCREEN`.
+
+## Failed send-ready checkpoint: stale accepted pass remains non-actionable (2026-09-12)
+
+- Canonical version: `0.8.59`.
+- A recovered and reopened Screen 4, but `ROUTE_VIEW_CAPABILITY_REQUIRED` still appeared. Screen 4 rendered fallback “Accepted bridge”, so it was not a valid send-ready state.
+- No `Authorize + Pass 1 NIM` click occurred.
+- Neon remains: mission `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`, invitation sequence `1` `ACCEPTED`, `tx_hash=null`, and `hop_count=0`.
+- No broadcast, `FINAL`, or `ARRIVED` occurred. This is a continuity-only update; no runtime change and no wallet send occurred.
+- Blocker/next exact action: `MAKE_STALE_UNBROADCAST_ACCEPTED_STATE_PASS_ACTIONABLE_ON_HOME`.
