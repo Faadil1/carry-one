@@ -249,6 +249,14 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Independent TESTNET.WATCH check on B: balance remains `110000 NIM`; no A→B transaction observed.
 - Neon: `tx_hash: null`, no hop, `finalized_hop_count=0`, mission `ACTIVE`, invitation `ACCEPTED`.
 - Chain broadcast: **NOT OBSERVED / NO BROADCAST EVIDENCE**. No transaction hash is recorded or inferred.
-- `real_FINAL_observed: false`; `real_ARRIVED_observed: false`; `wallet_send_initiated: false`.
+- `real_FINAL_observed: false`; `real_ARRIVED_observed: false`; `wallet_send_initiated: true`.
 - Next exact action: `RETRY_A_TO_B_AFTER_NIMIQ_PAY_SYNC_HEALTH_CHECK`.
+- Continuity-only update; runtime code was not modified.
+
+## Truth correction: wallet approval flow initiated (2026-09-12)
+
+- Canonical version: `0.8.45`.
+- Correction: `authorize_and_pass_button_pressed: true`. A wallet send attempt was initiated because Nimiq Pay opened the native approval flow, which then returned a sync error.
+- This does **not** establish chain broadcast: `chain_broadcast: NOT_OBSERVED_NO_BROADCAST_EVIDENCE`, `tx_hash: null`, no hop, `real_FINAL_observed: false`, and `real_ARRIVED_observed: false` remain unchanged.
+- Next exact action remains `RETRY_A_TO_B_AFTER_NIMIQ_PAY_SYNC_HEALTH_CHECK`.
 - Continuity-only update; runtime code was not modified.

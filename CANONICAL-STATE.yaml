@@ -3,7 +3,7 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.44
+state_version: 0.8.45
 date: 2026-09-12
 phase: REAL_TESTNET_PROOF_ATTEMPT_FAILED_NO_BROADCAST_EVIDENCE
 problem_locked: true
@@ -226,7 +226,7 @@ cloudflare_runtime:
     A: "FUNDED_OBSERVED_BALANCE_110000_NIM"
     B: "FUNDED_OBSERVED_BALANCE_110000_NIM"
     C: "FUNDING_NOT_REQUIRED_BEFORE_PROOF"
-  wallet_send_initiated: false
+  wallet_send_initiated: true
   operator_boundary: REAL_PROOF_NOT_STARTED_MAPPING_AND_FUNDING_READY
   operator_mapping_blocker: CLEARED
   operator_funding_blocker: CLEARED
@@ -260,7 +260,7 @@ cloudflare_runtime:
   real_proof_value_luna: 100000
   real_proof_requested_fee_luna: 0
   real_proof_custody_rule: FINAL_ONLY
-  authorize_and_pass_button_pressed: false
+  authorize_and_pass_button_pressed: true
   first_A_to_B_send_attempt_observed: true
   authorize_pass_succeeded: true
   pass_intent_sequence: 1
@@ -268,7 +268,7 @@ cloudflare_runtime:
   nimiq_pay_result: SYNC_ERROR
   chain_broadcast: NOT_OBSERVED_NO_BROADCAST_EVIDENCE
   tx_hash: null
-  wallet_send_initiated: false
+  wallet_send_attempt_initiated: true
   independent_testnet_watch_B_balance_nim: 110000
   independent_testnet_watch_A_to_B_transaction: NONE_OBSERVED
   neon_failed_attempt_observation:
