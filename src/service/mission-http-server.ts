@@ -654,7 +654,13 @@ async function buildMissionView(
   resolution: ViewerResolution
 ): Promise<MissionView> {
   const record = await deps.missions.getMissionRecord(missionId);
-  const invitation = await deps.repository.getOpenInvitation(missionId);
+  let invitation = await deps.repository.getOpenInvitation(missionId);
+  const viewerIsRecoveryHolder = resolution.viewer !== null && (
+    resolution.viewer === record.creatorWalletNormalized || resolution.viewer === record.currentHolderWalletNormalized
+  );
+  if (invitation === undefined && viewerIsRecoveryHolder) {
+    invitation = await deps.repository.getInvitationForSequence(missionId, record.currentSequence + 1);
+  }
   const route = deps.relay.getHistory(missionId);
   return composeMissionView({
     mission: record,

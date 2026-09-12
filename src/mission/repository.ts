@@ -24,6 +24,7 @@ export interface MissionRepository {
   getInvitation(id: string): Promise<InvitationRecord | undefined>;
   getInvitationByTokenHash(tokenHash: string): Promise<InvitationRecord | undefined>;
   getOpenInvitation(missionId: string): Promise<InvitationRecord | undefined>;
+  getInvitationForSequence(missionId: string, sequence: number): Promise<InvitationRecord | undefined>;
   acceptInvitation(id: string, wallet: string, now: number, passDeadlineAt: number): Promise<InvitationRecord>;
   closeInvitation(id: string, status: Extract<InvitationStatus, "DECLINED" | "EXPIRED" | "WITHDRAWN">, now: number): Promise<InvitationRecord>;
   expireDueInvitations(now: number): Promise<number>;

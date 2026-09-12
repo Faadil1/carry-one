@@ -50,6 +50,7 @@ let dir: string;
 let baseUrl: string;
 let close: () => Promise<void>;
 let rpc: FakeRpcClient;
+let repository: FileMissionRepository;
 
 type Response = { status: number; headers: Headers; body: any };
 
@@ -79,7 +80,7 @@ function envelope(ch: { challenge_id: string; message: string }, signer: Signer)
   return { challenge_id: ch.challenge_id, public_key: signer.publicKey.toHex(), signature: sign(ch.message, signer) };
 }
 
-async function createMissionViaApi(signer: Signer, targetAddress: string, key: string) {
+async function createMissionViaApi(signer: Signer, targetAddress: string, key: string, visibility = "UNLISTED") {
   const ch = await challenge(signer.address, "CREATE_MISSION");
   return request("POST", "/missions", {
     ...envelope(ch, signer),
@@ -87,7 +88,7 @@ async function createMissionViaApi(signer: Signer, targetAddress: string, key: s
     target_wallet: targetAddress,
     target_consent_confirmed: true,
     mission_note: "I'd like this invitation to reach Harley through people who actually know him.",
-    visibility: "UNLISTED",
+    visibility,
     creator_display_label: "Faadil",
   }, { "Idempotency-Key": key });
 }
@@ -104,7 +105,7 @@ describe("Reach Mission HTTP bindings", () => {
     rpc = new FakeRpcClient();
     const missionPath = join(dir, "missions.json");
     const relayPath = join(dir, "relay.json");
-    const repository = new FileMissionRepository(missionPath);
+    repository = new FileMissionRepository(missionPath);
     const missions = new ReachMissionService(repository, PROTECTOR);
     const relay = new CanonicalRelayService(new FileRelayStore(relayPath), rpc);
     const coordinator = new ReachMissionCoordinator(missions, repository, relay, PROTECTOR);
@@ -354,7 +355,7 @@ describe("Reach Mission route-view privacy", () => {
     rpc = new FakeRpcClient();
     const missionPath = join(dir, "missions.json");
     const relayPath = join(dir, "relay.json");
-    const repository = new FileMissionRepository(missionPath);
+    repository = new FileMissionRepository(missionPath);
     const missions = new ReachMissionService(repository, PROTECTOR);
     const relay = new CanonicalRelayService(new FileRelayStore(relayPath), rpc);
     const coordinator = new ReachMissionCoordinator(missions, repository, relay, PROTECTOR);
@@ -483,6 +484,32 @@ describe("Reach Mission route-view privacy", () => {
     });
     expect(creatorView.status).toBe(200);
     expect(creatorView.body.invitation.candidate_label).toBe("Bridget");
+  });
+
+  it("exposes an expired next-sequence invitation only to the creator/current-holder recovery view", async () => {
+    const creator = wallet();
+    const target = wallet();
+    const candidate = wallet();
+    const createRes = await createMissionViaApi(creator, target.address, "expired-recovery-create");
+    const missionId = createRes.body.mission_id;
+    const inviteCh = await challenge(creator.address, "CREATE_INVITATION", { mission_id: missionId, sequence: 1 });
+    const inviteRes = await request("POST", `/missions/${missionId}/invitations`, {
+      ...envelope(inviteCh, creator), candidate_label: "Bridge B", candidate_wallet: candidate.address, why_you: "Try again."
+    }, { "Idempotency-Key": "expired-recovery-invite" });
+    expect(inviteRes.status).toBe(201);
+    await repository.expireDueInvitations(Date.now() + 48 * 60 * 60 * 1000);
+
+    const creatorView = await request("GET", `/missions/${missionId}`, undefined, { Authorization: `Bearer ${createRes.body.view_token}` });
+    expect(creatorView.status).toBe(200);
+    expect(creatorView.body.invitation).toMatchObject({ invitation_id: inviteRes.body.invitation.id, sequence: 1, status: "EXPIRED" });
+    expect(creatorView.body.invitation.candidate_label).toBe("Bridge B");
+
+    const targetMint = await challenge(target.address, "VIEW_ROUTE", { mission_id: missionId });
+    const targetCap = await request("POST", `/missions/${missionId}/view`, envelope(targetMint, target), { "Idempotency-Key": "expired-recovery-target" });
+    expect(targetCap.status).toBe(200);
+    const targetView = await request("GET", `/missions/${missionId}`, undefined, { Authorization: `Bearer ${targetCap.body.view_token}` });
+    expect(targetView.status).toBe(200);
+    expect(targetView.body.invitation).toBeNull();
   });
 
   it("keeps public missions readable but redacts invitation context for anonymous viewers", async () => {

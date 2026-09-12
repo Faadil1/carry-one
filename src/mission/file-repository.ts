@@ -199,6 +199,12 @@ export class FileMissionRepository implements MissionRepository {
     return record ? clone(record) : undefined;
   }
 
+  async getInvitationForSequence(missionId: string, sequence: number): Promise<InvitationRecord | undefined> {
+    await this.queue;
+    const record = this.state.invitations.find((item) => item.missionId === missionId && item.sequence === sequence);
+    return record ? clone(record) : undefined;
+  }
+
   async acceptInvitation(id: string, wallet: string, now: number, passDeadlineAt: number): Promise<InvitationRecord> {
     return this.exclusive(() => {
       const invitation = this.invitation(id);
