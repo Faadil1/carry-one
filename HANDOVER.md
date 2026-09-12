@@ -302,3 +302,13 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Production `/health`: **200**, `status: ok`. `/health?deep=1`: **200**, Postgres, backend HTTP 200, `container_identity: nimcarry-primary`, `max_instances_for_proof_gate: 1`, and legacy relay gate PASS/403.
 - The invitation-reissue backend is therefore confirmed deployed in the production container. No wallet action occurred; no broadcast evidence, `FINAL`, or `ARRIVED` is claimed.
 - Next exact action remains: `RETRY_A_TO_B_AFTER_NIMIQ_PAY_SYNC_HEALTH_CHECK`.
+
+## Frontend invitation-reissue wiring deployed (2026-09-12)
+
+- Canonical version: `0.8.50`.
+- Choose-next-bridge now detects only an `EXPIRED` invitation whose sequence equals the mission's next canonical sequence. That recovery path reuses the existing invitation ID and calls `POST /missions/:id/invitations/:invitationId/reissue`.
+- Genuinely new sequences retain `POST /missions/:id/invitations`; the normal create path remains unchanged. The reissue request preserves candidate wallet B through the existing `candidate_wallet` binding and signs the existing `CREATE_INVITATION` action with the invitation ID; no second pass intent is created.
+- Deterministic frontend/static verification: **18/18 PASS**. Production frontend-only deployment: Worker version `1064263d-1b14-4fce-a878-6f7fb943ec4b`; container rollout disabled.
+- Production SPA: **200/PASS**; deployed `/app.js` contains the expired-current-sequence `/reissue` branch. `/health`: **200**. `/health?deep=1`: **200**, Postgres, backend HTTP 200, `nimcarry-primary`, `max_instances_for_proof_gate: 1`, legacy relay PASS/403.
+- Exact proof truth remains unchanged: no wallet send, no chain broadcast evidence, no `FINAL`, and no `ARRIVED`.
+- Next exact action: `REISSUE_B_INVITATION_FROM_A_UI`.

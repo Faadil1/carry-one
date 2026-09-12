@@ -114,6 +114,15 @@ describe("static Mini App skeleton", () => {
   it("normalizes invitation ids so real acceptance uses the canonical invitation binding", () => {
     expect(compat).toContain("invitation_id: invitation.invitation_id || invitation.id");
   });
+  it("reissues only the expired current-sequence invitation and creates fresh sequences normally", () => {
+    expect(js).toContain('existingInvitation?.status === "EXPIRED"');
+    expect(js).toContain('Number(existingInvitation.sequence) === sequence');
+    expect(js).toContain('/invitations/${encodeURIComponent(invitationId)}/reissue');
+    expect(js).toContain('const path = recoveringExpiredCurrentSequence');
+    expect(js).toContain('`/missions/${encodeURIComponent(mission.mission_id)}/invitations`');
+    expect(js).toContain('invitationId: recoveringExpiredCurrentSequence ? invitationId : undefined');
+    expect(js).not.toContain('sendBasicTransactionWithData({ recipient: candidateWallet');
+  });
   it("keeps demo mode explicit and visually distinct from real mode", () => {
     expect(html).toContain("DEMO MODE — no wallet or network writes");
     expect(js).toContain('query.get("demo") === "1"');

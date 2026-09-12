@@ -255,14 +255,23 @@ import { getNimiqProvider } from "/nimiq-provider.js";
     if (result === "cancel") return;
     const candidateLabel = document.querySelector("#candidate-label").value.trim(); const whyYou = document.querySelector("#why-you").value.trim(); const candidateWallet = document.querySelector("#candidate-wallet").value.trim();
     try {
-      notice("Creating private invitation…"); const sequence = Number(mission.sequence ?? mission.current_sequence ?? 0) + 1; let created;
+      const sequence = Number(mission.sequence ?? mission.current_sequence ?? 0) + 1;
+      const existingInvitation = mission.invitation || state.invitation;
+      const recoveringExpiredCurrentSequence = existingInvitation?.status === "EXPIRED"
+        && Boolean(existingInvitation.invitation_id || existingInvitation.id)
+        && Number(existingInvitation.sequence) === sequence;
+      notice(recoveringExpiredCurrentSequence ? "Reissuing private invitation…" : "Creating private invitation…"); let created;
       if (state.demo) {
         const token = `demo_${crypto.getRandomValues(new Uint32Array(8)).join("")}`.slice(0, 48);
         created = { invitation_id: `invite-${Date.now()}`, mission_id: mission.mission_id, sequence, status: "INVITED", candidate_label: candidateLabel || null, why_you: whyYou || null, invite_url: `${location.origin}/i/${token}`, invite_token: token };
         const stored = demoLoad(); stored.invitation = created; stored.mission.invitation = created; stored.mission.primary_action = "WAIT"; demoSave(stored); state.invitation = created; state.mission = stored.mission;
       } else {
-        const auth = await signedAuth("CREATE_INVITATION", { missionId: mission.mission_id, sequence });
-        created = await api(`/missions/${encodeURIComponent(mission.mission_id)}/invitations`, { method: "POST", body: { candidate_label: candidateLabel || null, candidate_wallet: candidateWallet || null, why_you: whyYou || null, auth } });
+        const invitationId = existingInvitation?.invitation_id || existingInvitation?.id;
+        const auth = await signedAuth("CREATE_INVITATION", { missionId: mission.mission_id, invitationId: recoveringExpiredCurrentSequence ? invitationId : undefined, sequence });
+        const path = recoveringExpiredCurrentSequence
+          ? `/missions/${encodeURIComponent(mission.mission_id)}/invitations/${encodeURIComponent(invitationId)}/reissue`
+          : `/missions/${encodeURIComponent(mission.mission_id)}/invitations`;
+        created = await api(path, { method: "POST", body: { candidate_label: candidateLabel || null, candidate_wallet: candidateWallet || null, why_you: whyYou || null, auth } });
       }
       renderInviteCreated(created);
     } catch (error) { notice(error.message, true); }
