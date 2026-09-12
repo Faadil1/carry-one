@@ -312,3 +312,13 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Production SPA: **200/PASS**; deployed `/app.js` contains the expired-current-sequence `/reissue` branch. `/health`: **200**. `/health?deep=1`: **200**, Postgres, backend HTTP 200, `nimcarry-primary`, `max_instances_for_proof_gate: 1`, legacy relay PASS/403.
 - Exact proof truth remains unchanged: no wallet send, no chain broadcast evidence, no `FINAL`, and no `ARRIVED`.
 - Next exact action: `REISSUE_B_INVITATION_FROM_A_UI`.
+
+## Expired invitation recovery-read fix deployed (2026-09-12)
+
+- Canonical version: `0.8.51`.
+- Root cause fixed: MissionView previously read only `getOpenInvitation()`, so the expired sequence-1 row was absent from A's view and the frontend fell back to normal creation.
+- Added `getInvitationForSequence(missionId, currentSequence + 1)` to both repositories. `getOpenInvitation()` semantics are unchanged. Mission views fetch the terminal next-sequence row only for an authorized creator/current-holder recovery view; unrelated viewers receive no invitation object/private candidate data.
+- Deterministic verification: full suite **165/165 PASS** across 24 files; TypeScript `--noEmit`: **PASS**. Service/HTTP coverage proves A sees the expired existing invitation ID/sequence/status and an unrelated target sees no recovery invitation; frontend static coverage proves expired recovery selects `/reissue` while fresh sequences retain `/invitations`.
+- Official Workers Build for `48d0bb516e01314ce802d92b94e5644e129e0f90`: `65acbda8-2519-422f-9e80-24f2a3ba0439`, **SUCCESS**; container image digest `sha256:21dea74e564c32df560ae8fa10889704d492600879a0970953620e4a4018b778`; Worker version `5d87dfc4-18f3-4d36-840c-3bbb587b8d20`.
+- Production `/health`: **200**. `/health?deep=1`: **200**, Postgres, backend HTTP 200, `nimcarry-primary`, `max_instances_for_proof_gate: 1`, legacy relay PASS/403. SPA and deployed bundle: **PASS**, including the expired-recovery `/reissue` branch. CI for implementation commit: **PASS** (`34698464068`).
+- This milestone did not retry the wallet/UI flow. No broadcast, `FINAL`, or `ARRIVED` is claimed. Next exact action remains `REISSUE_B_INVITATION_FROM_A_UI`; stop before executing it.
