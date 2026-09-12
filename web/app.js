@@ -1,3 +1,5 @@
+import { getNimiqProvider } from "/nimiq-provider.js";
+
 (() => {
   "use strict";
 
@@ -25,6 +27,25 @@
     selectedWallet: null,
     busy: false,
   };
+
+  async function runProviderDiagnostic() {
+    els.network.textContent = "PROVIDER CHECK";
+    els.screen.innerHTML = '<section class="card"><div class="kicker">Read-only provider diagnostic</div><h1>Checking Nimiq Pay…</h1><p id="provider-check-status" role="status" aria-live="polite">Waiting for window.nimiq.</p><div id="provider-check-accounts"></div></section>';
+    const status = document.querySelector("#provider-check-status");
+    const accounts = document.querySelector("#provider-check-accounts");
+    try {
+      const nimiq = await provider();
+      const listed = await nimiq.listAccounts();
+      if (!Array.isArray(listed)) throw new Error("listAccounts() returned a non-array result.");
+      status.textContent = `Provider initialized; listAccounts() succeeded (${listed.length} account${listed.length === 1 ? "" : "s"}).`;
+      accounts.innerHTML = listed.length
+        ? `<ul>${listed.map((account) => `<li>Account fingerprint: <code>${esc(short(account))}</code></li>`).join("")}</ul>`
+        : "<p>No accounts were shared by Nimiq Pay.</p>";
+    } catch (error) {
+      status.textContent = `Provider diagnostic error: ${error?.message || String(error)}`;
+      status.classList.add("error");
+    }
+  }
 
   if (state.apiBase) sessionStorage.setItem("carryone.apiBase", state.apiBase);
   els.demoBanner.hidden = !state.demo;
@@ -60,12 +81,9 @@
   }
 
   async function provider() {
-    const timeoutAt = Date.now() + 6000;
-    while (Date.now() < timeoutAt) {
-      if (window.nimiq && typeof window.nimiq.listAccounts === "function") return window.nimiq;
-      await new Promise((resolve) => setTimeout(resolve, 80));
-    }
-    throw new Error("Nimiq Pay provider is not available. Open Carry One inside Nimiq Pay or use ?demo=1 for the explicit local demo.");
+    const nimiq = await getNimiqProvider();
+    if (!nimiq || typeof nimiq.listAccounts !== "function") throw new Error("Nimiq Pay provider does not expose listAccounts().");
+    return nimiq;
   }
 
   async function chooseWallet() {
@@ -138,6 +156,11 @@
     if (/^\/mission\/[^/]+\/pass$/.test(path)) return renderPass();
     if (/^\/mission\/[^/]+\/route$/.test(path)) return renderRoute();
     return renderHome();
+  }
+
+  if (query.get("provider-check") === "1") {
+    runProviderDiagnostic();
+    return;
   }
 
   async function renderHome() {

@@ -211,7 +211,10 @@ cloudflare_runtime:
   provider_preflight_workers_build_uuid: bd31e1e8-def9-48aa-bbf8-8a9554c2af5c
   provider_preflight_workers_build: PASS
   deployed_spa_provider_preflight: PASS_EXPECTED_SENDER_WRONG_WALLET_SELECTION
-  live_nimiq_pay_session_check: NOT_RUN
+  provider_initializer: MINI_APP_SDK_INIT_THEN_LIST_ACCOUNTS
+  provider_diagnostic_deployed: PASS_READ_ONLY_SDK_PROVIDER_PATH
+  production_reverification_after_sdk_fix: PASS_HEALTH_200_DEEP_HEALTH_200_SPA_AND_BUNDLE
+  live_nimiq_pay_session_check: NOT_RUN_PHONE_TEST_PENDING
   wallet_send_initiated: false
 
 postgres_runtime:

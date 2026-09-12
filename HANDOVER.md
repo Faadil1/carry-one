@@ -163,3 +163,13 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Production `/health?deep=1`: **200**, Postgres mode, backend HTTP 200, and legacy relay disabled with 403.
 - Production SPA and deployed `/app.js`: **PASS**; bundle contains the `expected_sender` account guard and `WRONG_WALLET_SELECTION` fail-closed path before `sendBasicTransactionWithData`.
 - Provider readiness is limited to deployed production code verification. A live Nimiq Pay session check has **not** been run; no wallet send was initiated; real `FINAL` / `ARRIVED` remain unobserved.
+
+## SDK provider acquisition fix + read-only diagnostic (2026-09-12)
+
+- Root cause: the live frontend was polling `window.nimiq` directly instead of acquiring the injected provider through the official Mini App SDK initializer.
+- `web/app.js`, `web/http-compat.js`, and the hidden `?provider-check=1` route now share SDK `init()` provider acquisition; the diagnostic calls only `listAccounts()` and renders short account fingerprints.
+- Route-view signing now uses the same initialized provider. Real-flow guards remain intact: expected sender, exactly `100000` Luna, fee `0`, `co:v1:` commitment, and explicit wallet approval before send.
+- Directly related tests/docs updated. Full suite: **158/158 PASS** across 24 files; TypeScript `--noEmit`: **PASS**.
+- Production `/health`: **200**, `/health?deep=1`: **200**, Postgres mode and legacy relay fail-closed gate verified. Production SPA and bundle expose the SDK provider path, read-only diagnostic, and transaction guards.
+- Deployed Worker version: `5d0830da-1a6d-4bf8-b090-eec865b32fb8`; static/frontend deployment used `--containers-rollout=none`, leaving the existing backend container unchanged.
+- Exact partial state: SDK provider fix is deployed and production-code verified; live Nimiq Pay phone test is **PENDING**. Do not claim provider PASS, account listing PASS, wallet fingerprint, or any real proof until that phone test succeeds. No wallet send, signature, mission creation, or Neon mutation was initiated by this work.

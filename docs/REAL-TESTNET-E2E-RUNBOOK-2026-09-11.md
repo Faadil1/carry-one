@@ -182,7 +182,7 @@ Before touching a testnet wallet, verify:
 - frontend loads outside demo mode from the same Cloudflare origin;
 - direct `/mission/...` and `/i/...` browser navigation returns the SPA shell;
 - JSON fetches to `/missions/...` and `/i/...` reach the backend;
-- inside Nimiq Pay, `window.nimiq.listAccounts()` succeeds;
+- inside Nimiq Pay, the Mini App SDK `init()` resolves the injected provider and `listAccounts()` succeeds;
 - multiple accounts can be selected when the wallet exposes more than one account.
 
 ## 9. Real proof topology

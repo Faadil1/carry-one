@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 const html = readFileSync("web/index.html", "utf8");
 const js = readFileSync("web/app.js", "utf8");
+const provider = readFileSync("web/nimiq-provider.js", "utf8");
+const sdk = readFileSync("web/vendor/nimiq-mini-app-sdk.js", "utf8");
 const compat = readFileSync("web/http-compat.js", "utf8");
 const demoUx = readFileSync("web/demo-ux.js", "utf8");
 const winning = readFileSync("web/winning-intelligence.js", "utf8");
@@ -33,6 +35,31 @@ describe("static Mini App skeleton", () => {
     expect(js).toContain('co:v1:');
     expect(js).toContain('intent.expected_sender');
     expect(js).toContain('WRONG_WALLET_SELECTION');
+  });
+  it("ships an isolated read-only provider diagnostic behind provider-check=1", () => {
+    expect(js).toContain('query.get("provider-check") === "1"');
+    expect(js).toContain("Waiting for window.nimiq.");
+    expect(js).toContain("await nimiq.listAccounts()");
+    expect(js).toContain("Account fingerprint:");
+    expect(js).toContain("runProviderDiagnostic();");
+    expect(js).toContain('return;');
+    const diagnosticStart = js.indexOf("async function runProviderDiagnostic");
+    const diagnosticEnd = js.indexOf("\n  }", diagnosticStart);
+    const diagnostic = diagnosticStart >= 0 && diagnosticEnd >= 0 ? js.slice(diagnosticStart, diagnosticEnd) : "";
+    expect(diagnostic).not.toContain("fetch(");
+    expect(diagnostic).not.toContain("sendBasicTransactionWithData");
+    expect(diagnostic).not.toContain("sign(");
+  });
+  it("uses the Mini App SDK initializer as the shared provider boundary", () => {
+    expect(html).toContain('<script type="module" src="/http-compat.js"></script>');
+    expect(html).toContain('<script type="module" src="/app.js"></script>');
+    expect(provider).toContain('import { init } from "/vendor/nimiq-mini-app-sdk.js"');
+    expect(provider).toContain("init({ timeout: 6000 })");
+    expect(js).toContain('import { getNimiqProvider } from "/nimiq-provider.js"');
+    expect(compat).toContain('import { getNimiqProvider } from "/nimiq-provider.js"');
+    expect(js).not.toContain("window.nimiq.listAccounts");
+    expect(compat).not.toContain("window.nimiq.sign");
+    expect(sdk).toContain("function init(options)");
   });
   it("stores route-following capabilities in session storage and strips view tokens from the URL", () => {
     expect(js).toContain('sessionStorage.setItem(`carryone.view.${missionId}`, fromUrl)');

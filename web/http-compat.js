@@ -1,3 +1,5 @@
+import { getNimiqProvider } from "/nimiq-provider.js";
+
 (() => {
   "use strict";
 
@@ -168,7 +170,9 @@
   async function mintRouteViewAfterAcceptance(requestUrl, acceptanceContext, acceptedInvitation) {
     const missionId = acceptedInvitation?.mission_id || acceptanceContext?.missionId;
     const wallet = acceptanceContext?.wallet;
-    if (!missionId || !wallet || !window.nimiq || typeof window.nimiq.sign !== "function") return false;
+    if (!missionId || !wallet) return false;
+    const nimiq = await getNimiqProvider();
+    if (typeof nimiq.sign !== "function") return false;
 
     const challengeUrl = new URL("/auth/challenge", requestUrl.origin);
     const challenge = await nativeJson(challengeUrl.toString(), {
@@ -180,7 +184,7 @@
     const message = challenge?.message || challenge?.canonical_message;
     if (!challengeId || !message) throw new Error("VIEW_ROUTE_CHALLENGE_CONTRACT_MISMATCH");
 
-    const signed = await window.nimiq.sign(message);
+    const signed = await nimiq.sign(message);
     const viewUrl = new URL(`/missions/${encodeURIComponent(missionId)}/view`, requestUrl.origin);
     const view = await nativeJson(viewUrl.toString(), {
       method: "POST",
