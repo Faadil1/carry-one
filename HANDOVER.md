@@ -371,3 +371,12 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Production `/health`: **200**. `/health?deep=1`: **200**, Postgres, backend HTTP 200, `nimcarry-primary`, `max_instances_for_proof_gate: 1`, legacy relay PASS/403. CI: **PASS** (`34702440284`).
 - No wallet retry occurred. No broadcast, `FINAL`, or `ARRIVED` is claimed.
 - Next exact action: `PREPARE_CONTROLLED_A_TO_B_RETRY`. Stop before executing the wallet retry.
+
+## Live pre-send route-view capability checkpoint (2026-09-12)
+
+- Canonical version: `0.8.57`.
+- A opened Screen 4 / Pass 1 NIM on production, but the page displayed `ROUTE_VIEW_CAPABILITY_REQUIRED`; direct `/pass` navigation lacked a current Bearer route-view capability.
+- The UI rendered fallback “Accepted bridge” text, so this was **not** a valid send-ready state. No `Authorize + Pass 1 NIM` click occurred.
+- Neon remains: mission `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`, invitation sequence `1` `ACCEPTED`, `tx_hash=null`, and `hop_count=0`.
+- No broadcast, `FINAL`, or `ARRIVED` occurred. This is a continuity-only update; no runtime change and no wallet send occurred.
+- Next exact action: `RECOVER_A_ROUTE_VIEW_THEN_REOPEN_PASS`.
