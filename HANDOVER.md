@@ -260,3 +260,14 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - This does **not** establish chain broadcast: `chain_broadcast: NOT_OBSERVED_NO_BROADCAST_EVIDENCE`, `tx_hash: null`, no hop, `real_FINAL_observed: false`, and `real_ARRIVED_observed: false` remain unchanged.
 - Next exact action remains `RETRY_A_TO_B_AFTER_NIMIQ_PAY_SYNC_HEALTH_CHECK`.
 - Continuity-only update; runtime code was not modified.
+
+## Retry preflight: provider healthy, prior invitation expired (2026-09-12)
+
+- Canonical version: `0.8.46`.
+- Phone A provider health check on the production origin: **PASS**. `listAccounts()` succeeded with exactly one account: A `NQ46 EB… CLQL`.
+- No signing or send occurred during this diagnostic.
+- Read-only Neon: the previous B invitation is **EXPIRED** because its accepted-pass deadline elapsed; mission remains `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`.
+- Pass-intent sequence `1` still exists with `tx_hash: null`; no hop, `FINAL`, or `ARRIVED`.
+- Existing failed-attempt history and `chain_broadcast: NOT_OBSERVED_NO_BROADCAST_EVIDENCE` remain unchanged.
+- Next exact action: `CREATE_FRESH_B_INVITATION_FOR_EXISTING_MISSION`.
+- Continuity-only update; runtime code was not changed.
