@@ -191,3 +191,14 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - `wallet_send_initiated: false`; `real_FINAL_observed: false`; `real_ARRIVED_observed: false`.
 - Next exact action: `ESTABLISH_A_B_C_TESTNET_WALLET_MAPPING`.
 - This milestone changes continuity only; runtime code and wallet state were not touched.
+
+## A/B/C mapping and funding readiness (2026-09-12)
+
+- Canonical version: `0.8.39`.
+- Verified TESTNET role mapping using short fingerprints only: A `NQ46 EB… CLQL`, B `NQ48 HR… E1QT`, C `NQ67 MX… 7S1U`.
+- Device plan: A and C are distinct TESTNET accounts on phone 1; B is on phone 2.
+- Funding readiness: A funded with observed balance `110000 NIM`; B funded with observed balance `110000 NIM`; C funding not required before proof.
+- `ESTABLISH_A_B_C_TESTNET_WALLET_MAPPING`: **COMPLETE**. Operator and funding blockers: **CLEARED**.
+- Exact execution state remains: no mission, no invitation, no wallet signature, no NimCarry send, no `FINAL`, no `ARRIVED`.
+- Next exact action: `START_REAL_PROOF_CREATE_MISSION_WITH_A`.
+- This is a continuity-only milestone; runtime code and wallet state were not touched.

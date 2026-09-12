@@ -3,7 +3,7 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.38
+state_version: 0.8.39
 date: 2026-09-12
 phase: REAL_TESTNET_PROOF_OPERATOR_MAPPING_BLOCKED
 problem_locked: true
@@ -216,9 +216,21 @@ cloudflare_runtime:
   production_reverification_after_sdk_fix: PASS_HEALTH_200_DEEP_HEALTH_200_SPA_AND_BUNDLE
   live_nimiq_pay_session_check: PASS
   live_nimiq_pay_listAccounts: PASS_1_ACCOUNT
-  live_nimiq_pay_A_wallet_fingerprint: NOT_TRANSCRIBED_FROM_USER_SCREEN_RECORDING
+  live_nimiq_pay_A_wallet_fingerprint: "NQ46 EB… CLQL"
+  testnet_role_mapping:
+    A: "NQ46 EB… CLQL"
+    B: "NQ48 HR… E1QT"
+    C: "NQ67 MX… 7S1U"
+  testnet_device_plan: "A_and_C_distinct_accounts_on_phone_1; B_on_phone_2"
+  testnet_funding_readiness:
+    A: "FUNDED_OBSERVED_BALANCE_110000_NIM"
+    B: "FUNDED_OBSERVED_BALANCE_110000_NIM"
+    C: "FUNDING_NOT_REQUIRED_BEFORE_PROOF"
   wallet_send_initiated: false
-  operator_boundary: REAL_PROOF_NOT_STARTED_BLOCKED_LIVE_A_B_C_ROLE_MAPPING_NOT_ESTABLISHED_IN_OPERATOR_ENVIRONMENT
+  operator_boundary: REAL_PROOF_NOT_STARTED_MAPPING_AND_FUNDING_READY
+  operator_mapping_blocker: CLEARED
+  operator_funding_blocker: CLEARED
+  establish_A_B_C_testnet_wallet_mapping: COMPLETE
   real_mission_created: false
   real_invitation_created: false
   real_wallet_signature_observed: false
@@ -251,7 +263,7 @@ postgres_runtime:
 
 current_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: PROVIDER_READINESS_CLOSED_REAL_PROOF_NOT_STARTED_OPERATOR_MAPPING_BLOCKED
+  status: PROVIDER_READINESS_CLOSED_REAL_PROOF_NOT_STARTED_MAPPING_AND_FUNDING_READY
   provider_readiness_gate: CLOSED_PASS
   code_merge_prerequisite: COMPLETE
   cloudflare_scaffold_merge_prerequisite: COMPLETE
@@ -269,7 +281,7 @@ current_gate:
   legacy_relay_403: PASS
   same_origin_static_and_backend: PASS
   next_exact_actions:
-    - ESTABLISH_A_B_C_TESTNET_WALLET_MAPPING
+    - START_REAL_PROOF_CREATE_MISSION_WITH_A
     - query_Neon_after_each_real_FINAL_for_durable_state_evidence
   topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> INVITE -> ACCEPT -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
@@ -282,7 +294,7 @@ current_gate:
     - native_invitation_deeplink
     - iOS_cold_warm_background_resume
     - real_Route_Receipt_matches_finalized_route
-  proof_status: NOT_STARTED_BLOCKED_OPERATOR_ENVIRONMENT_WALLET_ROLE_MAPPING
+  proof_status: NOT_STARTED_MAPPING_AND_FUNDING_READY
   real_FINAL_observed: false
   real_ARRIVED_observed: false
   never_claim_before_observed: real_testnet_FINAL_or_ARRIVED
