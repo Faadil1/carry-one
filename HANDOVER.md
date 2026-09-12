@@ -202,3 +202,12 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Exact execution state remains: no mission, no invitation, no wallet signature, no NimCarry send, no `FINAL`, no `ARRIVED`.
 - Next exact action: `START_REAL_PROOF_CREATE_MISSION_WITH_A`.
 - This is a continuity-only milestone; runtime code and wallet state were not touched.
+
+## Real-proof partial milestone: invitation pending (2026-09-12)
+
+- Canonical version: `0.8.40`.
+- Real TESTNET mission was created by A targeting C; a private invitation for B was created. No private invitation token or link is recorded here.
+- B acceptance is **NOT YET observed**. Current holder remains A/Faadil; observed UI state is **Waiting for response**; finalized hops: `0`.
+- No `AUTHORIZE_PASS`, NimCarry send, `FINAL`, or `ARRIVED` occurred.
+- Next exact action: `B_OPEN_PRIVATE_INVITE_AND_ACCEPT`.
+- This is a continuity-only milestone; no wallet send was initiated.

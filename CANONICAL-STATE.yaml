@@ -3,7 +3,7 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.39
+state_version: 0.8.40
 date: 2026-09-12
 phase: REAL_TESTNET_PROOF_OPERATOR_MAPPING_BLOCKED
 problem_locked: true
@@ -231,9 +231,16 @@ cloudflare_runtime:
   operator_mapping_blocker: CLEARED
   operator_funding_blocker: CLEARED
   establish_A_B_C_testnet_wallet_mapping: COMPLETE
-  real_mission_created: false
-  real_invitation_created: false
+  real_mission_created: true
+  real_mission_created_by_A_targeting_C: true
+  private_invitation_for_B_created: true
+  private_invitation_token_or_link_recorded: false
+  B_acceptance_observed: false
   real_wallet_signature_observed: false
+  authorize_pass_observed: false
+  real_proof_ui_state: WAITING_FOR_RESPONSE
+  real_proof_current_holder: A_FAADIL
+  real_proof_finalized_hops: 0
 
 postgres_runtime:
   adapter_owner: opeyemi
@@ -281,7 +288,7 @@ current_gate:
   legacy_relay_403: PASS
   same_origin_static_and_backend: PASS
   next_exact_actions:
-    - START_REAL_PROOF_CREATE_MISSION_WITH_A
+    - B_OPEN_PRIVATE_INVITE_AND_ACCEPT
     - query_Neon_after_each_real_FINAL_for_durable_state_evidence
   topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> INVITE -> ACCEPT -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT
@@ -294,7 +301,7 @@ current_gate:
     - native_invitation_deeplink
     - iOS_cold_warm_background_resume
     - real_Route_Receipt_matches_finalized_route
-  proof_status: NOT_STARTED_MAPPING_AND_FUNDING_READY
+  proof_status: PARTIAL_MISSION_AND_INVITATION_CREATED_B_ACCEPTANCE_PENDING
   real_FINAL_observed: false
   real_ARRIVED_observed: false
   never_claim_before_observed: real_testnet_FINAL_or_ARRIVED
