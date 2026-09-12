@@ -1,5 +1,6 @@
 import type { Hop, PassIntent } from "../core/types.js";
 import type { CanonicalRelayService, PublicHop } from "../service/canonical-relay-service.js";
+import { isIntentStale } from "../core/relay.js";
 import type { MissionRepository } from "./repository.js";
 import { ReachMissionService, toPublicMission } from "./service.js";
 import { normalizeNimiqAddress, TargetWalletProtector } from "./target-wallet-crypto.js";
@@ -74,6 +75,18 @@ export class ReachMissionCoordinator {
         existing.recipient === invitation.candidateWalletNormalized &&
         existing.recipientData !== null
       ) {
+        if (isIntentStale(existing, now)) {
+          if (this.relay.hasRecordedBroadcast(mission.id)) {
+            throw new MissionValidationError("STALE_BROADCASTED_INTENT", "A stale pass intent has broadcast evidence and cannot be replaced");
+          }
+          this.relay.cancelPass(mission.id);
+          const renewed = this.relay.initiatePass(mission.id, signer, invitation.candidateWalletNormalized, { requireOpaqueTag: true });
+          if (!renewed.recipientData) {
+            throw new MissionValidationError("MISSING_HOP_COMMITMENT", "Reach Mission pass authorization must include an opaque on-chain commitment");
+          }
+          await this.relay.flushDurability();
+          return renewed;
+        }
         await this.relay.flushDurability();
         return existing;
       }

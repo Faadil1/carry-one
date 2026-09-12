@@ -1,9 +1,10 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PrivateKey, PublicKey } from "@nimiq/core";
 import { afterEach, describe, expect, it } from "vitest";
 import type { NimiqTxLookup } from "../../src/core/types.js";
+import { INTENT_VALIDITY_WINDOW_MS } from "../../src/core/relay.js";
 import type { NimiqRpcClient } from "../../src/nimiq/rpc-client.js";
 import { FileMissionRepository } from "../../src/mission/file-repository.js";
 import { ReachMissionCoordinator } from "../../src/mission/coordinator.js";
@@ -68,10 +69,41 @@ async function acceptedMission(dir: string, targetWallet = wallet()) {
     auth: auth(candidate, "ACCEPT_INVITATION", mission.id, created.invitation.id, 1),
     now: 3_000,
   });
+  const state = JSON.parse(readFileSync(missionPath, "utf8")) as { invitations: Array<{ passDeadlineAt: number }> };
+  state.invitations[0].passDeadlineAt = 10_000_000_000_000;
+  writeFileSync(missionPath, JSON.stringify(state));
+  Object.assign((repo as unknown as { state: typeof state }).state.invitations[0], { passDeadlineAt: 10_000_000_000_000 });
   return { missionPath, relayPath, repo, protector, service, rpc, relay, coordinator, creator, candidate, mission, invitationId: created.invitation.id };
 }
 
 describe("durable foundation recovery", () => {
+  it("reuses a still-valid matching pass intent", async () => {
+    const f = await acceptedMission(tempDir());
+    const first = await f.coordinator.authorizePass({ missionId: f.mission.id, invitationId: f.invitationId, auth: auth(f.creator, "AUTHORIZE_PASS", f.mission.id, f.invitationId, 1), now: 4_000 });
+    const second = await f.coordinator.authorizePass({ missionId: f.mission.id, invitationId: f.invitationId, auth: auth(f.creator, "AUTHORIZE_PASS", f.mission.id, f.invitationId, 1), now: 4_001 });
+    expect(second.nonce).toBe(first.nonce);
+  });
+
+  it("renews a stale unbroadcast matching intent durably for the same recipient", async () => {
+    const f = await acceptedMission(tempDir());
+    const first = await f.coordinator.authorizePass({ missionId: f.mission.id, invitationId: f.invitationId, auth: auth(f.creator, "AUTHORIZE_PASS", f.mission.id, f.invitationId, 1), now: 4_000 });
+    const renewed = await f.coordinator.authorizePass({ missionId: f.mission.id, invitationId: f.invitationId, auth: auth(f.creator, "AUTHORIZE_PASS", f.mission.id, f.invitationId, 1), now: first.createdAt + INTENT_VALIDITY_WINDOW_MS + 1 });
+    expect(renewed.nonce).not.toBe(first.nonce);
+    expect(renewed.recipient).toBe(first.recipient);
+    const restarted = new CanonicalRelayService(new FileRelayStore(f.relayPath), new MutableRpc());
+    expect(restarted.getActiveIntent(f.mission.id)?.nonce).toBe(renewed.nonce);
+  });
+
+  it("refuses renewal after a broadcast and rejects a conflicting recipient", async () => {
+    const f = await acceptedMission(tempDir());
+    const first = await f.coordinator.authorizePass({ missionId: f.mission.id, invitationId: f.invitationId, auth: auth(f.creator, "AUTHORIZE_PASS", f.mission.id, f.invitationId, 1), now: 4_000 });
+    await f.coordinator.recordBroadcast({ missionId: f.mission.id, invitationId: f.invitationId, txHash: "ef".repeat(32) });
+    await expect(f.coordinator.authorizePass({ missionId: f.mission.id, invitationId: f.invitationId, auth: auth(f.creator, "AUTHORIZE_PASS", f.mission.id, f.invitationId, 1), now: first.createdAt + INTENT_VALIDITY_WINDOW_MS + 1 })).rejects.toMatchObject({ reason: "STALE_BROADCASTED_INTENT" });
+
+    const conflict = await acceptedMission(tempDir());
+    conflict.relay.initiatePass(conflict.mission.id, normalizeNimiqAddress(conflict.creator), normalizeNimiqAddress(wallet()), { requireOpaqueTag: true });
+    await expect(conflict.coordinator.authorizePass({ missionId: conflict.mission.id, invitationId: conflict.invitationId, auth: auth(conflict.creator, "AUTHORIZE_PASS", conflict.mission.id, conflict.invitationId, 1), now: 4_000 })).rejects.toMatchObject({ reason: "RELAY_INTENT_CONFLICT" });
+  });
   it("rehydrates mission and opaque active relay broadcast state after process restart", async () => {
     const dir = tempDir();
     const f = await acceptedMission(dir, wallet());
