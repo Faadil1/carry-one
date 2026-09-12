@@ -342,3 +342,12 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Production `/health`: **200**. `/health?deep=1`: **200**, Postgres, backend HTTP 200, `nimcarry-primary`, `max_instances_for_proof_gate: 1`, legacy relay PASS/403. SPA and deployed bundle: **PASS**, including the primary-action-compatible `/reissue` path. CI: **PASS** (`34699901846`).
 - No wallet/send action occurred during implementation or verification. No broadcast, `FINAL`, or `ARRIVED` is claimed.
 - Next exact action: `REISSUE_B_INVITATION_FROM_A_UI`. Stop before executing the retry.
+
+## Live same-row B invitation reissue and acceptance milestone (2026-09-12)
+
+- Canonical version: `0.8.54`.
+- Baseline was canonical `0.8.53`. A successfully reissued the expired B invitation through the same-row `/reissue` path; no `DUPLICATE_KEY` occurred and a new private invite was generated.
+- B opened the new invite in Nimiq Pay TESTNET and accepted it.
+- Neon confirms: mission `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`, invitation sequence `1` is `ACCEPTED`, existing pass intent sequence `1` remains present with `tx_hash=null`, and `hop_count=0`.
+- No chain broadcast, `FINAL`, or `ARRIVED` occurred. This is a continuity-only update; no runtime changes and no wallet send occurred.
+- Next exact action: `PREPARE_CONTROLLED_A_TO_B_RETRY`.
