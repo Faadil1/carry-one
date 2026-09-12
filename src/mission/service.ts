@@ -213,6 +213,50 @@ export class ReachMissionService {
     return { invitation: toPublicInvitation(created), inviteToken: token };
   }
 
+  async reissueInvitation(input: {
+    missionId: string;
+    invitationId: string;
+    auth: VerifiedWalletAction;
+    candidateLabel?: string;
+    candidateWallet?: string;
+    whyYou?: string;
+    activePassRecipient?: string | null;
+    now?: number;
+  }): Promise<{ invitation: PublicInvitation; inviteToken: string }> {
+    const mission = await this.requireMission(input.missionId);
+    const invitation = await this.getInvitationRecord(input.invitationId);
+    const sequence = mission.currentSequence + 1;
+    assertAction(input.auth, "CREATE_INVITATION", { missionId: mission.id, invitationId: invitation.id, sequence });
+    const signer = normalizeNimiqAddress(input.auth.wallet);
+    if (mission.status !== "ACTIVE") throw new MissionValidationError("MISSION_NOT_ACTIVE", `Mission ${mission.id} is ${mission.status}`);
+    if (mission.currentHolderWalletNormalized !== signer) throw new MissionValidationError("WRONG_CURRENT_HOLDER", "Only the canonical current holder can reissue an invitation");
+    if (invitation.missionId !== mission.id || invitation.sequence !== sequence) throw new MissionValidationError("INVITATION_SEQUENCE_MISMATCH", "Invitation is not the mission's next canonical sequence");
+    if (invitation.status !== "EXPIRED") throw new MissionValidationError("INVITATION_NOT_REISSUABLE", `Invitation is ${invitation.status}`);
+    if (input.activePassRecipient === null) throw new MissionValidationError("ACTIVE_PASS_RECIPIENT_REQUIRED", "An active pass intent requires a matching candidate wallet");
+    const candidateWallet = input.candidateWallet ? normalizeNimiqAddress(input.candidateWallet) : null;
+    if (input.activePassRecipient && candidateWallet !== normalizeNimiqAddress(input.activePassRecipient)) {
+      throw new MissionValidationError("PASS_INTENT_RECIPIENT_MISMATCH", "Reissued candidate must match the active pass intent recipient");
+    }
+    if (candidateWallet && this.routeWalletGuard(mission.id, candidateWallet)) throw new MissionValidationError("ROUTE_WALLET_REUSE", "A finalized route participant cannot be selected again in the same mission");
+    const now = input.now ?? Date.now();
+    const token = randomBytes(32).toString("base64url");
+    const updated = await this.repository.reissueInvitation({
+      invitationId: invitation.id,
+      inviteTokenHash: hashToken(token),
+      candidateLabel: input.candidateLabel ? boundedText(input.candidateLabel, 1, 60, "candidateLabel") : null,
+      candidateWalletNormalized: candidateWallet,
+      whyYou: input.whyYou ? boundedText(input.whyYou, 1, 120, "whyYou") : null,
+      createdAt: now,
+      expiresAt: now + INVITATION_TTL_MS,
+    });
+    await this.repository.recordAuditEvent({
+      id: randomUUID(), missionId: mission.id, invitationId: invitation.id,
+      actorWalletNormalized: signer, eventType: "INVITATION_REISSUED",
+      metadata: { sequence, prior_status: "EXPIRED", active_pass_intent: Boolean(input.activePassRecipient) }, createdAt: now,
+    });
+    return { invitation: toPublicInvitation(updated), inviteToken: token };
+  }
+
   async getInvitationByToken(token: string): Promise<PublicInvitation> {
     return toPublicInvitation(await this.requireInvitationToken(token));
   }

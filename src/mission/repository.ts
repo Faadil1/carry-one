@@ -12,6 +12,15 @@ export interface MissionRepository {
   cancelMissionPristine(id: string, signerWallet: string, now: number): Promise<MissionRecord>;
 
   createInvitation(record: InvitationRecord): Promise<InvitationRecord>;
+  reissueInvitation(input: {
+    invitationId: string;
+    inviteTokenHash: string;
+    candidateLabel: string | null;
+    candidateWalletNormalized: string | null;
+    whyYou: string | null;
+    createdAt: number;
+    expiresAt: number;
+  }): Promise<InvitationRecord>;
   getInvitation(id: string): Promise<InvitationRecord | undefined>;
   getInvitationByTokenHash(tokenHash: string): Promise<InvitationRecord | undefined>;
   getOpenInvitation(missionId: string): Promise<InvitationRecord | undefined>;
@@ -33,4 +42,5 @@ export interface MissionRepository {
   consumeChallenge(id: string, now: number): Promise<AuthChallengeRecord>;
 
   snapshot(): Promise<MissionStoreSnapshot>;
+  recordAuditEvent(event: import("./types.js").AuditEventRecord): Promise<void>;
 }

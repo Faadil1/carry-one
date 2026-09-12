@@ -143,6 +143,49 @@ describe("Reach Mission foundation service", () => {
     expect(after.finalized_hop_count).toBe(0);
   });
 
+  it("reissues an expired accepted invitation in place and invalidates the old token", async () => {
+    const { repo, service } = fixture();
+    const creator = wallet();
+    const candidate = wallet();
+    const mission = await service.createMission(consentedMissionInput(creator, 50_000));
+    const original = await service.createInvitation({ missionId: mission.id, auth: auth(creator, "CREATE_INVITATION", mission.id, undefined, 1), candidateWallet: candidate, now: 51_000 });
+    await service.acceptInvitation({ token: original.inviteToken, auth: auth(candidate, "ACCEPT_INVITATION", mission.id, original.invitation.id, 1), now: 52_000 });
+    await service.expireDueInvitations(52_000 + 60 * 60 * 1000 + 1);
+
+    const reissued = await service.reissueInvitation({
+      missionId: mission.id,
+      invitationId: original.invitation.id,
+      auth: auth(creator, "CREATE_INVITATION", mission.id, original.invitation.id, 1),
+      candidateWallet: candidate,
+      activePassRecipient: candidate,
+      now: 53_000,
+    });
+    expect(reissued.invitation.id).toBe(original.invitation.id);
+    expect(reissued.inviteToken).not.toBe(original.inviteToken);
+    expect(reissued.invitation.status).toBe("INVITED");
+    await expect(service.getInvitationByToken(original.inviteToken)).rejects.toMatchObject({ reason: "INVITATION_NOT_FOUND" });
+    expect((await service.acceptInvitation({ token: reissued.inviteToken, auth: auth(candidate, "ACCEPT_INVITATION", mission.id, original.invitation.id, 1), now: 54_000 })).status).toBe("ACCEPTED");
+    expect((await repo.snapshot()).auditEvents).toHaveLength(1);
+  });
+
+  it("fails closed when reissued candidate differs from an active pass intent", async () => {
+    const { service } = fixture();
+    const creator = wallet(); const candidate = wallet(); const wrong = wallet();
+    const mission = await service.createMission(consentedMissionInput(creator, 60_000));
+    const invitation = await service.createInvitation({ missionId: mission.id, auth: auth(creator, "CREATE_INVITATION", mission.id, undefined, 1), candidateWallet: candidate, now: 61_000 });
+    await service.expireDueInvitations(61_000 + INVITATION_TTL_MS + 1);
+    await expect(service.reissueInvitation({ missionId: mission.id, invitationId: invitation.invitation.id, auth: auth(creator, "CREATE_INVITATION", mission.id, invitation.invitation.id, 1), candidateWallet: wrong, activePassRecipient: candidate, now: 62_000 })).rejects.toMatchObject({ reason: "PASS_INTENT_RECIPIENT_MISMATCH" });
+  });
+
+  it("does not reissue an accepted or completed invitation after broadcast/finalization state", async () => {
+    const { service } = fixture();
+    const creator = wallet(); const candidate = wallet();
+    const mission = await service.createMission(consentedMissionInput(creator, 70_000));
+    const invitation = await service.createInvitation({ missionId: mission.id, auth: auth(creator, "CREATE_INVITATION", mission.id, undefined, 1), candidateWallet: candidate, now: 71_000 });
+    await service.acceptInvitation({ token: invitation.inviteToken, auth: auth(candidate, "ACCEPT_INVITATION", mission.id, invitation.invitation.id, 1), now: 72_000 });
+    await expect(service.reissueInvitation({ missionId: mission.id, invitationId: invitation.invitation.id, auth: auth(creator, "CREATE_INVITATION", mission.id, invitation.invitation.id, 1), candidateWallet: candidate, activePassRecipient: candidate, now: 73_000 })).rejects.toMatchObject({ reason: "INVITATION_NOT_REISSUABLE" });
+  });
+
   it("refuses mission cancellation while an invitation is open", async () => {
     const { service } = fixture();
     const creator = wallet();

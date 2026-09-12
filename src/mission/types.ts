@@ -117,6 +117,17 @@ export interface MissionStoreSnapshot {
   missions: MissionRecord[];
   invitations: InvitationRecord[];
   challenges: AuthChallengeRecord[];
+  auditEvents?: AuditEventRecord[];
+}
+
+export interface AuditEventRecord {
+  id: string;
+  missionId: string | null;
+  invitationId: string | null;
+  actorWalletNormalized: string | null;
+  eventType: string;
+  metadata: Record<string, unknown>;
+  createdAt: number;
 }
 
 export class MissionValidationError extends Error {

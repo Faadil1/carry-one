@@ -202,6 +202,10 @@ async function handleMission(deps: MissionHttpDeps, req: IncomingMessage, res: S
   if (req.method === "POST" && tail.length === 1 && tail[0] === "invitations") {
     return sendMutation(deps, req, res, () => createInvitation(deps, req, missionId));
   }
+  if (req.method === "POST" && tail.length === 3 && tail[0] === "invitations" && tail[2] === "reissue") {
+    const invitationId = asUuid(decodeURIComponent(tail[1]), "invitationId");
+    return sendMutation(deps, req, res, () => reissueInvitation(deps, req, missionId, invitationId));
+  }
   if (req.method === "POST" && tail.length === 3 && tail[0] === "invitations" && tail[2] === "withdraw") {
     const invitationId = asUuid(decodeURIComponent(tail[1]), "invitationId");
     return sendMutation(deps, req, res, () => withdrawInvitation(deps, req, missionId, invitationId));
@@ -303,6 +307,27 @@ async function createInvitation(deps: MissionHttpDeps, req: IncomingMessage, mis
       nimiq_pay_custom_scheme: links.nimiqPayCustomScheme,
     },
   };
+}
+
+async function reissueInvitation(deps: MissionHttpDeps, req: IncomingMessage, missionId: string, invitationId: string) {
+  const obj = await jsonBody(req);
+  const envelope = parseSignedEnvelope(obj);
+  const candidateLabel = obj.candidate_label === undefined || obj.candidate_label === null ? undefined : boundedText(obj.candidate_label, "candidate_label", 1, 60);
+  const candidateWallet = obj.candidate_wallet === undefined || obj.candidate_wallet === null ? undefined : asAddress(obj.candidate_wallet, "candidate_wallet");
+  const whyYou = obj.why_you === undefined || obj.why_you === null ? undefined : boundedText(obj.why_you, "why_you", 1, 120);
+  rejectUnknownKeys(obj, ["challenge_id", "public_key", "signature", "candidate_label", "candidate_wallet", "why_you"]);
+  const auth = await verifyEnvelope(deps, envelope);
+  const { invitation, inviteToken } = await deps.missions.reissueInvitation({
+    missionId,
+    invitationId,
+    auth,
+    candidateLabel,
+    candidateWallet,
+    whyYou,
+    activePassRecipient: deps.coordinator.activePassRecipient(missionId),
+  });
+  const links = buildCarryOneInviteLinks(deps.canonicalOrigin, inviteToken);
+  return { status: 200, body: { mission_id: missionId, invitation, invite_token: inviteToken, web_invite_url: links.webInviteUrl, nimiq_pay_custom_scheme: links.nimiqPayCustomScheme } };
 }
 
 async function authorizePass(deps: MissionHttpDeps, req: IncomingMessage, missionId: string) {

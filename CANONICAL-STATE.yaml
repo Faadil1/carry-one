@@ -3,7 +3,7 @@ former_public_name: Carry One
 competition: Nimiq Mini Apps Competition - Cycle II
 repository: Faadil1/nimcarry
 visibility: public
-state_version: 0.8.46
+state_version: 0.8.48
 date: 2026-09-12
 phase: REAL_TESTNET_PROOF_ATTEMPT_FAILED_NO_BROADCAST_EVIDENCE
 problem_locked: true
@@ -287,6 +287,21 @@ cloudflare_runtime:
     hop: NONE
     FINAL: false
     ARRIVED: false
+  duplicate_key_recovery_blocker: ACTIVE_INVITATION_SEQUENCE_UNIQUE_CONSTRAINT_BLOCKS_REISSUE
+  invitation_reissue_implementation: COMPLETE_FILE_POSTGRES_SERVICE_HTTP_AUDIT_TESTED
+  invitation_reissue_runtime_production: NOT_DEPLOYED_DOCKER_BUILD_BLOCKED
+  worker_verification_without_container_rollout: PASS
+  recovery_truth_before_fix:
+    mission_status: ACTIVE
+    current_sequence: 0
+    previous_B_invitation: EXPIRED
+    pass_intent_sequence: 1
+    pass_intent_tx_hash: null
+    hop: NONE
+    finalized_hop_count: 0
+    FINAL: false
+    ARRIVED: false
+    chain_broadcast: NOT_OBSERVED_NO_BROADCAST_EVIDENCE
   neon_failed_attempt_observation:
     mission_status: ACTIVE
     invitation_status: ACCEPTED
@@ -342,7 +357,7 @@ current_gate:
   legacy_relay_403: PASS
   same_origin_static_and_backend: PASS
   next_exact_actions:
-    - CREATE_FRESH_B_INVITATION_FOR_EXISTING_MISSION
+    - DEPLOY_INVITATION_REISSUE_CONTAINER_AFTER_DOCKER_AVAILABLE
     - query_Neon_after_each_real_FINAL_for_durable_state_evidence
   topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
   target_proof: CREATE -> INVITE -> ACCEPT -> AUTHORIZE -> A_SENDS_1_NIM_TO_B -> FINAL -> B_HOLDER -> INVITE -> ACCEPT -> AUTHORIZE -> B_SENDS_1_NIM_TO_C -> FINAL -> ARRIVED -> VERIFIED_ROUTE_RECEIPT

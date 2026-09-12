@@ -214,6 +214,26 @@ describe("PgMissionRepository", () => {
       const invAfter = (await repo.getInvitation(inv1.id))!;
       expect(invAfter.status).toBe("EXPIRED");
     });
+
+    it("reissues the same expired invitation row without a sequence duplicate key", async () => {
+      const { mission, invitationId, candidate } = await acceptedMission();
+      await repo.expireDueInvitations(4000 + 60 * 60 * 1000 + 1);
+      const reissued = await repo.reissueInvitation({
+        invitationId,
+        inviteTokenHash: "fresh-token-hash",
+        candidateLabel: "Bridge",
+        candidateWalletNormalized: candidate,
+        whyYou: "Please try again.",
+        createdAt: 10000,
+        expiresAt: 10000 + 12 * 60 * 60 * 1000,
+      });
+      expect(reissued.id).toBe(invitationId);
+      expect(reissued.sequence).toBe(1);
+      expect(reissued.status).toBe("INVITED");
+      expect((await repo.getInvitationByTokenHash("fresh-token-hash"))!.id).toBe(invitationId);
+      expect((await repo.getInvitationByTokenHash("fresh-token-hash"))!.inviteTokenHash).toBe("fresh-token-hash");
+      expect((await repo.getMission(mission.id))!.currentSequence).toBe(0);
+    });
   });
 
   describe("completeFinalHop", () => {

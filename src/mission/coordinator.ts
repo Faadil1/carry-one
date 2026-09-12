@@ -16,6 +16,10 @@ export class ReachMissionCoordinator {
     missions.setRouteWalletGuard((missionId, wallet) => this.walletAlreadyInFinalRoute(missionId, wallet));
   }
 
+  activePassRecipient(missionId: string): string | undefined {
+    return this.relay.getActiveIntent(missionId)?.recipient;
+  }
+
   private walletAlreadyInFinalRoute(missionId: string, wallet: string): boolean {
     const normalized = normalizeNimiqAddress(wallet);
     return this.relay.getHistory(missionId).some((hop) =>

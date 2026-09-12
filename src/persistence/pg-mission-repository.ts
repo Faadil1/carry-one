@@ -3,6 +3,7 @@ import type { MissionRepository } from "../mission/repository.js";
 import {
   MissionValidationError,
   type AuthChallengeRecord,
+  type AuditEventRecord,
   type InvitationRecord,
   type InvitationStatus,
   type MissionRecord,
@@ -364,6 +365,36 @@ export class PgMissionRepository implements MissionRepository {
     return result.rows.length === 0 ? undefined : invitationFromRow(result.rows[0]);
   }
 
+  async reissueInvitation(input: {
+    invitationId: string;
+    inviteTokenHash: string;
+    candidateLabel: string | null;
+    candidateWalletNormalized: string | null;
+    whyYou: string | null;
+    createdAt: number;
+    expiresAt: number;
+  }): Promise<InvitationRecord> {
+    return this.withTransaction(async (client) => {
+      const current = await client.query<InvitationRow>("SELECT * FROM invitations WHERE id = $1 FOR UPDATE", [input.invitationId]);
+      if (current.rows.length === 0) throw new MissionValidationError("INVITATION_NOT_FOUND", `Invitation ${input.invitationId} does not exist`);
+      if (current.rows[0].status !== "EXPIRED") throw new MissionValidationError("INVITATION_NOT_REISSUABLE", `Invitation is ${current.rows[0].status}`);
+      try {
+        const updated = await client.query<InvitationRow>(
+          `UPDATE invitations SET invite_token_hash=$2, candidate_label=$3, candidate_wallet_normalized=$4,
+             why_you=$5, status='INVITED', created_at=$6, expires_at=$7,
+             accepted_at=NULL, pass_deadline_at=NULL, declined_at=NULL, withdrawn_at=NULL,
+             completed_at=NULL, closed_at=NULL
+           WHERE id=$1 RETURNING *`,
+          [input.invitationId, input.inviteTokenHash, input.candidateLabel, input.candidateWalletNormalized, input.whyYou, epoch(input.createdAt), epoch(input.expiresAt)]
+        );
+        await client.query("UPDATE missions SET updated_at=$2 WHERE id=$1", [current.rows[0].mission_id, epoch(input.createdAt)]);
+        return invitationFromRow(updated.rows[0]);
+      } catch (error) {
+        throw mapPgErrorToMission(error, `reissueInvitation failed for ${input.invitationId}`);
+      }
+    });
+  }
+
   async getInvitationByTokenHash(tokenHash: string): Promise<InvitationRecord | undefined> {
     const result = await this.pool.query<InvitationRow>(
       "SELECT * FROM invitations WHERE invite_token_hash = $1",
@@ -681,15 +712,28 @@ export class PgMissionRepository implements MissionRepository {
   }
 
   async snapshot(): Promise<MissionStoreSnapshot> {
-    const [missions, invitations, challenges] = await Promise.all([
+    const [missions, invitations, challenges, auditEvents] = await Promise.all([
       this.pool.query<MissionRow>("SELECT * FROM missions"),
       this.pool.query<InvitationRow>("SELECT * FROM invitations"),
       this.pool.query<ChallengeRow>("SELECT * FROM auth_challenges"),
+      this.pool.query<{
+        id: string; mission_id: string | null; invitation_id: string | null; actor_wallet_normalized: string | null;
+        event_type: string; metadata: Record<string, unknown>; created_at: Date;
+      }>("SELECT * FROM audit_events"),
     ]);
     return {
       missions: missions.rows.map(missionFromRow),
       invitations: invitations.rows.map(invitationFromRow),
       challenges: challenges.rows.map(challengeFromRow),
+      auditEvents: auditEvents.rows.map((row): AuditEventRecord => ({ id: row.id, missionId: row.mission_id, invitationId: row.invitation_id, actorWalletNormalized: row.actor_wallet_normalized, eventType: row.event_type, metadata: row.metadata, createdAt: row.created_at.getTime() })),
     };
+  }
+
+  async recordAuditEvent(event: AuditEventRecord): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO audit_events (mission_id, invitation_id, actor_wallet_normalized, event_type, metadata, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [event.missionId, event.invitationId, event.actorWalletNormalized, event.eventType, event.metadata, epoch(event.createdAt)]
+    );
   }
 }

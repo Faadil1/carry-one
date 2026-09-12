@@ -271,3 +271,23 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Existing failed-attempt history and `chain_broadcast: NOT_OBSERVED_NO_BROADCAST_EVIDENCE` remain unchanged.
 - Next exact action: `CREATE_FRESH_B_INVITATION_FOR_EXISTING_MISSION`.
 - Continuity-only update; runtime code was not changed.
+
+## Duplicate-key recovery blocker (2026-09-12)
+
+- Canonical version: `0.8.47`.
+- Exact proof truth preserved: mission `ACTIVE`, `current_sequence=0`, previous B invitation `EXPIRED`, existing pass intent sequence `1` with `tx_hash: null`, no hop, `0` FINAL, no ARRIVED, and no chain broadcast.
+- Blocker: the one-invitation-per-mission-sequence uniqueness constraint currently prevents reissuing the expired invitation through the normal create-invitation path.
+- Required fix: same-row invitation reissue with a fresh token/hash, old-token invalidation, active-holder authorization, and no second pass intent.
+- Next exact action: `IMPLEMENT_SAME_ROW_INVITATION_REISSUE_FOR_EXPIRED_SEQUENCE`.
+- No NIM was sent and no custody state changed.
+
+## Invitation reissue implementation and deployment boundary (2026-09-12)
+
+- Canonical version: `0.8.48`.
+- Implemented same-row invitation reissue for the exact expired-sequence gap across file and PostgreSQL repositories, service/HTTP, audit evidence, and deterministic tests. The unique `one_invitation_sequence_per_mission` invariant remains intact; no new mission or invitation row is created.
+- Reissue resets the old row to `INVITED` with a fresh token/hash and refreshed expiry, invalidates the old token, clears acceptance/terminal timestamps, requires ACTIVE/current-holder authorization, and requires an active pass-intent recipient match when one exists.
+- Full suite: **163/163 PASS**; TypeScript `--noEmit`: **PASS**. Production `/health` and `/health?deep=1`: **200**; SPA verification: **PASS**.
+- Runtime container deployment was attempted but blocked because Docker CLI is unavailable. Worker deployment without container rollout succeeded (`18da0227-d990-4bd7-8d6a-77b4057fc5ff`); the invitation-reissue runtime fix is tested but **not claimed live in production**.
+- Exact proof truth remains unchanged: mission `ACTIVE`, `current_sequence=0`, previous B invitation `EXPIRED`, pass intent sequence `1` with `tx_hash: null`, no hop, `0` FINAL, no ARRIVED, and no chain broadcast.
+- Next exact action: `DEPLOY_INVITATION_REISSUE_CONTAINER_AFTER_DOCKER_AVAILABLE`.
+- No NIM was sent and runtime code was not changed after the deployment attempt.

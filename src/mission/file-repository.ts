@@ -19,7 +19,7 @@ import {
 const OPEN_INVITATION_STATES = new Set<InvitationStatus>(["INVITED", "ACCEPTED"]);
 
 function emptySnapshot(): MissionStoreSnapshot {
-  return { missions: [], invitations: [], challenges: [] };
+  return { missions: [], invitations: [], challenges: [], auditEvents: [] };
 }
 
 function clone<T>(value: T): T {
@@ -46,6 +46,7 @@ export class FileMissionRepository implements MissionRepository {
       })),
       invitations: parsed.invitations ?? [],
       challenges: parsed.challenges ?? [],
+      auditEvents: parsed.auditEvents ?? [],
     };
   }
 
@@ -148,6 +149,42 @@ export class FileMissionRepository implements MissionRepository {
     await this.queue;
     const record = this.state.invitations.find((item) => item.id === id);
     return record ? clone(record) : undefined;
+  }
+
+  async reissueInvitation(input: {
+    invitationId: string;
+    inviteTokenHash: string;
+    candidateLabel: string | null;
+    candidateWalletNormalized: string | null;
+    whyYou: string | null;
+    createdAt: number;
+    expiresAt: number;
+  }): Promise<InvitationRecord> {
+    return this.exclusive(() => {
+      const invitation = this.invitation(input.invitationId);
+      if (invitation.status !== "EXPIRED") throw new MissionValidationError("INVITATION_NOT_REISSUABLE", `Invitation is ${invitation.status}`);
+      if (this.state.invitations.some((item) => item.id !== invitation.id && item.inviteTokenHash === input.inviteTokenHash)) {
+        throw new MissionValidationError("INVITE_TOKEN_COLLISION", "Invite token hash already exists");
+      }
+      Object.assign(invitation, {
+        candidateLabel: input.candidateLabel,
+        candidateWalletNormalized: input.candidateWalletNormalized,
+        whyYou: input.whyYou,
+        inviteTokenHash: input.inviteTokenHash,
+        status: "INVITED" as const,
+        createdAt: input.createdAt,
+        expiresAt: input.expiresAt,
+        acceptedAt: null,
+        passDeadlineAt: null,
+        declinedAt: null,
+        withdrawnAt: null,
+        completedAt: null,
+        closedAt: null,
+      });
+      this.mission(invitation.missionId).updatedAt = input.createdAt;
+      this.persist();
+      return clone(invitation);
+    });
   }
 
   async getInvitationByTokenHash(tokenHash: string): Promise<InvitationRecord | undefined> {
@@ -320,5 +357,13 @@ export class FileMissionRepository implements MissionRepository {
   async snapshot(): Promise<MissionStoreSnapshot> {
     await this.queue;
     return clone(this.state);
+  }
+
+  async recordAuditEvent(event: import("./types.js").AuditEventRecord): Promise<void> {
+    return this.exclusive(() => {
+      this.state.auditEvents ??= [];
+      this.state.auditEvents.push(clone(event));
+      this.persist();
+    });
   }
 }
