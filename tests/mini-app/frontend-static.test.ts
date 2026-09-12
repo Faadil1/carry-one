@@ -31,6 +31,8 @@ describe("static Mini App skeleton", () => {
     expect(js).toContain('sendBasicTransactionWithData');
     expect(js).toContain('value: ONE_NIM, fee: 0');
     expect(js).toContain('co:v1:');
+    expect(js).toContain('intent.expected_sender');
+    expect(js).toContain('WRONG_WALLET_SELECTION');
   });
   it("stores route-following capabilities in session storage and strips view tokens from the URL", () => {
     expect(js).toContain('sessionStorage.setItem(`carryone.view.${missionId}`, fromUrl)');

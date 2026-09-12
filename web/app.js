@@ -30,6 +30,7 @@
   els.demoBanner.hidden = !state.demo;
   els.network.textContent = state.demo ? "LOCAL DEMO" : "NIMIQ PAY / TESTNET";
 
+  const walletKey = (value) => String(value ?? "").replace(/\\s+/g, "").toUpperCase();
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   const short = (value) => {
     const text = String(value ?? "");
@@ -270,6 +271,10 @@
       const intent = await api(`/missions/${encodeURIComponent(missionId)}/pass-intent`, { method: "POST", body: { invitation_id: invitation.invitation_id, auth } });
       if (!intent?.recipient || Number(intent.value_luna) !== ONE_NIM || !intent.recipient_data) throw new Error("PASS_INTENT_CONTRACT_MISMATCH: recipient/value/opaque data required.");
       if (!String(intent.recipient_data).startsWith("co:v1:")) throw new Error("OPAQUE_COMMITMENT_REQUIRED: refusing clear-text/legacy recipient data.");
+      const selectedWallet = await chooseWallet();
+      if (!intent.expected_sender || walletKey(selectedWallet) !== walletKey(intent.expected_sender)) {
+        throw new Error("WRONG_WALLET_SELECTION: the canonical holder wallet is not selected in this Nimiq Pay session.");
+      }
       const nimiq = await provider(); notice("Open Nimiq Pay and approve exactly 1 NIM…");
       const txHash = await nimiq.sendBasicTransactionWithData({ recipient: intent.recipient, value: ONE_NIM, fee: 0, data: intent.recipient_data });
       const intentId = intent.intent_id || intent.id; if (!intentId || !txHash) throw new Error("PASS_BROADCAST_CONTRACT_MISMATCH: missing intent id or transaction hash.");
