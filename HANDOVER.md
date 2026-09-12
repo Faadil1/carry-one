@@ -173,3 +173,11 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Production `/health`: **200**, `/health?deep=1`: **200**, Postgres mode and legacy relay fail-closed gate verified. Production SPA and bundle expose the SDK provider path, read-only diagnostic, and transaction guards.
 - Deployed Worker version: `5d0830da-1a6d-4bf8-b090-eec865b32fb8`; static/frontend deployment used `--containers-rollout=none`, leaving the existing backend container unchanged.
 - Exact partial state: SDK provider fix is deployed and production-code verified; live Nimiq Pay phone test is **PENDING**. Do not claim provider PASS, account listing PASS, wallet fingerprint, or any real proof until that phone test succeeds. No wallet send, signature, mission creation, or Neon mutation was initiated by this work.
+
+## Live provider readiness closed (2026-09-12)
+
+- User-provided TESTNET screen recording confirms the production Mini App provider session is ready: `live_nimiq_pay_session_check: PASS` and `listAccounts: PASS_1_ACCOUNT`.
+- A short public A-wallet fingerprint is intentionally not transcribed into this continuity update because it was not provided as text; no full wallet address is recorded here.
+- Provider-readiness gate: **CLOSED / PASS**. Next exact gate: execute the real Nimiq testnet `A → B → C` proof.
+- `wallet_send_initiated: false`; `real_FINAL_observed: false`; `real_ARRIVED_observed: false`.
+- No wallet send was initiated by this continuity-only update.

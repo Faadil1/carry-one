@@ -214,7 +214,9 @@ cloudflare_runtime:
   provider_initializer: MINI_APP_SDK_INIT_THEN_LIST_ACCOUNTS
   provider_diagnostic_deployed: PASS_READ_ONLY_SDK_PROVIDER_PATH
   production_reverification_after_sdk_fix: PASS_HEALTH_200_DEEP_HEALTH_200_SPA_AND_BUNDLE
-  live_nimiq_pay_session_check: NOT_RUN_PHONE_TEST_PENDING
+  live_nimiq_pay_session_check: PASS
+  live_nimiq_pay_listAccounts: PASS_1_ACCOUNT
+  live_nimiq_pay_A_wallet_fingerprint: NOT_TRANSCRIBED_FROM_USER_SCREEN_RECORDING
   wallet_send_initiated: false
 
 postgres_runtime:
@@ -245,7 +247,8 @@ postgres_runtime:
 
 current_gate:
   name: NIMCARRY_REAL_TESTNET_E2E_PROOF
-  status: RUNTIME_SMOKE_PASS_NIMIQ_PAY_PROVIDER_THEN_REAL_PROOF
+  status: PROVIDER_READINESS_CLOSED_NEXT_REAL_A_TO_B_TO_C_TESTNET_PROOF
+  provider_readiness_gate: CLOSED_PASS
   code_merge_prerequisite: COMPLETE
   cloudflare_scaffold_merge_prerequisite: COMPLETE
   database_duplicate_check: COMPLETE_NONE_EXISTS
@@ -262,7 +265,6 @@ current_gate:
   legacy_relay_403: PASS
   same_origin_static_and_backend: PASS
   next_exact_actions:
-    - confirm_Nimiq_Pay_provider_available_on_production_origin
     - execute_real_Nimiq_Pay_A_to_B_to_C_testnet_proof
     - query_Neon_after_each_real_FINAL_for_durable_state_evidence
   topology: { A: creator_initial_holder, B: bridge, C: destination, wallets: 3, devices_preferred: 2 }
@@ -276,7 +278,7 @@ current_gate:
     - native_invitation_deeplink
     - iOS_cold_warm_background_resume
     - real_Route_Receipt_matches_finalized_route
-  proof_status: NOT_STARTED
+  proof_status: NOT_STARTED_PROVIDER_READY
   real_FINAL_observed: false
   real_ARRIVED_observed: false
   never_claim_before_observed: real_testnet_FINAL_or_ARRIVED
