@@ -331,3 +331,14 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Neon truth remains unchanged: mission `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`, invitation sequence `1` `EXPIRED`, pass intent sequence `1` with `tx_hash=null`, no hop, no `FINAL`, and no `ARRIVED`.
 - No wallet/send action occurred. This is a continuity-only checkpoint; runtime code was not changed.
 - Next exact action: `FIX_EXPIRED_INVITATION_PRIMARY_ACTION_FOR_REISSUE`.
+
+## Expired invitation recovery made actionable (2026-09-12)
+
+- Canonical version: `0.8.53`.
+- For an authorized current holder/creator, an `EXPIRED` invitation at `currentSequence + 1` now exposes `CREATE_INVITATION`, which opens the existing Choose-next-bridge dialog and lets the deployed frontend select the same-row `/reissue` route.
+- `INVITED` remains `WAIT`; `ACCEPTED` pass behavior is unchanged. Unauthorized viewers cannot trigger recovery and remain redacted. No new invitation row or pass intent is created.
+- Full verification: **166/166 PASS** across 24 files; TypeScript `--noEmit`: **PASS**. Deterministic mission-view/HTTP/frontend tests cover expired actionable recovery, `INVITED` wait, accepted semantics, and unauthorized access.
+- Official Workers Build `50d71142-83ab-410f-b3a3-5f014e5a5a77` for commit `cc94007a9ad188fea31eb0a581f4c7d92ce9f755`: **SUCCESS**; container image digest `sha256:fa55b6ac75efff935bce9f0ce47d71d1e1fba16096283a607c302af8b79e62aa`; Worker version `4958f6ab-d8cf-4281-b2a4-051746835dac`.
+- Production `/health`: **200**. `/health?deep=1`: **200**, Postgres, backend HTTP 200, `nimcarry-primary`, `max_instances_for_proof_gate: 1`, legacy relay PASS/403. SPA and deployed bundle: **PASS**, including the primary-action-compatible `/reissue` path. CI: **PASS** (`34699901846`).
+- No wallet/send action occurred during implementation or verification. No broadcast, `FINAL`, or `ARRIVED` is claimed.
+- Next exact action: `REISSUE_B_INVITATION_FROM_A_UI`. Stop before executing the retry.
