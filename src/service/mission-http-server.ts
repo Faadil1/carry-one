@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { INTENT_VALIDITY_WINDOW_MS, RelayValidationError } from "../core/relay.js";
+import { INTENT_VALIDITY_WINDOW_MS, isIntentStale, RelayValidationError } from "../core/relay.js";
 import { ONE_NIM_IN_LUNA, type Hop, type PassIntent } from "../core/types.js";
 import type { MissionRepository } from "../mission/repository.js";
 import { ReachMissionCoordinator } from "../mission/coordinator.js";
@@ -662,13 +662,16 @@ async function buildMissionView(
     invitation = await deps.repository.getInvitationForSequence(missionId, record.currentSequence + 1);
   }
   const route = deps.relay.getHistory(missionId);
+  const activeIntent = deps.relay.getActiveIntent(missionId);
   return composeMissionView({
     mission: record,
     invitation: invitation ?? null,
     route,
     protector: deps.protector,
     viewer: resolution.viewer,
-    hasActiveIntent: deps.relay.getActiveIntent(missionId) !== null,
+    hasActiveIntent: activeIntent !== null,
+    activeIntentStale: activeIntent ? isIntentStale(activeIntent) : false,
+    activeIntentHasBroadcast: activeIntent ? deps.relay.hasRecordedBroadcast(missionId) : false,
   });
 }
 

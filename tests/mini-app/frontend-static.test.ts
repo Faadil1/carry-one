@@ -131,6 +131,11 @@ describe("static Mini App skeleton", () => {
     expect(html).toContain("DEMO MODE — no wallet or network writes");
     expect(js).toContain('query.get("demo") === "1"');
   });
+  it("preserves route-view capability when Home opens the pass screen", () => {
+    expect(js).toContain('document.querySelector("#pass-button")?.addEventListener("click", () => navigate(`/mission/${encodeURIComponent(m.mission_id)}/pass`))');
+    expect(js).toContain('sessionStorage.getItem(`carryone.view.${missionId}`) || undefined');
+    expect(js).toContain('const viewToken = extractViewToken(missionId)');
+  });
   it("makes successful demo acceptance visibly return to Mission Home", () => {
     expect(demoUx).toContain('query.get("demo") !== "1"');
     expect(demoUx).toContain('stored?.invitation?.status !== "ACCEPTED"');

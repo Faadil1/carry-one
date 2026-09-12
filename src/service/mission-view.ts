@@ -138,7 +138,9 @@ function derivePrimaryAction(
   invitation: InvitationSummary | null,
   currentSequence: number,
   viewerIsCurrentHolder: boolean,
-  hasActiveIntent: boolean
+  hasActiveIntent: boolean,
+  activeIntentStale: boolean,
+  activeIntentHasBroadcast: boolean
 ): PrimaryAction | null {
   if (status === "CANCELLED") return null;
   if (status === "ARRIVED") {
@@ -150,7 +152,7 @@ function derivePrimaryAction(
   if (viewerIsCurrentHolder) {
     if (!invitation) return "CREATE_INVITATION";
     if (invitation.status === "EXPIRED" && invitation.sequence === currentSequence + 1) return "CREATE_INVITATION";
-    if (invitation.status === "ACCEPTED" && !hasActiveIntent) return "PASS_1_NIM";
+    if (invitation.status === "ACCEPTED" && (!hasActiveIntent || (activeIntentStale && !activeIntentHasBroadcast))) return "PASS_1_NIM";
     return "WAIT";
   }
   if (viewerRole === "INVITEE") {
@@ -166,6 +168,8 @@ export function composeMissionView(input: {
   protector: TargetWalletProtector;
   viewer: string | null;
   hasActiveIntent: boolean;
+  activeIntentStale?: boolean;
+  activeIntentHasBroadcast?: boolean;
   now?: number;
 }): MissionView {
   const now = input.now ?? Date.now();
@@ -182,7 +186,9 @@ export function composeMissionView(input: {
     invitation,
     input.mission.currentSequence,
     viewerIsCurrentHolder,
-    input.hasActiveIntent
+    input.hasActiveIntent,
+    input.activeIntentStale ?? false,
+    input.activeIntentHasBroadcast ?? false
   );
 
   return {
