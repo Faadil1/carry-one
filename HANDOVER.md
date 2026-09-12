@@ -291,3 +291,14 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Exact proof truth remains unchanged: mission `ACTIVE`, `current_sequence=0`, previous B invitation `EXPIRED`, pass intent sequence `1` with `tx_hash: null`, no hop, `0` FINAL, no ARRIVED, and no chain broadcast.
 - Next exact action: `DEPLOY_INVITATION_REISSUE_CONTAINER_AFTER_DOCKER_AVAILABLE`.
 - No NIM was sent and runtime code was not changed after the deployment attempt.
+
+## Invitation reissue production container deployment verified (2026-09-12)
+
+- Canonical version: `0.8.49`.
+- Cloudflare authentication: **PASS** via the official Workers Builds API.
+- Worker tag: `79cd9d3ec2814fc8a565a2b1c75dc6c3`; production trigger: `b060a3f1-7490-46ef-9ea7-8f997d8f7884`.
+- Build `7e613390-017d-45a5-8a6c-ec8e329cd7c8` for commit `77248b73434acad6a15a69fd3ebc532908407450` on `main`: **SUCCESS**; no duplicate build was triggered.
+- Official build logs show image digest `sha256:188de79dbbe87c819c1a1f51ab3cc77f48fba87ba9478a14a5b15fc433388660` deployed to `nimcarry-api`, with Worker version `850ad13e-a594-4d12-94ce-dc78eddb6fef`.
+- Production `/health`: **200**, `status: ok`. `/health?deep=1`: **200**, Postgres, backend HTTP 200, `container_identity: nimcarry-primary`, `max_instances_for_proof_gate: 1`, and legacy relay gate PASS/403.
+- The invitation-reissue backend is therefore confirmed deployed in the production container. No wallet action occurred; no broadcast evidence, `FINAL`, or `ARRIVED` is claimed.
+- Next exact action remains: `RETRY_A_TO_B_AFTER_NIMIQ_PAY_SYNC_HEALTH_CHECK`.
