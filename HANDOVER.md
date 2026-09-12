@@ -322,3 +322,12 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Official Workers Build for `48d0bb516e01314ce802d92b94e5644e129e0f90`: `65acbda8-2519-422f-9e80-24f2a3ba0439`, **SUCCESS**; container image digest `sha256:21dea74e564c32df560ae8fa10889704d492600879a0970953620e4a4018b778`; Worker version `5d87dfc4-18f3-4d36-840c-3bbb587b8d20`.
 - Production `/health`: **200**. `/health?deep=1`: **200**, Postgres, backend HTTP 200, `nimcarry-primary`, `max_instances_for_proof_gate: 1`, legacy relay PASS/403. SPA and deployed bundle: **PASS**, including the expired-recovery `/reissue` branch. CI for implementation commit: **PASS** (`34698464068`).
 - This milestone did not retry the wallet/UI flow. No broadcast, `FINAL`, or `ARRIVED` is claimed. Next exact action remains `REISSUE_B_INVITATION_FROM_A_UI`; stop before executing it.
+
+## Live A recovery checkpoint: expired invitation is visible but non-actionable (2026-09-12)
+
+- Canonical version: `0.8.52`.
+- A successfully recovered the existing mission after `0.8.51`; the expired sequence-1 invitation is visible in A's authorized mission view.
+- The UI currently renders disabled **Waiting for response**, so no reissue occurred. Blocker: `FIX_EXPIRED_INVITATION_PRIMARY_ACTION_FOR_REISSUE`.
+- Neon truth remains unchanged: mission `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`, invitation sequence `1` `EXPIRED`, pass intent sequence `1` with `tx_hash=null`, no hop, no `FINAL`, and no `ARRIVED`.
+- No wallet/send action occurred. This is a continuity-only checkpoint; runtime code was not changed.
+- Next exact action: `FIX_EXPIRED_INVITATION_PRIMARY_ACTION_FOR_REISSUE`.
