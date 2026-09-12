@@ -220,3 +220,13 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Live recovery was **not observed** because the existing mission ID and active phone-A Nimiq Pay session were unavailable in the operator environment. A has not been claimed to see the mission.
 - No new mission, invitation, `AUTHORIZE_PASS`, send, `FINAL`, `ARRIVED`, or custody change occurred.
 - Next exact action: `CREATOR_RECOVER_EXISTING_MISSION_WITH_A`.
+
+## Live creator-session recovery PASS (2026-09-12)
+
+- Canonical version: `0.8.42`.
+- Existing real TESTNET mission was successfully restored on phone A; the UI visibly shows **Pass 1 NIM**.
+- B invitation status is **ACCEPTED**.
+- Neon confirms: mission `ACTIVE`, `finalized_hop_count=0`, `current_sequence=0`, no `pass_intent`, no hop, no `FINAL`, and no `ARRIVED`.
+- `wallet_send_initiated: false`.
+- Next exact action: `OPEN_PASS_SCREEN_WITHOUT_AUTHORIZING_SEND`.
+- Continuity-only update; runtime code was not changed and no send was authorized.
