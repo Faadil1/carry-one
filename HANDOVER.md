@@ -230,3 +230,14 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - `wallet_send_initiated: false`.
 - Next exact action: `OPEN_PASS_SCREEN_WITHOUT_AUTHORIZING_SEND`.
 - Continuity-only update; runtime code was not changed and no send was authorized.
+
+## Real TESTNET pre-send screen milestone (2026-09-12)
+
+- Canonical version: `0.8.43`.
+- Phone A reached **Screen 4 / 5 · Pass 1 NIM** with accepted bridge B visible.
+- Displayed value: `1 NIM = 100000 Luna`; requested fee: `0`; custody remains **FINAL-only**.
+- **Authorize + Pass 1 NIM was not pressed.**
+- Read-only Neon observation: mission `ACTIVE`, invitation `ACCEPTED`, `finalized_hop_count=0`, `current_sequence=0`, no `pass_intent`, and no hop.
+- `wallet_send_initiated: false`; `real_FINAL_observed: false`; `real_ARRIVED_observed: false`.
+- Next exact action: `USER_APPROVE_FIRST_A_TO_B_TESTNET_SEND`.
+- Continuity-only update; runtime code was not changed.
