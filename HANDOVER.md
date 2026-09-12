@@ -351,3 +351,12 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Neon confirms: mission `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`, invitation sequence `1` is `ACCEPTED`, existing pass intent sequence `1` remains present with `tx_hash=null`, and `hop_count=0`.
 - No chain broadcast, `FINAL`, or `ARRIVED` occurred. This is a continuity-only update; no runtime changes and no wallet send occurred.
 - Next exact action: `PREPARE_CONTROLLED_A_TO_B_RETRY`.
+
+## Controlled A-to-B retry preflight blocker: stale unbroadcast pass intent (2026-09-12)
+
+- Canonical version: `0.8.55`.
+- Baseline was canonical `0.8.54`. Mission remains `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`; invitation sequence `1` is `ACCEPTED` and its `pass_deadline_at` remains valid.
+- Existing pass intent sequence `1` has `tx_hash=null`, was created at `2026-09-12T08:16:17.654Z`, and its 125-minute validity window is stale/expired.
+- No hop, chain broadcast, `FINAL`, or `ARRIVED` exists. Do not retry the wallet send yet.
+- Blocker/next exact action: `RENEW_STALE_UNBROADCAST_A_TO_B_PASS_INTENT`.
+- This is a continuity-only update; runtime code and wallet state were not changed.
