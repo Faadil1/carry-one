@@ -399,3 +399,14 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Neon remains: mission `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`, invitation sequence `1` `ACCEPTED`, `tx_hash=null`, and `hop_count=0`.
 - No broadcast, `FINAL`, or `ARRIVED` occurred. This is a continuity-only update; no runtime change and no wallet send occurred.
 - Blocker/next exact action: `MAKE_STALE_UNBROADCAST_ACCEPTED_STATE_PASS_ACTIONABLE_ON_HOME`.
+
+## Stale accepted pass made actionable on Mission Home (2026-09-12)
+
+- Canonical version: `0.8.60`.
+- Mission Home now exposes `PASS_1_NIM` when the authorized current holder has an `ACCEPTED` invitation and the matching active pass intent is stale but unbroadcast. The read path does not mutate or create intents.
+- Valid active intents remain `WAIT`; stale intents with broadcast evidence remain blocked/fail closed. Unauthorized viewers cannot trigger recovery.
+- Home-to-pass navigation preserves the stored route-view capability; deployed bundle verification confirms capability loading on Screen 4.
+- Full verification: **173/173 PASS** across 25 files; TypeScript `--noEmit`: **PASS**. Production `/health`: **200**; `/health?deep=1`: **200**, Postgres, `nimcarry-primary`, `max_instances_for_proof_gate: 1`, legacy relay PASS/403; SPA/bundle: **PASS**.
+- Official Workers Build `38494d3b-bc1a-489a-bbd4-9bcdcc0669de` for commit `8c9a54c9365758d6362a4e75c56fc02eef99b060`: **SUCCESS**; container image digest `sha256:9307d17b4f0924226329ef3420e28651a71bcaab30bb0350a7431a53d4d1626d`; Worker version `3a48ede5-5f95-4434-a99e-bef6b794e650`; CI **PASS** (`34706278368`).
+- No wallet send, broadcast, `FINAL`, or `ARRIVED` occurred.
+- Next exact action: `RECOVER_A_ROUTE_VIEW_AND_OPEN_VALID_PASS_SCREEN`. Stop before wallet send.
