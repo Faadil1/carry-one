@@ -410,3 +410,13 @@ GitHub and Neon are directly manageable from this chat. Cloudflare dashboard/acc
 - Official Workers Build `38494d3b-bc1a-489a-bbd4-9bcdcc0669de` for commit `8c9a54c9365758d6362a4e75c56fc02eef99b060`: **SUCCESS**; container image digest `sha256:9307d17b4f0924226329ef3420e28651a71bcaab30bb0350a7431a53d4d1626d`; Worker version `3a48ede5-5f95-4434-a99e-bef6b794e650`; CI **PASS** (`34706278368`).
 - No wallet send, broadcast, `FINAL`, or `ARRIVED` occurred.
 - Next exact action: `RECOVER_A_ROUTE_VIEW_AND_OPEN_VALID_PASS_SCREEN`. Stop before wallet send.
+
+## Final live send-ready checkpoint (2026-09-12)
+
+- Canonical version: `0.8.61`.
+- A recovered through Mission Home and navigated internally to Screen 4. No `ROUTE_VIEW_CAPABILITY_REQUIRED` banner is present; accepted bridge B is correctly loaded.
+- Displayed value is exactly `1 NIM / 100000 Luna`; requested fee is `0`; custody remains **FINAL-only**.
+- `Authorize + Pass 1 NIM` is visible but has **not** been clicked.
+- Neon remains: mission `ACTIVE`, `current_sequence=0`, `finalized_hop_count=0`, invitation sequence `1` `ACCEPTED`, `pass_deadline_at=2026-09-12T17:09:23.851Z`, existing pass intent sequence `1` with `tx_hash=null`, and `hop_count=0`.
+- No broadcast, `FINAL`, or `ARRIVED` occurred. This is a continuity-only update; no runtime change and no wallet send occurred.
+- Next exact action: `USER_APPROVE_CONTROLLED_A_TO_B_TESTNET_SEND`.
